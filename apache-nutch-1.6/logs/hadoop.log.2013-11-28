@@ -1,0 +1,92 @@
+2013-11-28 14:36:07,195 INFO  solr.SolrIndexer - SolrIndexer: starting at 2013-11-28 14:36:07
+2013-11-28 14:36:07,355 INFO  solr.SolrIndexer - SolrIndexer: deleting gone documents: false
+2013-11-28 14:36:07,355 INFO  solr.SolrIndexer - SolrIndexer: URL filtering: false
+2013-11-28 14:36:07,355 INFO  solr.SolrIndexer - SolrIndexer: URL normalizing: false
+2013-11-28 14:36:07,365 INFO  indexer.IndexerMapReduce - IndexerMapReduce: crawldb: crawl/crawldb
+2013-11-28 14:36:07,366 INFO  indexer.IndexerMapReduce - IndexerMapReduce: linkdb: crawl/linkdb
+2013-11-28 14:36:07,366 INFO  indexer.IndexerMapReduce - IndexerMapReduces: adding segment: crawl/segments/20131128114437
+2013-11-28 14:36:07,722 INFO  indexer.IndexerMapReduce - IndexerMapReduces: adding segment: crawl/segments/20131128114519
+2013-11-28 14:36:07,723 INFO  indexer.IndexerMapReduce - IndexerMapReduces: adding segment: crawl/segments/20131128114602
+2013-11-28 14:36:07,785 WARN  util.NativeCodeLoader - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+2013-11-28 14:36:08,869 INFO  plugin.PluginRepository - Plugins: looking in: /opt/apache-nutch-1.6/plugins
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - Plugin Auto-activation mode: [true]
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - Registered Plugins:
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	the nutch core extension points (nutch-extensionpoints)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Basic URL Normalizer (urlnormalizer-basic)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Basic Indexing Filter (index-basic)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Html Parse Plug-in (parse-html)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Http / Https Protocol Plug-in (protocol-httpclient)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	HTTP Framework (lib-http)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Regex URL Filter (urlfilter-regex)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Pass-through URL Normalizer (urlnormalizer-pass)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Regex URL Normalizer (urlnormalizer-regex)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Tika Parser Plug-in (parse-tika)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	OPIC Scoring Plug-in (scoring-opic)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	CyberNeko HTML Parser (lib-nekohtml)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Anchor Indexing Filter (index-anchor)
+2013-11-28 14:36:09,038 INFO  plugin.PluginRepository - 	Regex URL Filter Framework (lib-regex-filter)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - Registered Extension-Points:
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	Nutch URL Normalizer (org.apache.nutch.net.URLNormalizer)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	Nutch Protocol (org.apache.nutch.protocol.Protocol)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	Nutch Segment Merge Filter (org.apache.nutch.segment.SegmentMergeFilter)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	Nutch URL Filter (org.apache.nutch.net.URLFilter)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	Nutch Indexing Filter (org.apache.nutch.indexer.IndexingFilter)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	HTML Parse Filter (org.apache.nutch.parse.HtmlParseFilter)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	Nutch Content Parser (org.apache.nutch.parse.Parser)
+2013-11-28 14:36:09,039 INFO  plugin.PluginRepository - 	Nutch Scoring (org.apache.nutch.scoring.ScoringFilter)
+2013-11-28 14:36:09,041 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:09,043 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:09,043 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:11,602 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:11,603 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:11,603 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:14,623 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:14,624 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:14,624 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:17,578 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:17,578 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:17,578 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:20,621 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:20,621 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:20,621 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:23,701 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:23,701 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:23,701 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:26,699 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:26,699 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:26,699 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:29,707 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:29,707 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:29,708 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:32,722 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:32,723 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:32,723 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:35,727 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:35,728 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:35,728 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:38,756 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:38,756 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:38,756 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:41,752 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:41,752 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:41,753 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:44,765 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:44,765 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:44,765 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:47,710 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:47,710 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:47,711 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:50,735 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.basic.BasicIndexingFilter
+2013-11-28 14:36:50,735 INFO  anchor.AnchorIndexingFilter - Anchor deduplication is: off
+2013-11-28 14:36:50,735 INFO  indexer.IndexingFilters - Adding org.apache.nutch.indexer.anchor.AnchorIndexingFilter
+2013-11-28 14:36:50,805 INFO  solr.SolrMappingReader - source: content dest: content
+2013-11-28 14:36:50,805 INFO  solr.SolrMappingReader - source: title dest: title
+2013-11-28 14:36:50,805 INFO  solr.SolrMappingReader - source: host dest: host
+2013-11-28 14:36:50,806 INFO  solr.SolrMappingReader - source: segment dest: segment
+2013-11-28 14:36:50,806 INFO  solr.SolrMappingReader - source: boost dest: boost
+2013-11-28 14:36:50,806 INFO  solr.SolrMappingReader - source: digest dest: digest
+2013-11-28 14:36:50,806 INFO  solr.SolrMappingReader - source: tstamp dest: tstamp
+2013-11-28 14:36:50,806 INFO  solr.SolrMappingReader - source: url dest: id
+2013-11-28 14:36:50,806 INFO  solr.SolrMappingReader - source: url dest: url
+2013-11-28 14:36:50,897 INFO  solr.SolrWriter - Indexing 2 documents
+2013-11-28 14:36:54,603 INFO  solr.SolrIndexer - SolrIndexer: finished at 2013-11-28 14:36:54, elapsed: 00:00:47
