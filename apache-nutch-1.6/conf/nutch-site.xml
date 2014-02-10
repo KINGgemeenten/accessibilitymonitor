@@ -6,7 +6,7 @@
 <configuration>
 <property>
  <name>http.agent.name</name>
-  <value>My Nutch Spider</value>
+  <value>Webrichtlijnen Nutch Spider</value>
   </property>
 
 <property>
