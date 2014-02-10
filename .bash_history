@@ -1,228 +1,3 @@
-ls
-whoami
-bin/crawl urls/seed.txt TestCrawl http://dev-crawler.wrl.org:8983/solr/ 2
-pwd
-cd apache-nutch-1.7/
-bin/crawl urls/seed.txt TestCrawl http://dev-crawler.wrl.org:8983/solr/ 2
-locate hadoop.log
-cat /opt/apache-nutch-1.7/logs/hadoop.log
-bin/crawl urls/seed.txt TestCrawl http://dev-crawler.wrl.org:8983/solr/ 2
-history |more
-bin/nutch crawl urls -dir crawl -depth 3 -topN 5
-pwd
-cd ..
-ls
-cd apache-ant-1.9.2/
-ls
-cd etc
-ls
-cd ..
-ls
-vi fetch.xml 
-ls
-cd ..
-ls
-rm -r -f rh
-ls
-cd apache-nutch-1.7/
-ls
-cd conf
-ls
-ni nutch-default.xml 
-vi nutch-default.xml 
-hostname
-exit
-cd /opt/apache-nutch-1.7/
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 2
-bin/nutch crawl urls -dir crawl -depth 3 -topN 5
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 2
-bin/crawl urls/seed.txt TestCrawl http://dev-crawler.wrl.org:8983/solr/collection1 2
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 2
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-ls
-vi urls
-cd urls
-ls
-vi seed.txt 
-cd ..
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 2
-pwd
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 5
-cd urls/
-ls
-vi seed.txt 
-cd ..
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 2
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-bin/nutch crawl urls -dir crawl -depth 3 -topN 5
-vi urls/seed.txt 
-ls
-cd conf
-ls
-vi domainblacklist-urlfilter.txt 
-vi domain-urlfilter.txt 
-ls -sla
-vi domain-urlfilter.txt 
-pwd
-cd ..
-ls
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-ls
-cd crawl/
-ls
-rm -r -f *
-cd ..
-rm -r -f TestCrawl/
-rm -r -f crawl/
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-ls
-cd conf
-ls
-ls -sla
-cp schema.xml /opt/solr-4.5.1/example/conf/schema.xml
-ps -ax |grep start
-kill 5717
-ps -ax |grep start
-ls
-cd ..
-ls
-ps
-ls
-pwd
-cd ..
-ls
-cd solr-4.5.1/
-ls
-pwd
-cd example/
-ls
-java -jar start.jar
-cd /opt/solr-4.5.1/
-ls
-cd example/
-ls
-java -jar start.jar 
-nohup java -jar start.jar 
-java -jar start.jar 
-ls
-vi nohup.out 
-ls
-whoami
-pwd
-cd solr
-ls
-cd bin
-ls
-cd ..
-cd conf
-ls
-vi schema.xml 
-ls -sla
-pwd
-cp /opt/apache-nutch-1.7/conf/schema-solr4.xml schema.xml
-ls -sla
-pwd
-cd ..
-ls
-vi solr.xml 
-cd ..
-ls
-java -jar start.jar 
-ls
-cd conf
-ls
-pwd
-cd ..
-cd solr
-ls
-cd conf
-ls
-vi schema.xml 
-cd ..
-ls
-cd ..
-ls
-java -jar start.jar 
-ls
-cd conf
-ls
-ls -sla
-vi schema.xml 
-cd ..
-ls
-java -jar start.jar 
-ls
-cd ..
-ls
-cd apache-nutch-1.6
-ls
-cd conf
-ls
-cp schema-solr4.xml /opt/solr-4.5.1/example/conf/schema.xml
-cp schema-solr4.xml /opt/solr-4.5.1/example/solr/conf/schema.xml
-ls
-cd ..
-ls
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-ls
-cp -R ../apache-nutch-1.7/urls .
-ls
-ls -sla
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-ls
-cd conf
-ls
-vi nutch-site.xml 
-vi ../../apache-nutch-1.7/conf/nutch-site.xml 
-cp ../../apache-nutch-1.7/conf/nutch-site.xml .
-pwd
-cd ..
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-ls
-cd TestCrawl/
-ls
-cd ..
-ls
-bin/nutch crawl urls -dir crawl -depth 3 -topN 5
-cd ..
-ls
-cd solr-4.5.1/
-ls
-cd example/
-ls
-rm nohup.out 
-cd conf
-ls
-cd ..
-ls
-cd solr
-ls
-vi solr.xml 
-vi zoo.cfg 
-ls
-cd conf
-ls
-vi schema.xml 
-ls
-cd ..
-ls
-cd ..
-ls
-java -jar start.jar 
-ls
-pwd
-cd conf
-ls
-vi schema.xml 
-ls
-vi schema-solr4.xml 
-cd ..
-ls
-java -jar start.jar 
-ls
-cd conf
-ls
 cat schema.xml |grep _version
 ls
 cd ..
@@ -998,3 +773,228 @@ cat /tmp/quaildata/data
 ./checksite.sh http://www.zaanstad.nl
 ./checksite.sh http://www.delft.nl
 ./checksite.sh http://www.stadskanaal.nl
+./checksite.sh http://www.amsterdam.nl
+./checksite.sh http://www.utrecht.nl
+./checksite.sh http://www.vng.nl
+./checksite.sh http://www.kinggemeenten.nl
+./checksite.sh http://www.overheid.nl
+./checksite.sh http://overheid.nl
+./checksite.sh http://mijnoverheid.nl
+./checksite.sh http://www.mijnoverheid.nl
+./checksite.sh http://www.eindhoven.nl
+./checksite.sh http://www.apeldoorn.nl
+./checksite.sh http://www.nijmegen.nl
+./checksite.sh http://www.arnhem.nl
+./checksite.sh http://www.heemskerk.nl
+./checksite.sh http://www.ictu.nl
+./checksite.sh http://www.rijswijk.nl
+./checksite.sh http://www.leiden.nl
+./checksite.sh http://www.haarlem.nl
+./checksite.sh http://www.alkmaar.nl
+./checksite.sh http://www.bergen.nl
+./checksite.sh http://www.tweedekamer.nl
+./checksite.sh http://debatgemist.tweedekamer.nl
+./checksite.sh http://
+./checksite.sh http://king.vng.nl
+./checksite.sh http://rijksmuseum.nl
+./checksite.sh http://museon.nl
+./checksite.sh http://denhaag.nl
+./checksite.sh https://www.noordwijk.nl
+./checksite.sh http://www.noordwijk.nl
+cd ..
+pwd
+ls
+git
+git remote -v
+git init
+git add *
+ls
+git add apache-ant-1.9.2
+git add apache-nutch-1.6
+git add drupal_feed_to_nutch_seed
+git add phantomjs-1.9.2-linux-x86_64
+git add siteinspector
+git add solr-4.5.1
+git commit
+git remote -v
+git remote rm origin
+git remote add origin https://github.com/KINGgemeenten/accessibilitymonitor.git
+git config master.remote origin
+git config master.merge refs/heads/master
+git push
+git commit
+git remote -v
+git commit -a
+git add
+ls
+git add .
+git commit
+git push
+git remote rm origin
+git remote add origin http://github.com/KINGgemeenten/accessibilitymonitor.git
+git config master.remote origin
+git config master.merge refs/heads/master
+git push
+git config --global user.name "ReinVelt"
+git config --global user.email rein@velt.org
+git commit --amend --reset-author
+git commit
+git push
+cd /tmp
+wget https://github.com/KINGgemeenten/accessibilitymonitor.git
+cd /opt
+ls
+git push
+set GIT_CURL_VERBOSE=1
+git push
+git remote rm origin
+git remote add origin https://ReinVelt@github.com/KINGgemeenten/accessibilitymonitor.git
+git config master.remote origin
+git config master.merge refs/heads/master
+git push
+git commit -a
+git push
+git remote -v
+git push -f
+ls -sla
+./checksite.sh http://www.denhaag.nl
+./checksite.sh http://www.denhaag.nl/info
+./checksite.sh http://www.denhaag.nl
+./checksite.sh http://www.s-hertogenbosch.nl
+./checksite.sh http://wwww.aaenhunze.nl
+./checksite.sh http://www.aaenhunze.nl
+./checksite.sh http://www.aalburg.nl
+./checksite.sh http://www.aalsmeer.nl
+./checksite.sh http://www.aalten.nl
+./checksite.sh http://www.achtkarspelen.nl
+./checksite.sh http://www.alblasserdam.nl
+./checksite.sh http://www.albrandswaard.nl
+ls
+c /opt
+ls
+cd /opt
+ls
+cd siteinspector
+ls
+./checksite.sh  http://www.apeldoorn.nl
+cd ..
+clear
+ls -sla
+cd siteinspector
+ls
+clear
+ls
+ls -sla
+./checksite.sh  http://www.apeldoorn.nl
+ls
+cd 
+cd /opt
+ls
+cd siteinspector
+ls
+vi nutch2quail.php
+vi parseData.php 
+ls
+cd /opt
+ls
+cd solr-4.5.1/
+ls
+cd ls
+ls
+pwd
+cd example/
+ls
+cd conf
+ls
+cd ..
+cd solr
+ls
+cd collection1/
+ls
+cd conf
+ls
+vi schema.xml 
+cd /opt
+ls
+cd siteinspector
+ls
+vi nutch2quail.php 
+vi nutch2quaillib.php
+vi nutch2quail.php 
+vi nutch2quaillib.php
+vi nutch2quail.php 
+vi nutch2quaillib.php
+vi nutch2quail.php 
+php -f nutch2quail.php 
+pwd
+cd ..
+cd solr-4.5.1/
+ls
+cd example/
+ls
+cd solr
+ls
+cd collection1/
+ls
+cd conf
+ls
+vi schema.xml 
+git commit schema.xml
+git push
+cd /opt
+ls
+cd siteinspector
+ls
+vi nutch2quail.php 
+php -f nutch2quail.php 
+vi nutch2quail.php 
+php -f nutch2quail.php 
+vi nutch2quaillib.php
+vi nutch2quail.php 
+php -f nutch2quail.php 
+vi nutch2quail.php 
+php -f nutch2quail.php 
+ls
+vi checksite.sh 
+vi cronrun.sh
+which php
+vi cronrun.sh
+chmod +x cronrun.sh 
+./cronrun.sh 
+echo $ITEMS
+./cronrun.sh 
+vi cronrun.sh
+./cronrun.sh 
+ls
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+ls
+git add nutch2quaillib.php 
+git add nutch2quail.php 
+git add cronrun.sh 
+git commit
+git psuh
+git push
+git status
+ls
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+ls
+git commit cronrun.sh 
+git push
