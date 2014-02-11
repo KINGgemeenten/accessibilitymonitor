@@ -41,7 +41,7 @@
 		$report='<h1>Accessibility Test results</h1>';
 		$report.="\n";
 		$report.=print_r($res,true);
-		print $report;
+		//print $report;
 	}
 
 	function post($fields){
@@ -77,11 +77,11 @@
 		$json->id=(string)(time().$index);
 		if (isset($json->wcag) && ($json->wcag!=""))
                 {
-		$wcag=json_decode($json->wcag);
-		$json->applicationframework="";
-		$json->techniques="";
-		while (list($applicationNr,$techniques)=each($wcag))
-		{
+		 $wcag=json_decode($json->wcag);
+		 $json->applicationframework="";
+		 $json->techniques="";
+		 while (list($applicationNr,$techniques)=each($wcag))
+		 {
 		   $json->applicationframework[]=$applicationNr;
 		   if (count($techniques)>0)
                    {
@@ -93,8 +93,8 @@
                          }
                       }
                    }	
-		}
-		$json->techniques=$thistechniques;
+		 }
+		 $json->techniques=array_unique($thistechniques);
                 }
 		post($json);
 		
