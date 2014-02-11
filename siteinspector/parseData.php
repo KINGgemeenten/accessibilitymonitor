@@ -45,6 +45,7 @@
 	}
 
 	function post($fields){
+                        
 			$ch = curl_init();
 			$post_url = 'http://dev-crawler.wrl.org:8983/solr/phantomcore/update?commit=true';
 			$json_fields='{"add":{"doc":'.json_encode($fields).'}}' ;
@@ -74,6 +75,27 @@
 		$testresult=$data;
 		$json=json_decode($data);
 		$json->id=(string)(time().$index);
+		if (isset($json->wcag) && ($json->wcag!=""))
+                {
+		$wcag=json_decode($json->wcag);
+		$json->applicationframework="";
+		$json->techniques="";
+		while (list($applicationNr,$techniques)=each($wcag))
+		{
+		   $json->applicationframework[]=$applicationNr;
+		   if (count($techniques)>0)
+                   {
+		      foreach($techniques as $technique)
+		      {
+                         foreach($technique as $techniqueStr)
+                         {
+		   	    $thistechniques[]=$techniqueStr;
+                         }
+                      }
+                   }	
+		}
+		$json->techniques=$thistechniques;
+                }
 		post($json);
 		
 		return $testresult;
