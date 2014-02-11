@@ -364,6 +364,8 @@
     <field name="element"  type="string" indexed="true" stored="true" />
     <field name="name" type="string" indexed="true" stored="true" />
     <field name="wcag"  type="string" indexed="true" stored="true" />
+    <field name="applicationframework" type="string" indexed="true" multiValued="true" stored="true" />
+    <field name="techniques" type="string" indexed="true" multiValued="true"  stored="true" />
     <field name="tags" type="string" indexed="true" termVectors="true" multiValued="true" stored="true" />
     <field name="testability" type="integer" indexed="true" stored="true"/>
     <field name="testtype" type="string" indexed="true" termVectors="true" stored="true"/>
