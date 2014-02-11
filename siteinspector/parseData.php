@@ -1,4 +1,8 @@
 <?php
+
+        //THIS SCRIPT READS OUTPUT FROM QUAIL, CONVERT IT TO JSON AND SENDS IT TO SOLR
+	//rein@mechanicape.com
+
 	if (isset($argv) && count($argv)>1) { $parameter=$argv[1]; }
 	if (isset($_REQUEST["url"])) { $parameter=$_REQUEST["url"]; }
 	//print $parameter;
@@ -37,7 +41,6 @@
 		$report='<h1>Accessibility Test results</h1>';
 		$report.="\n";
 		$report.=print_r($res,true);
-		//mail ('rein@velt.org','accessibilitytest '.$report[0],$report);
 		print $report;
 	}
 
