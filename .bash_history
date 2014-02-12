@@ -1,519 +1,3 @@
-cat schema.xml |grep _version
-ls
-cd ..
-ls
-cd multicore/
-ls
-vi solr.xml 
-cd ..
-ls
-cd solr
-ls
-cd conf
-ls
-cat schema.xml |grep _vers
-ls
-cd ..
-ls
-cd collection1/
-ls
-cd conf
-ls
-cat schema.xml |grep _vers
-vi schema.xml
-cd ..
-pwd
-cd ..
-ls
-java -jar start.jar 
-nohup java -jar start.jar & 
-cd ..
-ls
-cd ..
-ls
-cd apache-nutch-1.6
-ls
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-ls
-ls- sla
-ls -sla
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb crawl/segments/*
-ls
-pwd
-vi run.sh
-chmod +x run.sh
-mv run.sh testrun.sh
-./testrun.sh 
-pwd
-ls
-cd urls/
-ls
-vi seed.txt 
-ls
-cd ..
-ls
-cd ..
-cd apache-nutch-1.
-cd apache-nutch-1.6/
-./testrun.sh 
-cd crawl
-ls
-cd ..
-ls
-vi testrun.sh 
-cd TestCrawl/
-ls
-cd ..
-rm -r -f TestCrawl
-cd doc
-cd docs
-ls
-cd ..
-ls
-vi README.txt 
-ls
-pwd
-cd conf
-vi regex-urlfilter.txt 
-ls
-cd ..
-ls
-./testrun.sh 
-cd logs
-ls
-ls -sla
-rm hadoop.log
-cd ..
-./testrun.sh 
-cd log
-ls
-cd logs
-ls
-ls -sla
-more hadoop.log 
-cd
-ls
-pwd
-tar -cvf /tmp/apache-nutch.tar /opt/apache-nutch-1.6
-tar -cvf /tmp/apache-solr.tar /opt/solr-4.5.1
-ls /opt
-cd apache-ant
-cd /opt/apache-ant-1.9.2/
-ls
-cd ..
-tar -cvf /tmp/apache-ant.tar /opt/apache-ant-1.9.2
-cd /tmp
-ls
-gzip apache-ant.tar 
-gzip apache-nutch.tar 
-gzip apache-solr.tar 
-ls -sla
-mail rein@velt.org < apache-ant.tar.gz 
-mailq
-mail
-exit
-cd /opt
-ls
-cd apache-nutch-1.6/
-ls
-cd urls
-ls
-vi seed.txt 
-cd ..
-vi testrun.sh 
-./testrun.sh 
-ls
-cat testrun.sh 
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb crawl/segments/*
-cd crawl
-ls
-rm -r -f *
-ls
-cd ..
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb crawl/segments/*
-ls
-rm -r -f crawl
-rm -r -f tmp_1386324603990-2144565067/
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb crawl/segments/*
-mkdir crawl
-mkdir crawl/crawldb
-mkdir crawl/linkdb
-mkdir crawl/crawldb/current
-mkdir crawl/linkdb/current
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb crawl/segments/*
-mkdir crawl/segments
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb crawl/segments/*
-history
-bin/crawl urls/seed.txt TestCrawl http://localhost:8983/solr/collection1 3
-bin/crawl urls/seed.txt crawl http://localhost:8983/solr/collection1 3
-ls
-rm -r -f TestCrawl/
-cd crawl/
-ls
-cd segments/
-ls
-cd ..
-ls
-./testrun.sh 
-vi testrun.sh 
-./testrun.sh 
-bin/crawl urls/seed.txt crawl http://localhost:8983/solr/collection1 5
-bin/crawl urls/seed.txt crawl http://localhost:8983/solr 10
-bin/crawl urls/seed.txt crawl http://localhost:8983/solr/collection1 10
-vi urls/seed.txt 
-bin/crawl urls/seed.txt crawl http://localhost:8983/solr/collection1 10
-bin/crawl urls/seed.txt crawl http://localhost:8983/solr/collection1 5
-ls
-./testrun.sh 
-rm -r -f crawl
-ls
-rm -r -f inject-temp-1455659653
-./testrun.sh 
-ls
-cd logs
-ls
-ls -sla
-vi hadoop.log
-cd ..
-ls
-bin/nutch crawl urls -solr http://localhost:8983/solr/ -depth 3 -topN 5
-bin/nutch crawl urls -dir crawl -depth 3 -topN 5
-ls
-rm -r -f crawl-20131206124610
-cd crawl
-ls
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/ -depth 3 -topN 5
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5
-ls
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5
-ls
-cd urls
-ls
-vi seed.txt 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5
-ls
-rm -r -f crawl
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5
-rm -r -f crawl
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5000 
-rm -r -f crawl
-ls
-rm -r -f tmp_1386330554151--1117430026
-cd urls
-ls
-cat seed.txt 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 500 
-ls
-rm -r -f crawl
-cd urls/
-vi seed.txt 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 500 
-cd urls
-vi seed.txt 
-
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 500 
-ls
-rm -r -f crawl
-cd conf
-ls
-vi nutch-conf.xsl 
-LS
-ls
-vi automaton-urlfilter.txt 
-cd ..
-ls
-wget http://dev.wrl.org/zoekindex.xml
-vi zoekindex.xml 
-ls
-rm zoekindex.xml 
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 500 
-ls
-rm -r -f crawl
-cd urls
-vi seed.txt 
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 500 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 500 
-bincd urls
-ls
-cd urls/
-ls
-vi seed.txt 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 500 
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5 
-ls
-cd conf
-ls
-vi automaton-urlfilter.txt 
-cd ..
-ls
-cd urls
-ls
-vi seed.txt 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5 
-ls
-rm -r -f crawl
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 3 -topN 5 
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 5 -topN 50 
-ls
-cd urls
-ls
-vi seed.txt 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 5 -topN 50 
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 5 -topN 500
-cd urls/
-ls
-vi seed.txt 
-cd ..
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 5 -topN 500
-ls
-rm -r -f crawl
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 5 -topN 500
-nohup bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 5 -topN 500
-ls
-cd /opt
-ls
-cd apache-nutch-1.6
-ls
-vi testrun.sh 
-./testrun.sh 
-nohup bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr/collection1 -depth 5 -topN 500
-bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr -depth 3 -topN 500
-bin/nutch inject crawl_test/crawldb seeds/
-ls
-bin/nutch inject crawl_test/crawldb urls/
-bin/nutch generate crawl_test/crawldb crawl_test/segments
-export SEGMENT=crawl_test/segments/`ls -tr crawl_test/segments|tail -1`
-bin/nutch fetch $SEGMENT -noParsing
-bin/nutch parse $SEGMENT
-bin/nutch updatedb crawl_test/crawldb $SEGMENT -filter -normalize
-bin/nutch invertlinks crawl_test/linkdb -dir crawl_test/segments
-bin/nutch solrindex http://localhost:8983/solr/ crawl_test/crawldb -linkdb crawl_test/linkdb crawl_test/segments/$SEGMENT
-bin/nutch solrindex http://localhost:8983/solr/ crawl_test/crawldb -linkdb crawl_test/linkdb $SEGMENT
-nohup bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr -depth 2 -topN 200
- bin/nutch crawl urls -dir crawl -solr http://localhost:8983/solr -depth 2 -topN 200
-cd /opt/apache-nutch-1.6/crawl/segments/20131209172347
-ls
-cd ..
-ls
-cd ..
-cd .
-cd ..
-ls
-rm -r -f crawl
-rm -r -f crawl-test
-vi testrun.sh 
-./testrun.sh 
-bin/nutch inject crawl/crawldb urls/
-bin/nutch generate crawl/crawldb crawl/segments
-export SEGMENT=crawl/segments/`ls -tr crawl/segments|tail -1`
-bin/nutch fetch $SEGMENT 
-bin/nutch updatedb crawl/crawldb $SEGMENT -filter -normalize
-bin/nutch invertlinks crawl/linkdb -dir crawl/segments
-ls
-cd bin
-ls
-cd ..
-ls
-bin/nutch fetch $SEGMENT 
-bin/nutch updatedb crawl/crawldb $SEGMENT -filter -normalize
-bin/nutch invertlinks crawl/linkdb -dir crawl/segments
-bin/nutch updatedb crawl/crawldb $SEGMENT -filter -normalize
-bin/nutch invertlinks crawl/linkdb -dir crawl/segments
-echo $SEGMENTS
-echo $SEGMENT
-bin/nutch invertlinks crawl/linkdb -dir $SEGMENT
-bin/nutch fetch $SEGMENT 
-cd $SEGMENT 
-ls
-cd ..
-ls
-cd ..
-ls
-cd ..
-ls
-bin/nutch invertlinks crawl/linkdb -dir $SEGMENT
-bin/nutch invertlinks crawl/linkdb -dir crawl/segments
-pwd
-rm -r -f crawl
-ls
-rm -r -f crawl_test
-bin/nutch crawl urls -dir crawl -depth 3 -topN 5
-bin/nutch crawl urls -dir crawl -depth 3 -topN 50
-bin/nutch crawl urls -solr http://dev-crawler.wrl.org:8983/solr/  -depth 3 -topN 50
-bin/nutch crawl urls -solr http://dev-crawler.wrl.org:8983/solr/collection1  -depth 3 -topN 100
-ls /tmp
-df -h /tmp
-bin/nutch crawl urls -dir crawl -solr http://dev-crawler.wrl.org:8983/solr/  -depth 3 -topN 50
-bin/nutch inject crawl/crawldb urls
-bin/nutch inject crawl/crawldb urls/seed.txt 
-bin/nutch generate crawl/crawldb crawl/segments
-s1=`ls -d crawl/segments/2* | tail -1`
-echo $s1
-bin/nutch fetch $s1
-
-echo $s1
-bin/nutch fetch $s1
-bin/nutch parse $s1
-bin/nutch generate crawl/crawldb crawl/segments -topN 1000
-bin/nutch generate crawl/crawldb crawl/segments -depth 3 -topN 1000
-bin/nutch invertlinks crawl/linkdb -dir crawl/segments
-bin/nutch invertlinks crawl/linkdb -dir crawl/$1
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb crawl/segments/*
-bin/nutch solrindex http://127.0.0.1:8983/solr/ crawl/crawldb -linkdb crawl/linkdb $s1
-bin/nutch invertlinks crawl/linkdb -dir $s1
-pwd
-bin/nutch crawl urls -solr http://localhost:8983/solr/ -depth 3 -topN 1000
-bin/nutch crawl urls -solr http://localhost:8983/solr/collection1 -depth 3 -topN 10000
-bin/nutch crawl urls -solr http://localhost:8983/solr/collection1/ -depth 3 -topN 10000
-bin/nutch crawl urls -solr http://localhost:8983/solr/ -depth 5 -topN 1000
-bin/nutch crawl urls -solr http://localhost:8983/solr/ -depth 10 -topN 1000
-ls
-rm -r -f apache-nutch-1.7
-ls -sla
-tar -cvf /tmp/opt.tar /opt
-ls
-cd /etc/apache2
-cd /etc
-ls
-locate rewrite.conf
-cd /etc
-ls
-cd /etc/httpd
-cd /opt/apache-nutch-1.6/
-ls
-cd conf
-ls
-vi regex-urlfilter.txt 
-vi subcollections.xml 
-vi automaton-urlfilter.txt 
-cd /tmp
-gzip opt.tar
-cd
-ls
-mkdir drupal_feed_to_nutch_seed
-cd drupal_feed_to_nutch_seed/
-vi sync.sh
-chmod +x sync.sh 
-./sync.sh 
-ls
-vi zoekindex.xml 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-vi sync.py
-python sync.py 
-vi sync.py
-python sync.py 
-vi sync.py
-python sync.py 
-vi sync.py
-ls
-rm zoekindex.*
-python sync.py 
-ls
-./sync.sh 
-vi zoekindex.xml 
-vi sync.py
-python sync.py 
-vi sync.py
-python sync.py 
-vi sync.py
-ls
-vi sync.sh
-vi sync.py
-vi zoekindex.xml 
-vi sync.py
-python sync.py
-vi sync.py
-python sync.py
-vi sync.py
-python sync.py
-vi sync.py
-python sync.py
-rm sync.py
-ls
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-./sync.sh 
-vi sync.sh 
-which wget
-vi sync.sh 
-which cat
-vi sync.sh 
-pwd
-vi sync.sh 
-
-vi sync.sh 
-ls
-vi sync.sh 
-./sync.sh 
-ls
-cd /opt
-ls
-wget https://phantomjs.googlecode.com/files/phantomjs-1.9.2-source.zip
-unzip phantomjs-1.9.2-source.zip 
-cd phantomjs-1.9.2
-ls
-./build.sh
-cd ..
-rm -r -f phantomjs-1.9.2
-ls
-rm -r -f phantomjs-1.9.2-source.zip 
-phantomjs
-nodejs
-ls
-cd ..
-ls
-cd phantomcore/
-ls
-cd ..
-ls
-cd conf
-ls -sla
-cd ..
-ls
-cd collection1/
-ls
-cd conf
-ls
-mkdir ../../phantomcore/conf
-cp -r * ../../phantomcore/conf
-cd ../../phantomcore/
-cd conf
-ls
 vi solrconfig.xml 
 pwd
 mkdir data
@@ -998,3 +482,519 @@ vi cronrun.sh
 ls
 git commit cronrun.sh 
 git push
+cd /opt/siteinspector
+ls
+vi cronrun.sh 
+./cronrun.sh 
+ls
+cat t
+rm t
+vi cronrun.sh 
+ls
+vi update.json
+vi cronrun.sh 
+ls
+./cronrun.sh 
+vi cronrun.sh 
+ls
+vi update.json 
+vi cronrun.sh 
+./cronrun.sh 
+ls
+vi update.json 
+mv update.json updatejson.php
+./cronrun.sh 
+vi updatejson.php 
+./cronrun.sh 
+vi updatejson.php 
+./cronrun.sh 
+vi updatejson.php 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi updatejson.php 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+./cronrun.sh 
+ls
+vi cronrun.sh 
+vi nutch2quail
+vi nutch2quail.php 
+vi updatejson.php 
+vi cronrun.sh 
+./cronrun.sh 
+vi cronrun.sh 
+ls
+vi nutch2quail
+vi nutch2quail.php 
+vi updatejson.php 
+php
+vi updatejson.php 
+php -f updatejson.php 
+vi updatejson.php 
+php -f updatejson.php 
+./cronrun.sh 
+vi updatejson.php 
+vi cronrun.sh 
+./cronrun.sh 
+crontab -e
+cd /opt
+ls
+cd /tmp
+ls
+chmod 777 quaildata/
+ls
+cd quaildata/
+ls
+chmod 777 data
+cd /opt
+ls
+cd siteinspector
+ls
+vi cronrun.sh 
+vi checksite.sh 
+cd /opt
+ls
+cd apache-nutch-1.6/
+ls
+vi ./testrun.sh 
+cd conf
+ls
+vi nutch-site.xml 
+git commit nutch-site.xml 
+vi nutch-default.xml 
+git commit nutch-default.xml 
+cd /opt
+ls
+cd siteinspector
+ls
+git commit *
+git commit updatejson.php 
+git add updatejson.php 
+git commit updatejson.php 
+ls
+git commit nutch2quail.php 
+git commit -a
+git push
+ls
+mail
+cd /opt/apache-nutch-1.6/
+ls
+vi urls/seed.txt 
+./testrun.sh 
+vi testrun.sh 
+cd crawl
+ls
+cd segments/
+ls
+rm -r -f *
+ls
+cd ..
+ls
+cd linksdb
+cd linkdb/
+ls
+cd current/
+ls
+cd ..
+ls
+cd current/
+ls
+rm -r -f *
+cd ..
+ls
+cd ..
+ls
+cd crawldb/
+ls
+rm -r -f old
+cd current/
+ls
+rm -r -f *
+cd ..
+ls
+cd ..
+ls
+vi README.txt 
+./testrun.sh 
+ls -sla
+rm -r -f crawl-2013*
+ls
+cd crawl
+ls
+cd ..
+ls
+./testrun.sh 
+history
+history |more
+pwd
+bin/crawl urls/seed.txt crawl http://localhost:8983/solr/collection1 10
+ls
+vi createindex.sh
+vi createindex.sh 
+vi testrun.sh 
+./testrun.sh 
+ls
+vi createindex.sh 
+./createindex.sh
+ls -sla
+whoami
+chmod +x createindex.sh 
+./createindex.sh 
+ls
+./testrun.sh 
+vi createindex.sh 
+vi testrun.sh 
+mail
+ls
+cd crawl
+ls
+rm -r -f *
+ls
+cd ..
+ls
+./testrun.sh 
+vi testrun.sh 
+cat testrun.sh 
+mkdir crawl/crawldb
+mkdir crawl/linkdb
+mkdir crawl/segments
+ls
+./testrun.sh 
+ls
+vi createindex.sh 
+vi testrun.sh 
+./testrun.sh 
+ls
+ls urls
+./testrun.sh 
+vi testrun.sh 
+./testrun.sh 
+ls
+vi testrun.sh 
+vi createindex.sh 
+ls
+./testrun.sh 
+history
+ls
+vi testrun.sh 
+vi createindex.sh 
+./createindex.sh 
+./testrun.sh 
+df -h
+ls
+ls -sla
+rm nohup.out 
+vi createindex.sh 
+./createindex.sh 
+ls
+cd logs
+ls
+tail hadoop.log
+tail -n 100 hadoop.log
+ls
+cd ..
+ls
+vi testrun.sh 
+vi createindex.sh 
+cd conf
+ls
+vi nutch-default.xml 
+vi nutch-site.xml 
+vi nutch-default.xml 
+cd ..
+ls
+vi createindex.sh 
+./createindex.sh 
+ls
+./testrun.sh 
+cd generate-temp-1392045221479/
+ls
+cd _temporary/
+ls
+cd ..
+ls
+vi createindex.sh 
+./testrun.sh 
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210151216/crawl_parse
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210151216/parse_data
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210151216/parse_text
+./testrun.sh 
+crontab -e
+ps -ax |grep php |wc -l
+ls
+vi checksite.sh 
+cd ..
+ls
+cd apache-nutch-1.6/
+ls
+vi testrun.sh 
+./testrun.sh 
+ls
+vi createindex.sh 
+vi testrun.sh 
+ls
+cd crawl
+ls
+killall php
+ps -ax |grep php
+cat /tmp/quaildata/data |head
+cat /tmp/quaildata/data 
+ls
+cd ..
+ls
+cd ..
+ls
+cd siteinspector
+ls
+vi checksite.sh 
+ls /tmp/quaildata/
+ls -sla/tmp/quaildata/
+ls -sla /tmp/quaildata/
+rm /tmp/quaildata/data
+ls -sla /tmp/quaildata/
+crontab -e
+ps -ax |grep php
+killall php
+ps -ax |grep php
+ls /tmp/quaildata/
+ps -ax |grep php
+ls
+vi checksite.sh 
+uuencode
+encode
+base64encode
+vi checksite.sh 
+vi createhash.php
+vi checksite.sh 
+ps -ax |grep php
+ls /tmp/quaildata/
+ls
+php -f createhash.php http://test.nl
+vi checksite.sh 
+top
+crontab -e
+vi cronrun.sh 
+ls
+ps -ax |grep php
+ls /tmp/quaildata/
+vi cronrun.sh 
+/usr/bin/php -f nutch2quail.php
+ls
+./cronrun.sh 
+ps -ax
+ls
+cd ..
+cd apache-nutch-1.6/
+ls
+./testrun.sh 
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210132840/crawl_parse
+./testrun.sh 
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210132840/parse_data
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210132840/parse_text
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210141901/crawl_parse
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210141901/parse_data
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210141901/parse_text
+./testrun.sh 
+mkdir /opt/apache-nutch-1.6/crawl/segments/20140210141901/crawl_fetch
+./testrun.sh 
+ps -ax |grep php
+./testrun.sh 
+ls -sla /tmp/quaildata/
+ls -sla |wc -l
+ps -ax |grep php
+ls -sla /tmp/quaildata |wc -l
+cd /tmp/quaildata/
+ls
+cat 919c6a9246a154ae88cab3b9d195a91d 
+ls
+pwd
+ls -sla /tmp/quaildata |wc -l
+cd /opt
+ls
+cd siteinspector
+ls
+vi nutch2quail.php 
+vi parseData.php 
+ls -sla /tmp/quaildata |wc -l
+crontab -e
+ps -ax |grep phantom
+ps -ax |grep phantomjs
+ps -ax
+killall php
+ps -ax
+killall cronrun.sh
+ps -ax
+killall php
+ps -ax
+ls -sla
+ls
+ls -sla |wc -l
+pwd
+cd /opt
+ls
+cd siteinspector
+ls
+vi parseData.php 
+git commit parseData.php 
+git push
+vi parseData.php 
+cp parseData.php parseDataDev.php
+vi parseDataDev.php
+php -g parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+ls
+cd ..
+ls
+cd solr-4.5.1/
+ls
+cd example/
+ls
+cd solr
+ls
+cd phantomcore/
+ls
+cd conf
+ls
+vi schema.xml 
+git commit schema.xml 
+git push
+cd /opt
+ls
+cd siteinspector
+ls
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+:q!
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+php -f parseDataDev.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseDataDev.php 
+ls
+mv parseData.php parseData.php.old
+mv parseDataDev.php parseData.php
+git commit parseData.php
+git push
+php -f parseData.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+vi parseData.php 
+git commit parseData.php
+git push
+php -f parseData.php /tmp/quaildata/8ccbbf1792feaa05286f0d917082aa0d 
+ls
+vi cleansolrphantom.sh
+chmod +x cleansolrphantom.sh 
+./cleansolrphantom.sh 
+vi cleansolrphantom.sh
+./cleansolrphantom.sh 
+vi cleansolrphantom.sh
+./cleansolrphantom.sh 
+vi cleansolrphantom.sh
+wget http://localhost:8983/solr/phantomcore/update?stream.body=<delete><query>*:*</query></delete>&commit=true
+ls
+cd js
+ls
+cd quail/
+ls
+cd dist
+ls
+cd guidelines/
+ls
+vi 508.json 
+vi 508.tests.json 
+ls
+vi wcag.json 
+ls -sla
+vi tests.json 
+vi wcag.tests.json 
+ls
+cd ..
+ls
+vi tests.json 
+ls
+cd ..
+ls
+cd ..
+ls
+cd ..
+ls
+rm parseData.php.old 
+cp cleansolrphantom.sh cleansolrnutch.sh
+vi cleansolrnutch.sh 
+./cleansolrnutch.sh 
+cd /opt
+ls
+cd apache-nutch-1.6/
+ls
+./testrun.sh 
+ps -ax
+ls
+cd /opt/siteinspector
+ls
+./cronrun.sh 
+ls -sla /tmp/quaildata/ |more
+
+php
+pwd
+cd /opt
+ls
+cd siteinspector
+ls
+ls -sla
+cd /tmp/quaildata/
+ls
+ls -sla |wc -l
+mem
+uptime
+top
+ls
+ls -sla |wc -l
+ps -ax
+su nutch
+hostname
+ls
+cd
+ls
+ps -ax
+ls
+cd solr
+cd solr-4.5.1/
+ls
+cd dist/
+ls
+cd ..
+ls
+cd example/
+ls
+java -jar start.jar
+cd /opt
+ls
+cd solr-4.5.1/
+ls
+cd example/
+ls
+nohup java -jar start.jar
