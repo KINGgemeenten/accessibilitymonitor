@@ -1,8 +1,8 @@
 <?php
-
+        
         //THIS SCRIPT READS OUTPUT FROM QUAIL, CONVERT IT TO JSON AND SENDS IT TO SOLR
 	//rein@mechanicape.com
-
+        error_reporting(0);
 	if (isset($argv) && count($argv)>1) { $parameter=$argv[1]; }
 	if (isset($_REQUEST["url"])) { $parameter=$_REQUEST["url"]; }
 	//print $parameter;
@@ -74,9 +74,25 @@
 	{
 		$testresult=$data;
 		$json=json_decode($data);
+		$json->url_main="";
+		$json->url_sub="";
+		$urlarr=parse_url($json->url);
+                 $fqdArr=explode(".",$urlarr["host"]);
+                 if (count($fqdArr)>2)
+                 {  
+                    $partcount=count($fqdArr);
+                    $json->url_main=$fqdArr[$partcount-2].".".$fqdArr[$partcount-1];
+                 }
+                 else
+                 {
+                   $json->url_main=$urlarr["host"];
+                 }
+                 $json->url_sub=$urlarr["host"];
+
 		$json->id=(string)(time().$index);
 		if (isset($json->wcag) && ($json->wcag!=""))
                 {
+		 $url=json_decode($json->url);
 		 $wcag=json_decode($json->wcag);
 		 $json->applicationframework="";
 		 $json->techniques="";
