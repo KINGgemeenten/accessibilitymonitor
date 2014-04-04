@@ -1,4 +1,6 @@
 <?php
+// Include the settings.
+include_once 'settings.php';
 
 //THIS SCRIPT READS OUTPUT FROM QUAIL, CONVERT IT TO JSON AND SENDS IT TO SOLR
 //rein@mechanicape.com
@@ -49,7 +51,7 @@ function post($fields) {
 
   $ch = curl_init();
   // TODO: make solr host configurable
-  $post_url = 'http://vps38899.public.cloudvps.com:8080/solr/phantomcore/update?commit=true';
+  $post_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/phantomcore/update?commit=true';
   $json_fields = '{"add":{"doc":' . json_encode($fields) . '}}';
   $header = array("Content-type:application/json; charset=utf-8");
   curl_setopt($ch, CURLOPT_URL, $post_url);
