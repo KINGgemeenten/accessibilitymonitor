@@ -49,7 +49,7 @@ function post($fields) {
 
   $ch = curl_init();
   // TODO: make solr host configurable
-  $post_url = 'http://dev-crawler.wrl.org:8080/solr/phantomcore/update?commit=true';
+  $post_url = 'http://vps38899.public.cloudvps.com:8080/solr/phantomcore/update?commit=true';
   $json_fields = '{"add":{"doc":' . json_encode($fields) . '}}';
   $header = array("Content-type:application/json; charset=utf-8");
   curl_setopt($ch, CURLOPT_URL, $post_url);
@@ -77,18 +77,18 @@ function post($fields) {
 function processRecord($index, $data) {
   $testresult = $data;
   $json = json_decode($data);
-  $json->url_main = "";
-  $json->url_sub = "";
+//  $json->url_main = "";
+//  $json->url_sub = "";
   $urlarr = parse_url($json->url);
   $fqdArr = explode(".", $urlarr["host"]);
   if (count($fqdArr) > 2) {
     $partcount = count($fqdArr);
-    $json->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
+//    $json->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
   }
   else {
-    $json->url_main = $urlarr["host"];
+//    $json->url_main = $urlarr["host"];
   }
-  $json->url_sub = $urlarr["host"];
+//  $json->url_sub = $urlarr["host"];
 
   $json->id = (string) (time() . $index);
   if (isset($json->wcag) && ($json->wcag != "")) {

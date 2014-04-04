@@ -14,7 +14,7 @@ do
 
   #UPDATE TEST FIELD IN SOLR NUTCH RECORD (nutch)
   export UPDATE=`/usr/bin/php -f updatejson.php $i`
-  /usr/bin/curl 'localhost:8080/solr/update?commit=true' -H 'Content-type:application/json' -d $UPDATE
+  /usr/bin/curl 'http://vps38900.public.cloudvps.com:8080/solr/nutch/update?commit=true' -H 'Content-type:application/json' -d $UPDATE
   echo $UPDATE
 
 done

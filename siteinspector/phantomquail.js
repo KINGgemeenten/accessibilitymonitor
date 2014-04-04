@@ -98,7 +98,7 @@ function init_test(guideline, tests, url) {
         console.log(JSON.stringify(res));
       },
       complete: function (results) {
-        var totals = {aggregated: results.totals};
+        var totals = {aggregated: results.totals, 'url': url};
         console.log(JSON.stringify(totals));
 
       }
