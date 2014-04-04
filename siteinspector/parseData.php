@@ -47,7 +47,8 @@
 	function post($fields){
                         
 			$ch = curl_init();
-			$post_url = 'http://dev-crawler.wrl.org:8983/solr/phantomcore/update?commit=true';
+      // TODO: make solr host configurable
+			$post_url = 'http://dev-crawler.wrl.org:8080/solr/phantomcore/update?commit=true';
 			$json_fields='{"add":{"doc":'.json_encode($fields).'}}' ;
 			$header = array("Content-type:application/json; charset=utf-8");
 			curl_setopt($ch, CURLOPT_URL, $post_url);

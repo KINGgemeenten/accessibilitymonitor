@@ -23,10 +23,10 @@ page.onResourceTimeout = function(e) {
 t = Date.now();
 address = system.args[1];
 test = system.args[2];
-var guidelinedata=fs.read('/opt/siteinspector/js/quail/examples/php/data/guideline.json');
+var guidelinedata=fs.read('/opt/quail/examples/php/data/guideline.json');
 var guidelines=JSON.parse(guidelinedata);
 
-var testsdata=fs.read('/opt/siteinspector/js/quail/dist/tests.json');
+var testsdata=fs.read('/opt/quail/dist/tests.json');
 var tests=JSON.parse(testsdata);
 
 
@@ -38,7 +38,7 @@ page.open(address, function (status) {
 
         page.injectJs('/js/jquery-1.10.1.js');
         page.injectJs('/js/jquery.hasEventListener-2.0.4.js');
-	page.injectJs('/js/quail/dist/quail.jquery.js');
+	page.injectJs('/opt/quail/dist/quail.jquery.js');
         // Our "event loop"
 	     if(!phantom.state){
                console.log('#start testing',address);

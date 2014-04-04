@@ -2,8 +2,9 @@
  function fetch_solr_data($collection,$query)
 {
   $result=false;
-  $http_post=FALSE;		
-  $search_url = 'http://dev-crawler.wrl.org:8983/solr/'.$collection.'/select';
+  $http_post=FALSE;
+  // TODO: make solr host configurable.
+  $search_url = 'http://dev-crawler.wrl.org:8080/solr/'.$collection.'/select';
   $querystring = "stylesheet=&q=".trim(urlencode($query))."&fl=*+score&qt=standard&rows=9999";
   $selecturl = "/?$querystring";
   $search_url .= $selecturl;

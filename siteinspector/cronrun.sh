@@ -12,9 +12,9 @@ do
   echo $i
   /opt/siteinspector/checksite.sh $i
 
-  #UPDATE TEST FIELD IN SOLR NUTCH RECORD (COLLECTION1)
+  #UPDATE TEST FIELD IN SOLR NUTCH RECORD (nutch)
   export UPDATE=`/usr/bin/php -f updatejson.php $i`
-  /usr/bin/curl 'localhost:8983/solr/update?commit=true' -H 'Content-type:application/json' -d $UPDATE
+  /usr/bin/curl 'localhost:8080/solr/update?commit=true' -H 'Content-type:application/json' -d $UPDATE
   echo $UPDATE
 
 done
