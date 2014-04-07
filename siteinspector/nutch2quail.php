@@ -7,7 +7,14 @@ $solrresponse = handle_solr_response($unprocessedRecords);
 while (list ($index, $data) = each($solrresponse)) {
   $count++;
   if (isset($data["tested"])) {
-    $url = $data["url"];
-    print $url . "\n";
+    if ($count < 100) {
+      $url = $data["url"];
+      print $url . "\n";
+    }
   }
 }
+
+
+
+
+
