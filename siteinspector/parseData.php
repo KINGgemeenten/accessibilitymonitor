@@ -79,18 +79,18 @@ function post($fields) {
 function processRecord($index, $data) {
   $testresult = $data;
   $json = json_decode($data);
-//  $json->url_main = "";
-//  $json->url_sub = "";
+  $json->url_main = "";
+  $json->url_sub = "";
   $urlarr = parse_url($json->url);
   $fqdArr = explode(".", $urlarr["host"]);
   if (count($fqdArr) > 2) {
     $partcount = count($fqdArr);
-//    $json->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
+    $json->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
   }
   else {
-//    $json->url_main = $urlarr["host"];
+    $json->url_main = $urlarr["host"];
   }
-//  $json->url_sub = $urlarr["host"];
+  $json->url_sub = $urlarr["host"];
 
   $json->id = (string) (time() . $index);
   if (isset($json->wcag) && ($json->wcag != "")) {
