@@ -7,7 +7,7 @@ function fetch_solr_data($collection, $query) {
   $http_post = FALSE;
   // TODO: make solr host configurable.
   $search_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . get_setting('solr_nutch_corename') . '/select';
-  $querystring = "stylesheet=&q=" . trim(urlencode($query)) . "&fl=*+score&qt=standard&rows=" . get_setting('batch_rows') . "&start=300";
+  $querystring = "stylesheet=&q=" . trim(urlencode($query)) . "&fl=*+score&qt=standard&rows=" . get_setting('batch_rows');
   $selecturl = "/?$querystring";
   $search_url .= $selecturl;
   $header[] = "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
