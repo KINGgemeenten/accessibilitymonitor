@@ -65,7 +65,7 @@ function init_test(guideline, tests, url) {
     jQuery('html').quail({
       guideline: guideline,
       accessibilityTests: tests,
-      jsonPath: '/js/quail/dist',
+      jsonPath: 'src/resources',
       testFailed: function (event) {
         outerHTML = jQuery('<textarea />').append(event.element);
         outerHTML.val(outerHTML.html());
