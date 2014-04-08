@@ -23,7 +23,7 @@ page.onResourceTimeout = function (e) {
 t = Date.now();
 address = system.args[1];
 test = system.args[2];
-var guidelinedata = fs.read('/opt/quail/examples/php/data/guideline.json');
+var guidelinedata = fs.read('/opt/siteinspector/guideline.json');
 var guidelines = JSON.parse(guidelinedata);
 
 var testsdata = fs.read('/opt/quail/dist/tests.json');
