@@ -21,14 +21,15 @@ function updateWebsiteEntries() {
   // Loop through the websites and check if there are new items.
   foreach ($newWebsites as $url) {
     // First try to load the website.
-    $query = $pdo->prepare("SELECT * FROM website WHERE url=':url'");
-    $query-execute(array('url' => $url));
-    if ($row = $query->fetchObject()) {
+    $query = $pdo->prepare("SELECT * FROM website WHERE url=:url");
+    $query->execute(array('url' => $url));
+    if ($row = $query->fetch()) {
+      print_r($row);
       // If the website is already present, update it.
       $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
       $update->execute(array(
-          'status' => STATUS_SCHEDULED,
-          'wid' => $row->wid
+          ':status' => STATUS_SCHEDULED,
+          ':wid' => $row['wid']
         ));
     }
     else {
@@ -85,6 +86,7 @@ function getDatabaseConnection() {
     $password = get_setting('mysql_password');
     $dsn = 'mysql:host=localhost;dbname=' . $database;
     $pdo_object = new PDO($dsn, $username, $password);
+    $pdo_object->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   }
   return $pdo_object;
 }
