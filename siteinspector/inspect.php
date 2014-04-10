@@ -7,9 +7,12 @@ main();
 
 function main() {
   // Main controller for the script.
-  updateWebsiteEntries();
+//  updateWebsiteEntries();
   // Update the url's which need to be tested.
-  updateUrlFromNutch();
+//  updateUrlFromNutch();
+  // Now perform tests.
+  performTests();
+
 }
 
 
@@ -103,9 +106,88 @@ function updateUrlFromNutch() {
       }
     }
   }
+}
 
+function performTests() {
+  // Get an url to test.
+  $pdo = getDatabaseConnection();
+  $query = $pdo->prepare("SELECT * FROM urls WHERE status=:status LIMIT 1");
+  $query->execute(array('status' => STATUS_SCHEDULED));
+  $results = $query->fetchAll(PDO::FETCH_OBJ);
+  // Get the phantomcore corename.
+  // We need this to send results to Solr.
+  $phantomcore_name = get_setting('solr_phantom_corename');
+  foreach ($results as $result) {
+    // First delete all solr records for this url.
+    $escaped_string = json_encode($result->full_url);
+    $escaped_string = str_replace('"', '', $escaped_string);
+    $solrQuery = urlencode("url:" . $result->full_url);// . json_encode($result->full_url);
+    deleteFromSolr($solrQuery, $phantomcore_name);
 
+    $url = $result->full_url;
+    // Execute phantomjs.
+    $command = 'phantomjs --ignore-ssl-errors=yes phantomquail.js ' . $url;
+    $output = shell_exec($command);
+    // Now process the results from quail.
+    // We have to generate a unique id later.
+    // In order to do this, we count the results, so it can be
+    // included in the unique id.
+    $count = 0;
+    foreach(preg_split("/((\r?\n)|(\r\n?))/", $output) as $line){
+      // do stuff with $line
+      $quailResult = json_decode($line);
+      // Process the quail result to a json object which can be send to solr.
+      $data = preprocessQuailResult($quailResult, $count);
+      // Now sent the result to Solr.
+//      postToSolr($data, $phantomcore_name);
+      $count++;
+    }
+  }
+}
 
+/**
+ * Preprocess quail result for sending to solr.
+ *
+ * TODO: Solr should have a class, in which we can do all these things.
+ *
+ * @param $quailResult
+ * @param $count
+ *
+ * @return mixed
+ */
+function preprocessQuailResult($quailResult, $count) {
+  $quailResult->url_main = "";
+  $quailResult->url_sub = "";
+  $urlarr = parse_url($quailResult->url);
+  $fqdArr = explode(".", $urlarr["host"]);
+  if (count($fqdArr) > 2) {
+    $partcount = count($fqdArr);
+    $quailResult->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
+  }
+  else {
+    $quailResult->url_main = $urlarr["host"];
+  }
+  $quailResult->url_sub = $urlarr["host"];
+
+  // Create a unique id.
+  $quailResult->id = time() . $count;
+  if (isset($quailResult->wcag) && ($quailResult->wcag != "")) {
+    $wcag = json_decode($quailResult->wcag);
+    $quailResult->applicationframework = "";
+    $quailResult->techniques = "";
+    while (list($applicationNr, $techniques) = each($wcag)) {
+      $quailResult->applicationframework[] = $applicationNr;
+      if (count($techniques) > 0) {
+        foreach ($techniques as $technique) {
+          foreach ($technique as $techniqueStr) {
+            $thistechniques[] = $techniqueStr;
+          }
+        }
+      }
+    }
+    $quailResult->techniques = array_unique($thistechniques);
+  }
+  return $quailResult;
 }
 
 /**
@@ -215,4 +297,81 @@ function fetchSolrData($collection, $query, $customParams) {
   }
 
   return $data;
+}
+
+/**
+ * Post results to Solr.
+ *
+ * @param $fields
+ * @param $core
+ *
+ * @return bool
+ * @throws Exception
+ */
+function postToSolr($fields, $core) {
+
+  $ch = curl_init();
+  // TODO: make solr host configurable
+  $post_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $core . '/update?commit=true';
+  $json_fields = '{"add":{"doc":' . json_encode($fields) . '}}';
+  $header = array("Content-type:application/json; charset=utf-8");
+  curl_setopt($ch, CURLOPT_URL, $post_url);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $json_fields);
+  curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+
+  $data = curl_exec($ch);
+
+  if (curl_errno($ch)) {
+    throw new Exception ("curl_error:" . curl_error($ch));
+    print $curl_error($ch);
+  }
+  else {
+    curl_close($ch);
+    print $data;
+
+    return TRUE;
+  }
+}
+
+
+/**
+ * Delete documents from solr.
+ *
+ * @param $query
+ * @param $collection
+ *
+ * @throws Exception
+ */
+function deleteFromSolr($query, $collection) {
+  $ch = curl_init();
+
+  $delete_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $collection . '/update?commit=true';
+
+  $json_fields = '{"delete":{"query":"' . $query . '" }}';
+  print_r($json_fields);
+  $header = array("Content-type:application/json; charset=utf-8");
+  curl_setopt($ch, CURLOPT_URL, $delete_url);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $json_fields);
+  curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+  curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+
+  $data = curl_exec($ch);
+
+  if (curl_errno($ch)) {
+    throw new Exception ("curl_error:" . curl_error($ch));
+    print $curl_error($ch);
+  }
+  else {
+    curl_close($ch);
+    print $data;
+
+    return TRUE;
+  }
 }
