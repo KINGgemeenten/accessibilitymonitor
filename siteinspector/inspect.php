@@ -119,9 +119,9 @@ function performTests() {
   $phantomcore_name = get_setting('solr_phantom_corename');
   foreach ($results as $result) {
     // First delete all solr records for this url.
-    $escaped_string = json_encode($result->full_url);
-    $escaped_string = str_replace('"', '', $escaped_string);
-    $solrQuery = urlencode("url:" . $result->full_url);// . json_encode($result->full_url);
+    $escaped_string = escapeUrlForSolr($result->full_url);
+    $solrQuery = 'url_id:' . $escaped_string;
+//    $solrQuery = '*:*';
     deleteFromSolr($solrQuery, $phantomcore_name);
 
     $url = $result->full_url;
@@ -139,7 +139,7 @@ function performTests() {
       // Process the quail result to a json object which can be send to solr.
       $data = preprocessQuailResult($quailResult, $count);
       // Now sent the result to Solr.
-//      postToSolr($data, $phantomcore_name);
+      postToSolr($data, $phantomcore_name);
       $count++;
     }
   }
@@ -169,6 +169,10 @@ function preprocessQuailResult($quailResult, $count) {
   }
   $quailResult->url_sub = $urlarr["host"];
 
+  // Add the escaped url in order to be able to delete.
+  $escaped_url = escapeUrlForSolr($quailResult->url);
+  $quailResult->url_id = $escaped_url;
+
   // Create a unique id.
   $quailResult->id = time() . $count;
   if (isset($quailResult->wcag) && ($quailResult->wcag != "")) {
@@ -188,6 +192,21 @@ function preprocessQuailResult($quailResult, $count) {
     $quailResult->techniques = array_unique($thistechniques);
   }
   return $quailResult;
+}
+
+/**
+ * Escape an url for solr.
+ *
+ * @param $url
+ *
+ * @return mixed
+ */
+function escapeUrlForSolr($url) {
+  $escaped_url = str_replace(':', '_', $url);
+  $escaped_url = str_replace('/', '_', $escaped_url);
+  $escaped_url = str_replace('.', '_', $escaped_url);
+
+  return $escaped_url;
 }
 
 /**
@@ -352,7 +371,7 @@ function deleteFromSolr($query, $collection) {
   $delete_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $collection . '/update?commit=true';
 
   $json_fields = '{"delete":{"query":"' . $query . '" }}';
-  print_r($json_fields);
+  print_r($query);
   $header = array("Content-type:application/json; charset=utf-8");
   curl_setopt($ch, CURLOPT_URL, $delete_url);
   curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
