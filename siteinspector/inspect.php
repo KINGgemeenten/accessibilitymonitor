@@ -125,7 +125,6 @@ function updateUrlFromNutch() {
         $solrResponse = fetchSolrData($nutchCore, $solrQuery, $customParams);
         $parsedResponse = json_decode($solrResponse);
         $docs = $parsedResponse->response->docs;
-        print_r($docs);
         foreach ($docs as $doc) {
           // TODO: optimize the insert statement.
           // Insert a new entry.
@@ -149,7 +148,7 @@ function performTests() {
   // Get an url to test.
   $pdo = getDatabaseConnection();
   // Get the batch_size so we don't do to much.
-  $batch_size = get_setting('batch_rows');
+  $batch_size = get_setting('batch_size');
   // It seems that there is something wrong here.
   // I had problems using prepared for limit.
   // Normal parameter substitution doesn't work here.
