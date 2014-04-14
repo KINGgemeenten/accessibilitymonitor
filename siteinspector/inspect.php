@@ -1,17 +1,46 @@
 <?php
+
+include_once('lib/pid.php');
+
 define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
 define('STATUS_TESTED', 2);
 
-main();
+// Execute main with the first argument.
 
-function main() {
+main($argv[1]);
+
+
+
+function main($operation = NULL) {
+  // Check if the script is already running.
+  // If so, exit.
+  $pid = new pid('/tmp');
+  if($pid->already_running) {
+    echo "Already running.\n";
+    exit;
+  }
+  else {
+    echo "Running...\n";
+  }
+
   // Main controller for the script.
-//  updateWebsiteEntries();
-  // Update the url's which need to be tested.
-//  updateUrlFromNutch();
-  // Now perform tests.
-  performTests();
+  if (!isset($operation)) {
+    print "inspect.php excepts 1 argument: check or update-sitelist\n";
+  }
+
+  switch ($operation) {
+    case 'check':
+      performTests();
+      break;
+
+    case 'update-sitelist':
+      // Update the entries which should be tested.
+      updateWebsiteEntries();
+      // Update the url's which need to be tested.
+      updateUrlFromNutch();
+      break;
+  }
 
 }
 
@@ -108,12 +137,27 @@ function updateUrlFromNutch() {
   }
 }
 
+/**
+ * Perform tests on urls.
+ */
 function performTests() {
   // Get an url to test.
   $pdo = getDatabaseConnection();
-  $query = $pdo->prepare("SELECT * FROM urls WHERE status=:status LIMIT 1");
-  $query->execute(array('status' => STATUS_SCHEDULED));
+  // Get the batch_size so we don't do to much.
+  $batch_size = get_setting('batch_rows');
+  // It seems that there is something wrong here.
+  // I had problems using prepared for limit.
+  // Normal parameter substitution doesn't work here.
+  $query = $pdo->prepare("SELECT * FROM urls WHERE status=:status LIMIT " . intval($batch_size));
+  $query->execute(array(
+      'status' => STATUS_SCHEDULED,
+    ));
   $results = $query->fetchAll(PDO::FETCH_OBJ);
+  // TODO: implement testing functionality.
+  // Now set all the urls to status testing, so if another process tries to do something
+  // it can read that these url's will be tested.
+
+
   // Get the phantomcore corename.
   // We need this to send results to Solr.
   $phantomcore_name = get_setting('solr_phantom_corename');
@@ -133,15 +177,30 @@ function performTests() {
     // In order to do this, we count the results, so it can be
     // included in the unique id.
     $count = 0;
+    // Create an array for all documents.
+    $documents = array();
     foreach(preg_split("/((\r?\n)|(\r\n?))/", $output) as $line){
-      // do stuff with $line
-      $quailResult = json_decode($line);
-      // Process the quail result to a json object which can be send to solr.
-      $data = preprocessQuailResult($quailResult, $count);
-      // Now sent the result to Solr.
-      postToSolr($data, $phantomcore_name);
-      $count++;
+      if ($line != '') {
+        // do stuff with $line
+        $quailResult = json_decode($line);
+        // Process the quail result to a json object which can be send to solr.
+        $document = preprocessQuailResult($quailResult, $count);
+        if ($document) {
+          // Add the documents to the document list in solr.
+          $documents[] = $document;
+          $count++;
+        }
+      }
     }
+    // Now sent the result to Solr.
+    postToSolr($documents, $phantomcore_name);
+
+    // Update the url entry.
+    $query = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
+    $query->execute(array(
+        'status' => STATUS_TESTED,
+        'url_id' => $result->url_id,
+      ));
   }
 }
 
@@ -156,42 +215,46 @@ function performTests() {
  * @return mixed
  */
 function preprocessQuailResult($quailResult, $count) {
-  $quailResult->url_main = "";
-  $quailResult->url_sub = "";
-  $urlarr = parse_url($quailResult->url);
-  $fqdArr = explode(".", $urlarr["host"]);
-  if (count($fqdArr) > 2) {
-    $partcount = count($fqdArr);
-    $quailResult->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
-  }
-  else {
-    $quailResult->url_main = $urlarr["host"];
-  }
-  $quailResult->url_sub = $urlarr["host"];
+  if (isset($quailResult->url) && $quailResult->url != '') {
+    $quailResult->url_main = "";
+    $quailResult->url_sub = "";
+    $urlarr = parse_url($quailResult->url);
+    $fqdArr = explode(".", $urlarr["host"]);
+    if (count($fqdArr) > 2) {
+      $partcount = count($fqdArr);
+      $quailResult->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
+    }
+    else {
+      $quailResult->url_main = $urlarr["host"];
+    }
+    $quailResult->url_sub = $urlarr["host"];
 
-  // Add the escaped url in order to be able to delete.
-  $escaped_url = escapeUrlForSolr($quailResult->url);
-  $quailResult->url_id = $escaped_url;
+    // Add the escaped url in order to be able to delete.
+    $escaped_url = escapeUrlForSolr($quailResult->url);
+    $quailResult->url_id = $escaped_url;
 
-  // Create a unique id.
-  $quailResult->id = time() . $count;
-  if (isset($quailResult->wcag) && ($quailResult->wcag != "")) {
-    $wcag = json_decode($quailResult->wcag);
-    $quailResult->applicationframework = "";
-    $quailResult->techniques = "";
-    while (list($applicationNr, $techniques) = each($wcag)) {
-      $quailResult->applicationframework[] = $applicationNr;
-      if (count($techniques) > 0) {
-        foreach ($techniques as $technique) {
-          foreach ($technique as $techniqueStr) {
-            $thistechniques[] = $techniqueStr;
+    // Create a unique id.
+    $quailResult->id = time() . $count;
+    if (isset($quailResult->wcag) && ($quailResult->wcag != "")) {
+      $wcag = json_decode($quailResult->wcag);
+      $quailResult->applicationframework = "";
+      $quailResult->techniques = "";
+      while (list($applicationNr, $techniques) = each($wcag)) {
+        $quailResult->applicationframework[] = $applicationNr;
+        if (count($techniques) > 0) {
+          foreach ($techniques as $technique) {
+            foreach ($technique as $techniqueStr) {
+              $thistechniques[] = $techniqueStr;
+            }
           }
         }
       }
+      $quailResult->techniques = array_unique($thistechniques);
     }
-    $quailResult->techniques = array_unique($thistechniques);
+
+    return $quailResult;
   }
-  return $quailResult;
+  return FALSE;
 }
 
 /**
@@ -321,24 +384,30 @@ function fetchSolrData($collection, $query, $customParams) {
 /**
  * Post results to Solr.
  *
- * @param $fields
+ * @param $documents
  * @param $core
  *
  * @return bool
  * @throws Exception
  */
-function postToSolr($fields, $core) {
+function postToSolr($documents, $core) {
 
   $ch = curl_init();
   // TODO: make solr host configurable
   $post_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $core . '/update?commit=true';
-  $json_fields = '{"add":{"doc":' . json_encode($fields) . '}}';
+  // Create an array of jason docs.
+  $json_docs = array();
+  foreach ($documents as $doc) {
+    $json_docs[] = '"add":{"doc":' . json_encode($doc) . '}';
+  }
+  // Now create the total json object.
+  $json_post = '{' . implode(',', $json_docs) . '}';
   $header = array("Content-type:application/json; charset=utf-8");
   curl_setopt($ch, CURLOPT_URL, $post_url);
   curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
   curl_setopt($ch, CURLOPT_POST, 1);
-  curl_setopt($ch, CURLOPT_POSTFIELDS, $json_fields);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $json_post);
   curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
   curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
 
