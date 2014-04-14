@@ -31,6 +31,7 @@ function main($operation = NULL) {
 
   switch ($operation) {
     case 'check':
+      print "Performing tests\n";
       performTests();
       break;
 
@@ -55,31 +56,34 @@ function updateWebsiteEntries() {
   // Get the database connection.
   $pdo = getDatabaseConnection();
 
-  // Loop through the websites and check if there are new items.
-  foreach ($newWebsites as $url) {
-    // First try to load the website.
-    $query = $pdo->prepare("SELECT * FROM website WHERE url=:url");
-    $query->execute(array('url' => $url));
-    if ($row = $query->fetch()) {
-      // If the website is already present, update it.
-      $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
-      $update->execute(array(
-          'status' => STATUS_SCHEDULED,
-          'wid' => $row['wid']
-        ));
+  if (count($newWebsites)) {
+    // Loop through the websites and check if there are new items.
+    foreach ($newWebsites as $url) {
+      // First try to load the website.
+      $query = $pdo->prepare("SELECT * FROM website WHERE url=:url");
+      $query->execute(array('url' => $url));
+      if ($row = $query->fetch()) {
+        // If the website is already present, update it.
+        $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
+        $update->execute(
+          array(
+            'status' => STATUS_SCHEDULED,
+            'wid'    => $row['wid']
+          )
+        );
+      }
+      else {
+        // Insert a new entry.
+        $sql = "INSERT INTO website (url,status) VALUES (:url,:status)";
+        $insert = $pdo->prepare($sql);
+        $insert->execute(
+          array(
+            'url'    => $url,
+            'status' => STATUS_SCHEDULED
+          ));
+      }
     }
-    else {
-      // Insert a new entry.
-      $sql = "INSERT INTO website (url,status) VALUES (:url,:status)";
-      $insert = $pdo->prepare($sql);
-      $insert->execute(array(
-          'url' => $url,
-          'status' => STATUS_SCHEDULED
-        ));
-    }
-
   }
-
 }
 
 /**
@@ -170,7 +174,8 @@ function performTests() {
 
     $url = $result->full_url;
     // Execute phantomjs.
-    $command = 'phantomjs --ignore-ssl-errors=yes phantomquail.js ' . $url;
+    // TODO: make the phantomjs path and the js file path configurable.
+    $command = '/usr/local/bin/phantomjs --ignore-ssl-errors=yes /opt/siteinspector/phantomquail.js ' . $url;
     $output = shell_exec($command);
     // Now process the results from quail.
     // We have to generate a unique id later.
