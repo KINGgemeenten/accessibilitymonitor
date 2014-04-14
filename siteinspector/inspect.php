@@ -13,16 +13,6 @@ main($argv[1]);
 
 
 function main($operation = NULL) {
-  // Check if the script is already running.
-  // If so, exit.
-  $pid = new pid('/tmp');
-  if($pid->already_running) {
-    echo "Already running.\n";
-    exit;
-  }
-  else {
-    echo "Running...\n";
-  }
 
   // Main controller for the script.
   if (!isset($operation)) {
@@ -31,10 +21,21 @@ function main($operation = NULL) {
 
   switch ($operation) {
     case 'check':
+      // Check if the script is already running.
+      // If so, exit.
+      $pid = new pid('/tmp');
+      if($pid->already_running) {
+        echo "Already running.\n";
+        exit;
+      }
+      else {
+        echo "Running...\n";
+      }
       print "Performing tests\n";
       performTests();
       break;
 
+    // Update site may always run.
     case 'update-sitelist':
       // Update the entries which should be tested.
       updateWebsiteEntries();
