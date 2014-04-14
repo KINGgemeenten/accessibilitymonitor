@@ -125,6 +125,7 @@ function updateUrlFromNutch() {
         $solrResponse = fetchSolrData($nutchCore, $solrQuery, $customParams);
         $parsedResponse = json_decode($solrResponse);
         $docs = $parsedResponse->response->docs;
+        print_r($docs);
         foreach ($docs as $doc) {
           // TODO: optimize the insert statement.
           // Insert a new entry.
