@@ -13,6 +13,8 @@ main($argv[1]);
 
 
 function main($operation = NULL) {
+  // First update the status.
+  updateStatus();
 
   // Main controller for the script.
   if (!isset($operation)) {
@@ -208,6 +210,59 @@ function performTests() {
         'url_id' => $result->url_id,
       ));
   }
+}
+
+/**
+ * Update the status of the websites.
+ *
+ * If at least one url of a website is set to tested,
+ * the website is in testing mode
+ * If all url's are tested, the website is also tested.
+ */
+function updateStatus() {
+  // First get all website entries.
+  $pdo = getDatabaseConnection();
+  $query = $pdo->prepare("SELECT * FROM website;");
+  $query->execute(array('status' => STATUS_SCHEDULED));
+  $websites = $query->fetchAll(PDO::FETCH_OBJ);
+
+  foreach ($websites as $website) {
+    // We have to do two queries:
+    // 1: how many urls are present
+    // 2: how many urls are tested.
+    $urlCountQuery = $pdo->prepare("SELECT COUNT(*) FROM urls WHERE wid=:wid");
+    $urlCountQuery->execute(array('wid' => $website->wid));
+    $urlCount = array_shift($urlCountQuery->fetch(PDO::FETCH_NUM));
+    // Tested urls.
+    $testedCountQuery = $pdo->prepare("SELECT COUNT(*) FROM urls WHERE wid=:wid AND status=:status");
+    $testedCountQuery->execute(array(
+        'wid' => $website->wid,
+        'status' => STATUS_TESTED
+      ));
+    // The result is an array. Because it is only 1 result
+    // we can use array_shift to get the first array element.
+    // This is the number we want.
+    $testedCount = array_shift($testedCountQuery->fetch(PDO::FETCH_NUM));
+
+    // Now there are three possibilities:
+    // The amount of tested urls is 0: set the website to scheduled.
+    // The amount of tested urls is smaller than the total amount of urls: set website to testing.
+    // The amount of tested urls is the same as the total amount of urls: set website to tested.
+    $websiteStatus = STATUS_SCHEDULED;
+    if ($testedCount > 0 && $testedCount < $urlCount) {
+      $websiteStatus = STATUS_TESTING;
+    }
+    else if ($testedCount == $urlCount) {
+      $websiteStatus = STATUS_TESTED;
+    }
+    // Now write the status.
+    $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
+    $update->execute(array(
+        'status' => $websiteStatus,
+        'wid' => $website->wid
+      ));
+  }
+
 }
 
 /**
