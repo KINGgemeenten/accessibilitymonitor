@@ -252,7 +252,7 @@ function updateStatus() {
     if ($testedCount > 0 && $testedCount < $urlCount) {
       $websiteStatus = STATUS_TESTING;
     }
-    else if ($testedCount == $urlCount) {
+    else if ($testedCount == $urlCount && $urlCount != 0) {
       $websiteStatus = STATUS_TESTED;
     }
     // Now write the status.
