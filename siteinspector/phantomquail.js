@@ -63,44 +63,24 @@ function init_test(guideline, tests, url) {
 
     //start quail
     jQuery('html').quail({
-      guideline: guideline,
       accessibilityTests: tests,
-      jsonPath: 'src/resources',
-      testFailed: function (event) {
-        outerHTML = jQuery('<textarea />').append(event.element);
-        outerHTML.val(outerHTML.html());
-        var wcag = event.test.guidelines.wcag;
-        if (wcag) {
-          var res = {
-            url: url,
-            element: outerHTML.html().substr(0, 255),
-            name: event.test.title.en,
-            //fail:event.test,
-            wcag: JSON.stringify(event.test.guidelines.wcag),
-            tags: event.test.tags,
-            testability: event.test.testability,
-            testtype: event.test.type,
-            severity: event.severity
-          };
-        }
-        else {
-          var res = {
-            url: url,
-            element: outerHTML.html().substr(0, 255),
-            name: event.test.title.en,
-            tags: event.test.tags,
-            testability: event.test.testability,
-            testtype: event.test.type,
-            severity: event.severity
-          };
-        }
-        testResults.failedTests.push(res);
-        console.log(JSON.stringify(res));
+      // Filter down to just one test for development.
+      guideline: ['cssTextHasContrast'],
+      // Called when an individual Case in a Test is resolved.
+      caseResolve: function (eventName, test, _case) {
+        // Do not turn this on unless you filter the tests.
+        // It creates A LOT of data.
+        console.log(_case.get('status') + "\t\t" + test.get('name'), "\n\t\t\t\t\t" + _case.get('message') + "\n\t\t\t\t\t" + _case.get('selector') + "\n");
       },
-      complete: function (results) {
-        var totals = {aggregated: results.totals, 'url': url};
-        console.log(JSON.stringify(totals));
-
+      // Called when all the Cases in a Test are resolved.
+      testComplete: function (eventName, test) {
+        console.log('testComplete: ' + test.get('name'));
+      },
+      // Called when all the Tests in a TestCollection are completed.
+      complete: function (eventName, testCollection) {
+        testCollection.each(function (index, test) {
+          console.log('complete: ' + test.get('name'));
+        });
       }
     });
   }, guideline, tests, url);
