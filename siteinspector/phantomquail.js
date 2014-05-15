@@ -1,15 +1,16 @@
-var page = require('webpage').create();
 var system = require('system');
-var t, address;
-
-if (system.args.length <= 1) {
-  console.log('Usage: phantomjs-quail.js <some URL> <guidelines>');
-  phantom.exit();
-}
+var page = require('webpage').create();
+var address, dir;
 
 page.onConsoleMessage = function (msg, line, source) {
   console.log(msg);
 };
+
+// Return early.
+if (system.args.length <= 1) {
+  console.log('Usage: phantomjs-quail.js <some URL> <guidelines>');
+  phantom.exit();
+}
 
 page.settings.resourceTimeout = 60000; // 5 seconds
 page.onResourceTimeout = function (e) {
@@ -19,55 +20,37 @@ page.onResourceTimeout = function (e) {
   phantom.exit(1);
 };
 
-t = Date.now();
+// Open the page at the provided URL in Phantom.
 address = system.args[1];
-test = system.args[2];
-
-/**
- * Determine the length of an object.
- *
- * @param object obj
- *   The object whose size will be determined.
- *
- * @return number
- *   The size of the object determined by the number of keys.
- */
-function size (obj) {
-  var size = 0, key;
-  for (key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      size++;
-    }
-  }
-  return size;
-}
-
-var quitPhantom = function (reason) {
-  console.log('Exit' + (reason && (': ' + reason) || ''));
-  phantom.exit();
-}
-
+dir = '/usr/local/opt/siteinspector';
 page.open(address, function (status) {
   if (status !== 'success') {
     console.log('FAIL to load the address');
   }
   else {
     var fs = require('fs');
-    var guidelinedata = fs.read('/opt/siteinspector/guideline.json');
+    var guidelinedata = fs.read(dir + '/guideline.json');
     var guidelines = JSON.parse(guidelinedata);
 
-    var testsdata = fs.read('/opt/quail/dist/tests.json');
+    var testsdata = fs.read(dir + '/quail/dist/tests.json');
     var tests = JSON.parse(testsdata);
+    // If a specific test is requested, just use that one.
+    var testFromCLI = system.args[2];
+    if (testFromCLI && tests[testFromCLI]) {
+      var singleTest = tests[testFromCLI];
+      tests = {};
+      tests[testFromCLI] = singleTest;
+    }
 
     // Inject assets into the page.
-    page.injectJs('/usr/local/opt/siteinspector/js/jquery-1.10.1.min.js');
-    page.injectJs('/usr/local/opt/siteinspector/js/jquery.hasEventListener-2.0.4.min.js');
-    page.injectJs('/usr/local/opt/siteinspector/quail/dist/quail.jquery.js');
+    page.injectJs(dir + '/js/jquery-1.10.1.min.js');
+    page.injectJs(dir + '/js/jquery.hasEventListener-2.0.4.min.js');
+    page.injectJs(dir + '/quail/dist/quail.jquery.js');
 
     // Handle results from the test runs.
     var len = size(tests);
     // Open a write stream to an output file.
-    var stream = fs.open('/usr/local/opt/siteinspector/results.js', 'w');
+    var stream = fs.open(dir + '/results.js', 'w');
     page.onCallback = function(data) {
       var test = JSON.parse(data);
       console.log('Finished testing ' + test.id + '.');
@@ -98,39 +81,6 @@ page.open(address, function (status) {
         jQuery('html').quail({
           accessibilityTests: tests,
           guideline: [testname],
-          // testFailed: function (event) {
-          //   console.log('// from the test failed function');
-          //   outerHTML = jQuery('<textarea />').append(event.element);
-          //   outerHTML.val(outerHTML.html());
-          //   var wcag = event.test.guidelines.wcag;
-          //   if (wcag) {
-          //     var res = {
-          //       url: url,
-          //       element: outerHTML.html().substr(0, 255),
-          //       name: event.test.title.en,
-          //       //fail:event.test,
-          //       wcag: JSON.stringify(event.test.guidelines.wcag),
-          //       tags: event.test.tags,
-          //       testability: event.test.testability,
-          //       testtype: event.test.type,
-          //       severity: event.severity
-          //     };
-          //   }
-          //   else {
-          //     var res = {
-          //       url: url,
-          //       element: outerHTML.html().substr(0, 255),
-          //       name: event.test.title.en,
-          //       tags: event.test.tags,
-          //       testability: event.test.testability,
-          //       testtype: event.test.type,
-          //       severity: event.severity
-          //     };
-          //   }
-          //   testResults.failedTests.push(res);
-          //   console.log(JSON.stringify(res));
-          // },
-          // Called when an individual Case in a test is resolved.
           caseResolve: function (eventName, test, _case) {
             output.cases.push({
               status: _case.get('status'),
@@ -153,3 +103,30 @@ page.open(address, function (status) {
     }
   }
 });
+
+/**
+ * Logs the reason for exit; exits Phantom.
+ */
+function quitPhantom (reason) {
+  console.log('Exit' + (reason && (': ' + reason) || ''));
+  phantom.exit();
+}
+
+/**
+ * Determines the length of an object.
+ *
+ * @param object obj
+ *   The object whose size will be determined.
+ *
+ * @return number
+ *   The size of the object determined by the number of keys.
+ */
+function size (obj) {
+  var size = 0, key;
+  for (key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      size++;
+    }
+  }
+  return size;
+}
