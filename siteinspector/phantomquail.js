@@ -69,6 +69,7 @@ page.open(address, function (status) {
         console.log('Running ' + testname + '...')
         jQuery.noConflict();
         var test = tests[testname];
+        // Basic test attributes.
         var output = {
           id: testname,
           title: test.title,
@@ -81,6 +82,7 @@ page.open(address, function (status) {
         jQuery('html').quail({
           accessibilityTests: tests,
           guideline: [testname],
+          // Called when an individual Case in a test is resolved.
           caseResolve: function (eventName, test, _case) {
             output.cases.push({
               status: _case.get('status'),
@@ -91,9 +93,7 @@ page.open(address, function (status) {
           testComplete: function (eventName, test) {},
           // Called when all the Tests in a TestCollection are completed.
           complete: function (eventName, testCollection) {
-            testCollection.each(function (index, test) {
-              //output += 'complete: ' + test.get('name');
-            });
+            // Push the results of the test out to the Phantom listener.
             if (typeof window.callPhantom === 'function') {
               window.callPhantom(JSON.stringify(output));
             }
