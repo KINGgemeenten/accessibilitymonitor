@@ -22,7 +22,7 @@ page.onResourceTimeout = function (e) {
 
 // Open the page at the provided URL in Phantom.
 address = system.args[1];
-dir = '/usr/local/opt/siteinspector';
+dir = '/opt/siteinspector';
 page.open(address, function (status) {
   if (status !== 'success') {
     console.log('FAIL to load the address');
@@ -32,23 +32,40 @@ page.open(address, function (status) {
     var guidelinedata = fs.read(dir + '/guideline.json');
     var guidelines = JSON.parse(guidelinedata);
 
-    var testsdata = fs.read(dir + '/quail/dist/tests.json');
-    var tests = JSON.parse(testsdata);
+    var testsdata = fs.read('/opt/quail/dist/tests.json');
+    // Save the testsdata in the array all tests.
+    // Some tests might need to be filtered out.
+    var allTests = JSON.parse(testsdata);
+    var tests = {};
+
+    // Only add the tests which are defined in the guidelines.
+    for ( var i = 0 ; i < guidelines.length; i++) {
+      var key = guidelines[i];
+      if (allTests[key]) {
+        tests[key] = allTests[key];
+      }
+    }
+
     // If a specific test is requested, just use that one.
     var testFromCLI = system.args[2];
-    if (testFromCLI && tests[testFromCLI]) {
-      var singleTest = tests[testFromCLI];
+
+    if (testFromCLI && allTests[testFromCLI]) {
+      var singleTest = allTests[testFromCLI];
       tests = {};
       tests[testFromCLI] = singleTest;
+      console.log(singleTest);
     }
+
+
 
     // Inject assets into the page.
     page.injectJs(dir + '/js/jquery-1.10.1.min.js');
     page.injectJs(dir + '/js/jquery.hasEventListener-2.0.4.min.js');
-    page.injectJs(dir + '/quail/dist/quail.jquery.js');
+    page.injectJs('/opt/quail/dist/quail.jquery.js');
 
     // Handle results from the test runs.
     var len = size(tests);
+
     // Open a write stream to an output file.
     var stream = fs.open(dir + '/results.js', 'w');
     page.onCallback = function(data) {
