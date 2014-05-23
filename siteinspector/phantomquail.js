@@ -67,15 +67,16 @@ page.open(address, function (status) {
     var len = size(tests);
 
     // Open a write stream to an output file.
-    var stream = fs.open(dir + '/results.js', 'w');
+//    var stream = fs.open(dir + '/results.js', 'w');
     page.onCallback = function(data) {
       var test = JSON.parse(data);
-      console.log('Finished testing ' + test.id + '.');
-      stream.write(data);
+//      console.log('Finished testing ' + test.id + '.');
+      console.log(data);
+//      stream.write(data);
       --len;
       // All the tests have completed.
       if (len === 0) {
-        stream.close();
+//        stream.close();
         quitPhantom('Testing complete');
       }
     };
@@ -83,7 +84,7 @@ page.open(address, function (status) {
     var testname;
     for (testname in tests) {
       page.evaluateAsync(function (address, tests, testname) {
-        console.log('Running ' + testname + '...')
+//        console.log('Running ' + testname + '...')
         jQuery.noConflict();
         var test = tests[testname];
         // Basic test attributes.

@@ -188,7 +188,7 @@ function performTests() {
     // Create an array for all documents.
     $documents = array();
     foreach(preg_split("/((\r?\n)|(\r\n?))/", $output) as $line){
-      if ($line != '') {
+      if ($line != '' && preg_match("/^{/", $line)) {
         // do stuff with $line
         $quailResult = json_decode($line);
         // Process the quail result to a json object which can be send to solr.
