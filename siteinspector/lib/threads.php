@@ -21,7 +21,7 @@ class PhantomQuailWorker extends Thread {
     $url = $this->urlObject->full_url;
     // Execute phantomjs.
     // TODO: make the phantomjs path and the js file path configurable.
-    $command = '/usr/local/bin/phantomjs --ignore-ssl-errors=yes /opt/siteinspector/phantomquail.js ' . $url;
+    $command = '/usr/bin/phantomjs --ignore-ssl-errors=yes /opt/siteinspector/phantomquail.js ' . $url;
     $output = shell_exec($command);
     // Now process the results from quail.
     // We have to generate a unique id later.

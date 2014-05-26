@@ -11,7 +11,8 @@ Vagrant.configure("2") do |config|
   config.ssh.forward_agent = true
 
   config.vm.provider "virtualbox" do |vb|
-    vb.customize ["modifyvm", :id, "--ioapic", "on"]
+    vb.memory = 2048
+    vb.cpus = 2
   end
 
   config.vm.provision "ansible" do |ansible|

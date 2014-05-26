@@ -174,18 +174,18 @@ function performTests() {
   foreach ($results as $result) {
     // Create a PhantomQuailWorker for each url.
     $worker = new PhantomQuailWorker($result);
-    $worker->run();
+    $worker->start();
     $workers[] = $worker;
   }
   // Now process the results of the workers.
   foreach ($workers as $worker) {
     // Join the worker.
-//    $worker->join();
-//    $query = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-//    $query->execute(array(
-//        'status' => STATUS_TESTED,
-//        'url_id' => $worker->getResult(),
-//      ));
+    $worker->join();
+    $query = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
+    $query->execute(array(
+        'status' => STATUS_TESTED,
+        'url_id' => $worker->getResult(),
+      ));
 
 
   }
