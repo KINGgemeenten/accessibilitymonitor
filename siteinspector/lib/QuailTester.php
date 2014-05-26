@@ -28,7 +28,7 @@ class QuailTester {
    * @param PDO $pdo
    *   PDO object for doing database queries.
    */
-  public function __construct(float $maxTime, int $workerCount, PDO $pdo) {
+  public function __construct($maxTime, $workerCount, PDO $pdo) {
     $this->maxTime = $maxTime;
     $this->pdo = $pdo;
     $this->workerCount = $workerCount;
@@ -55,6 +55,10 @@ class QuailTester {
 
       $this->processFinishedWorkers();
 
+      // Break if there are no more targets.
+      if (count($targets) === 0) {
+        break;
+      }
 
       // Join workers and put them in the finishedWorkers array.
       foreach ($this->workers as $worker) {
@@ -69,6 +73,8 @@ class QuailTester {
       $message = 'Analysis used ' . $this->elapsedTime . ' seconds for ' . $this->workerCount . 'workers';
       $this->log($message);
     }
+    $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
+    $this->log($message);
   }
 
   /**

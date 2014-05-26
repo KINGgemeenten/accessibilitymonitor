@@ -1,7 +1,7 @@
 <?php
 
 include_once('lib/pid.php');
-include_once('lib/threads.php');
+include_once('lib/PhantomQuailWorker.php');
 include_once('lib/QuailTester.php');
 
 define('STATUS_SCHEDULED', 0);
@@ -36,7 +36,12 @@ function main($operation = NULL) {
         echo "Running...\n";
       }
       print "Performing tests\n";
-      QuailTester::performTests();
+      $pdo = getDatabaseConnection();
+
+      $workerCount = isset($argv[2]) ? $argv[2] : 2;
+
+      $tester = new QuailTester(100, $workerCount, $pdo);
+      $tester->test();
       break;
 
     // Update site may always run.
