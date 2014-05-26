@@ -1,6 +1,7 @@
 <?php
 
 include_once('lib/pid.php');
+include_once('lib/threads.php');
 
 define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
@@ -148,6 +149,7 @@ function updateUrlFromNutch() {
  * Perform tests on urls.
  */
 function performTests() {
+  $start_time = microtime(TRUE);
   // Get an url to test.
   $pdo = getDatabaseConnection();
   // Get the batch_size so we don't do to much.
@@ -168,48 +170,29 @@ function performTests() {
   // Get the phantomcore corename.
   // We need this to send results to Solr.
   $phantomcore_name = get_setting('solr_phantom_corename');
+  $workers = array();
   foreach ($results as $result) {
-    // First delete all solr records for this url.
-    $escaped_string = escapeUrlForSolr($result->full_url);
-    $solrQuery = 'url_id:' . $escaped_string;
-//    $solrQuery = '*:*';
-    deleteFromSolr($solrQuery, $phantomcore_name);
-
-    $url = $result->full_url;
-    // Execute phantomjs.
-    // TODO: make the phantomjs path and the js file path configurable.
-    $command = '/usr/local/bin/phantomjs --ignore-ssl-errors=yes /opt/siteinspector/phantomquail.js ' . $url;
-    $output = shell_exec($command);
-    // Now process the results from quail.
-    // We have to generate a unique id later.
-    // In order to do this, we count the results, so it can be
-    // included in the unique id.
-    $count = 0;
-    // Create an array for all documents.
-    $documents = array();
-    foreach(preg_split("/((\r?\n)|(\r\n?))/", $output) as $line){
-      if ($line != '' && preg_match("/^{/", $line)) {
-        // do stuff with $line
-        $quailResult = json_decode($line);
-        // Process the quail result to a json object which can be send to solr.
-        $document = preprocessQuailResult($quailResult, $count);
-        if ($document) {
-          // Add the documents to the document list in solr.
-          $documents[] = $document;
-          $count++;
-        }
-      }
-    }
-    // Now sent the result to Solr.
-    postToSolr($documents, $phantomcore_name);
-
-    // Update the url entry.
-    $query = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-    $query->execute(array(
-        'status' => STATUS_TESTED,
-        'url_id' => $result->url_id,
-      ));
+    // Create a PhantomQuailWorker for each url.
+    $worker = new PhantomQuailWorker($result);
+    $worker->run();
+    $workers[] = $worker;
   }
+  // Now process the results of the workers.
+  foreach ($workers as $worker) {
+    // Join the worker.
+//    $worker->join();
+//    $query = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
+//    $query->execute(array(
+//        'status' => STATUS_TESTED,
+//        'url_id' => $worker->getResult(),
+//      ));
+
+
+  }
+  $end_time = microtime(TRUE);
+  $total_time = ($end_time - $start_time);
+  print 'analysis used ' . $total_time . ' seconds';
+
 }
 
 /**
@@ -480,7 +463,7 @@ function postToSolr($documents, $core) {
   }
   else {
     curl_close($ch);
-    print $data;
+//    print $data;
 
     return TRUE;
   }
@@ -501,7 +484,7 @@ function deleteFromSolr($query, $collection) {
   $delete_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $collection . '/update?commit=true';
 
   $json_fields = '{"delete":{"query":"' . $query . '" }}';
-  print_r($query);
+//  print_r($query);
   $header = array("Content-type:application/json; charset=utf-8");
   curl_setopt($ch, CURLOPT_URL, $delete_url);
   curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
@@ -519,8 +502,7 @@ function deleteFromSolr($query, $collection) {
   }
   else {
     curl_close($ch);
-    print $data;
-
+//    print $data;
     return TRUE;
   }
 }
