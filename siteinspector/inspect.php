@@ -2,6 +2,7 @@
 
 include_once('lib/pid.php');
 include_once('lib/threads.php');
+include_once('lib/QuailTester.php');
 
 define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
@@ -35,7 +36,7 @@ function main($operation = NULL) {
         echo "Running...\n";
       }
       print "Performing tests\n";
-      performTests();
+      QuailTester::performTests();
       break;
 
     // Update site may always run.
@@ -146,56 +147,6 @@ function updateUrlFromNutch() {
 }
 
 /**
- * Perform tests on urls.
- */
-function performTests() {
-  $start_time = microtime(TRUE);
-  // Get an url to test.
-  $pdo = getDatabaseConnection();
-  // Get the batch_size so we don't do to much.
-  $batch_size = get_setting('batch_size');
-  // It seems that there is something wrong here.
-  // I had problems using prepared for limit.
-  // Normal parameter substitution doesn't work here.
-  $query = $pdo->prepare("SELECT * FROM urls WHERE status=:status LIMIT " . intval($batch_size));
-  $query->execute(array(
-      'status' => STATUS_SCHEDULED,
-    ));
-  $results = $query->fetchAll(PDO::FETCH_OBJ);
-  // TODO: implement testing functionality.
-  // Now set all the urls to status testing, so if another process tries to do something
-  // it can read that these url's will be tested.
-
-
-  // Get the phantomcore corename.
-  // We need this to send results to Solr.
-  $phantomcore_name = get_setting('solr_phantom_corename');
-  $workers = array();
-  foreach ($results as $result) {
-    // Create a PhantomQuailWorker for each url.
-    $worker = new PhantomQuailWorker($result);
-    $worker->start();
-    $workers[] = $worker;
-  }
-  // Now process the results of the workers.
-  foreach ($workers as $worker) {
-    // Join the worker.
-    $worker->join();
-    $query = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-    $query->execute(array(
-        'status' => STATUS_TESTED,
-        'url_id' => $worker->getResult(),
-      ));
-
-
-  }
-  $end_time = microtime(TRUE);
-  $total_time = ($end_time - $start_time);
-  print 'analysis used ' . $total_time . ' seconds';
-
-}
-
-/**
  * Update the status of the websites.
  *
  * If at least one url of a website is set to tested,
@@ -246,59 +197,6 @@ function updateStatus() {
       ));
   }
 
-}
-
-/**
- * Preprocess quail result for sending to solr.
- *
- * TODO: Solr should have a class, in which we can do all these things.
- *
- * @param $quailResult
- * @param $count
- *
- * @return mixed
- */
-function preprocessQuailResult($quailResult, $count) {
-  if (isset($quailResult->url) && $quailResult->url != '') {
-    $quailResult->url_main = "";
-    $quailResult->url_sub = "";
-    $urlarr = parse_url($quailResult->url);
-    $fqdArr = explode(".", $urlarr["host"]);
-    if (count($fqdArr) > 2) {
-      $partcount = count($fqdArr);
-      $quailResult->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
-    }
-    else {
-      $quailResult->url_main = $urlarr["host"];
-    }
-    $quailResult->url_sub = $urlarr["host"];
-
-    // Add the escaped url in order to be able to delete.
-    $escaped_url = escapeUrlForSolr($quailResult->url);
-    $quailResult->url_id = $escaped_url;
-
-    // Create a unique id.
-    $quailResult->id = time() . $count;
-    if (isset($quailResult->wcag) && ($quailResult->wcag != "")) {
-      $wcag = json_decode($quailResult->wcag);
-      $quailResult->applicationframework = "";
-      $quailResult->techniques = "";
-      while (list($applicationNr, $techniques) = each($wcag)) {
-        $quailResult->applicationframework[] = $applicationNr;
-        if (count($techniques) > 0) {
-          foreach ($techniques as $technique) {
-            foreach ($technique as $techniqueStr) {
-              $thistechniques[] = $techniqueStr;
-            }
-          }
-        }
-      }
-      $quailResult->techniques = array_unique($thistechniques);
-    }
-
-    return $quailResult;
-  }
-  return FALSE;
 }
 
 /**
