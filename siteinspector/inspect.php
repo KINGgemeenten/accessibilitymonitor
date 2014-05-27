@@ -10,11 +10,11 @@ define('STATUS_TESTED', 2);
 
 // Execute main with the first argument.
 
-main($argv[1]);
+main($argv[1], $argv[2]);
 
 
 
-function main($operation = NULL) {
+function main($operation = NULL, $workerCount = 2) {
   // First update the status.
   updateStatus();
 
@@ -37,8 +37,6 @@ function main($operation = NULL) {
       }
       print "Performing tests\n";
       $pdo = getDatabaseConnection();
-
-      $workerCount = isset($argv[2]) ? $argv[2] : 2;
 
       $tester = new QuailTester(100, $workerCount, $pdo);
       $tester->test();
@@ -171,7 +169,8 @@ function updateStatus() {
     // 2: how many urls are tested.
     $urlCountQuery = $pdo->prepare("SELECT COUNT(*) FROM urls WHERE wid=:wid");
     $urlCountQuery->execute(array('wid' => $website->wid));
-    $urlCount = array_shift($urlCountQuery->fetch(PDO::FETCH_NUM));
+    $urlCountResult = $urlCountQuery->fetch(PDO::FETCH_NUM);
+    $urlCount = array_shift($urlCountResult);
     // Tested urls.
     $testedCountQuery = $pdo->prepare("SELECT COUNT(*) FROM urls WHERE wid=:wid AND status=:status");
     $testedCountQuery->execute(array(
@@ -181,7 +180,8 @@ function updateStatus() {
     // The result is an array. Because it is only 1 result
     // we can use array_shift to get the first array element.
     // This is the number we want.
-    $testedCount = array_shift($testedCountQuery->fetch(PDO::FETCH_NUM));
+    $testedCountResult = $testedCountQuery->fetch(PDO::FETCH_NUM);
+    $testedCount = array_shift($testedCountResult);
 
     // Now there are three possibilities:
     // The amount of tested urls is 0: set the website to scheduled.

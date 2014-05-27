@@ -49,7 +49,8 @@ class QuailTester {
       foreach ($targets as $target) {
         // Create a PhantomQuailWorker for each url.
         $worker = new PhantomQuailWorker($target, $target->url_id);
-        $worker->start();
+//        $worker->start();
+        $worker->run();
         $this->workers[] = $worker;
       }
 
@@ -91,13 +92,13 @@ class QuailTester {
 
     // Now loop the results, and set the urls to be processing.
     foreach ($results as $result) {
-      $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-      $query->execute(
-        array(
-          'status' => STATUS_TESTING,
-          'url_id' => $result->url_id,
-        )
-      );
+//      $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
+//      $query->execute(
+//        array(
+//          'status' => STATUS_TESTING,
+//          'url_id' => $result->url_id,
+//        )
+//      );
     }
     return $results;
   }
