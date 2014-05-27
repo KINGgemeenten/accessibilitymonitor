@@ -94,6 +94,7 @@ page.open(address, function (status) {
           description: test.description,
           type: test.type,
           testability: test.testability,
+          guidelines: test.guidelines || {},
           tags: test.tags,
           cases: []
         };
