@@ -43,3 +43,42 @@ There are two ways to do parallel processing:
 
 1. Run more than one script at a time.
 2. Run one script and use threads to start more processes.
+
+We are going to use one script and start threads using pthreads to parallel process.
+
+### Testing pseudo code
+
+    class QuailTester {
+
+      protected workers = array();
+      protected finished_workers = array();
+
+      protected pdo;
+
+      public function __construct(maxTime, int workers, PDO pdo) {
+        // set the max time the tester may test.
+
+        // Set the pdo.
+      }
+
+      public function test() {
+        // while max time is not exceded: {
+
+          // Pick the amount of workers from the queue.
+
+          // Update the queue to indicate that the items are being tested.
+
+          // Create the workers
+
+          // Process the finished workers.
+
+          // Join the workers and put them in the finishedWorkers array.
+        }
+      }
+
+      protected function processFinishedWorkers() {
+        // Write the results to the database.
+      }
+
+
+    }

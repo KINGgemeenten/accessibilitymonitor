@@ -1,6 +1,8 @@
 <?php
 
 include_once('lib/pid.php');
+include_once('lib/PhantomQuailWorker.php');
+include_once('lib/QuailTester.php');
 
 define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
@@ -8,11 +10,11 @@ define('STATUS_TESTED', 2);
 
 // Execute main with the first argument.
 
-main($argv[1]);
+main($argv[1], $argv[2]);
 
 
 
-function main($operation = NULL) {
+function main($operation = NULL, $workerCount = 2) {
   // First update the status.
   updateStatus();
 
@@ -34,7 +36,10 @@ function main($operation = NULL) {
         echo "Running...\n";
       }
       print "Performing tests\n";
-      performTests();
+      $pdo = getDatabaseConnection();
+
+      $tester = new QuailTester(100, $workerCount, $pdo);
+      $tester->test();
       break;
 
     // Update site may always run.
@@ -145,74 +150,6 @@ function updateUrlFromNutch() {
 }
 
 /**
- * Perform tests on urls.
- */
-function performTests() {
-  // Get an url to test.
-  $pdo = getDatabaseConnection();
-  // Get the batch_size so we don't do to much.
-  $batch_size = get_setting('batch_size');
-  // It seems that there is something wrong here.
-  // I had problems using prepared for limit.
-  // Normal parameter substitution doesn't work here.
-  $query = $pdo->prepare("SELECT * FROM urls WHERE status=:status LIMIT " . intval($batch_size));
-  $query->execute(array(
-      'status' => STATUS_SCHEDULED,
-    ));
-  $results = $query->fetchAll(PDO::FETCH_OBJ);
-  // TODO: implement testing functionality.
-  // Now set all the urls to status testing, so if another process tries to do something
-  // it can read that these url's will be tested.
-
-
-  // Get the phantomcore corename.
-  // We need this to send results to Solr.
-  $phantomcore_name = get_setting('solr_phantom_corename');
-  foreach ($results as $result) {
-    // First delete all solr records for this url.
-    $escaped_string = escapeUrlForSolr($result->full_url);
-    $solrQuery = 'url_id:' . $escaped_string;
-//    $solrQuery = '*:*';
-    deleteFromSolr($solrQuery, $phantomcore_name);
-
-    $url = $result->full_url;
-    // Execute phantomjs.
-    // TODO: make the phantomjs path and the js file path configurable.
-    $command = '/usr/local/bin/phantomjs --ignore-ssl-errors=yes /opt/siteinspector/phantomquail.js ' . $url;
-    $output = shell_exec($command);
-    // Now process the results from quail.
-    // We have to generate a unique id later.
-    // In order to do this, we count the results, so it can be
-    // included in the unique id.
-    $count = 0;
-    // Create an array for all documents.
-    $documents = array();
-    foreach(preg_split("/((\r?\n)|(\r\n?))/", $output) as $line){
-      if ($line != '' && preg_match("/^{/", $line)) {
-        // do stuff with $line
-        $quailResult = json_decode($line);
-        // Process the quail result to a json object which can be send to solr.
-        $document = preprocessQuailResult($quailResult, $count);
-        if ($document) {
-          // Add the documents to the document list in solr.
-          $documents[] = $document;
-          $count++;
-        }
-      }
-    }
-    // Now sent the result to Solr.
-    postToSolr($documents, $phantomcore_name);
-
-    // Update the url entry.
-    $query = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-    $query->execute(array(
-        'status' => STATUS_TESTED,
-        'url_id' => $result->url_id,
-      ));
-  }
-}
-
-/**
  * Update the status of the websites.
  *
  * If at least one url of a website is set to tested,
@@ -232,7 +169,8 @@ function updateStatus() {
     // 2: how many urls are tested.
     $urlCountQuery = $pdo->prepare("SELECT COUNT(*) FROM urls WHERE wid=:wid");
     $urlCountQuery->execute(array('wid' => $website->wid));
-    $urlCount = array_shift($urlCountQuery->fetch(PDO::FETCH_NUM));
+    $urlCountResult = $urlCountQuery->fetch(PDO::FETCH_NUM);
+    $urlCount = array_shift($urlCountResult);
     // Tested urls.
     $testedCountQuery = $pdo->prepare("SELECT COUNT(*) FROM urls WHERE wid=:wid AND status=:status");
     $testedCountQuery->execute(array(
@@ -242,7 +180,8 @@ function updateStatus() {
     // The result is an array. Because it is only 1 result
     // we can use array_shift to get the first array element.
     // This is the number we want.
-    $testedCount = array_shift($testedCountQuery->fetch(PDO::FETCH_NUM));
+    $testedCountResult = $testedCountQuery->fetch(PDO::FETCH_NUM);
+    $testedCount = array_shift($testedCountResult);
 
     // Now there are three possibilities:
     // The amount of tested urls is 0: set the website to scheduled.
@@ -263,59 +202,6 @@ function updateStatus() {
       ));
   }
 
-}
-
-/**
- * Preprocess quail result for sending to solr.
- *
- * TODO: Solr should have a class, in which we can do all these things.
- *
- * @param $quailResult
- * @param $count
- *
- * @return mixed
- */
-function preprocessQuailResult($quailResult, $count) {
-  if (isset($quailResult->url) && $quailResult->url != '') {
-    $quailResult->url_main = "";
-    $quailResult->url_sub = "";
-    $urlarr = parse_url($quailResult->url);
-    $fqdArr = explode(".", $urlarr["host"]);
-    if (count($fqdArr) > 2) {
-      $partcount = count($fqdArr);
-      $quailResult->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
-    }
-    else {
-      $quailResult->url_main = $urlarr["host"];
-    }
-    $quailResult->url_sub = $urlarr["host"];
-
-    // Add the escaped url in order to be able to delete.
-    $escaped_url = escapeUrlForSolr($quailResult->url);
-    $quailResult->url_id = $escaped_url;
-
-    // Create a unique id.
-    $quailResult->id = time() . $count;
-    if (isset($quailResult->wcag) && ($quailResult->wcag != "")) {
-      $wcag = json_decode($quailResult->wcag);
-      $quailResult->applicationframework = "";
-      $quailResult->techniques = "";
-      while (list($applicationNr, $techniques) = each($wcag)) {
-        $quailResult->applicationframework[] = $applicationNr;
-        if (count($techniques) > 0) {
-          foreach ($techniques as $technique) {
-            foreach ($technique as $techniqueStr) {
-              $thistechniques[] = $techniqueStr;
-            }
-          }
-        }
-      }
-      $quailResult->techniques = array_unique($thistechniques);
-    }
-
-    return $quailResult;
-  }
-  return FALSE;
 }
 
 /**
@@ -480,7 +366,7 @@ function postToSolr($documents, $core) {
   }
   else {
     curl_close($ch);
-    print $data;
+//    print $data;
 
     return TRUE;
   }
@@ -501,7 +387,7 @@ function deleteFromSolr($query, $collection) {
   $delete_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $collection . '/update?commit=true';
 
   $json_fields = '{"delete":{"query":"' . $query . '" }}';
-  print_r($query);
+//  print_r($query);
   $header = array("Content-type:application/json; charset=utf-8");
   curl_setopt($ch, CURLOPT_URL, $delete_url);
   curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
@@ -519,8 +405,7 @@ function deleteFromSolr($query, $collection) {
   }
   else {
     curl_close($ch);
-    print $data;
-
+//    print $data;
     return TRUE;
   }
 }
