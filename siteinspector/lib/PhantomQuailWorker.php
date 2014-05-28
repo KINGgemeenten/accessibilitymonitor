@@ -28,6 +28,15 @@ class PhantomQuailWorker extends Thread {
    * Run function. This function is executed when the method start is executed.
    */
   public function run() {
+    // We need to include the autoloaders here.
+    // This is because this is a thread, and there
+    // are different rules.
+    // For this perticular case see:
+    // https://github.com/krakjoe/pthreads/issues/68
+    // Composer autoloader.
+    require( __DIR__ . '/../vendor/autoload.php');
+    require( __DIR__ . '/../settings.php');
+
     // First delete all solr records for this url.
     $this->deleteCasesFromSolr();
 
@@ -78,7 +87,7 @@ class PhantomQuailWorker extends Thread {
   /**
    * Delete all the cases from solr.
    */
-  protected function deleteCasesFromSolr() {
+  public function deleteCasesFromSolr() {
     // Create the client to solr.
     $phantomcore_config = get_setting('solr_phantom');
     $client = new Solarium\Client($phantomcore_config);
@@ -91,7 +100,6 @@ class PhantomQuailWorker extends Thread {
     $solrQuery = 'url_id:' . $escaped_string;
 
     $update->addDeleteQuery($solrQuery);
-    $update->addCommit();
 
     // this executes the query and returns the result
     $result = $client->update($update);
@@ -167,7 +175,6 @@ class PhantomQuailWorker extends Thread {
       }
       // add the documents and a commit command to the update query
       $updateQuery->addDocuments($docs);
-      $updateQuery->addCommit();
 
       // this executes the query and returns the result.
       // TODO: catch exceptions.
@@ -211,6 +218,9 @@ class PhantomQuailWorker extends Thread {
       if (property_exists($case, 'severity')) {
         $doc->severity = $case->severity;
       }
+
+      // Add document type.
+      $doc->document_type = 'case';
 
       return $doc;
     }

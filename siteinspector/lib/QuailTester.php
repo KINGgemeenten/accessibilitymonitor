@@ -49,10 +49,15 @@ class QuailTester {
       foreach ($targets as $target) {
         // Create a PhantomQuailWorker for each url.
         $worker = new PhantomQuailWorker($target, $target->url_id);
-//        $worker->start();
-        $worker->run();
+        // First delete all documents from solr.
+        $worker->deleteCasesFromSolr();
+        // Now start the thread.
+        $worker->start();
+//        $worker->run();
         $this->workers[] = $worker;
       }
+      $this->sendCommitToPhantomcoreSolr();
+
 
       // Process the finished workers.
       $this->processFinishedWorkers();
@@ -131,6 +136,23 @@ class QuailTester {
    */
   protected function log($message) {
     print $message . "\n";
+  }
+
+  /**
+   * Send a commit to phantomcore solr.
+   */
+  protected function sendCommitToPhantomcoreSolr() {
+    // Send a commit to solr.
+    $phantomcore_config = get_setting('solr_phantom');
+    $client = new Solarium\Client($phantomcore_config);
+
+    // Get an update query instance.
+    $update = $client->createUpdate();
+
+    $update->addCommit();
+
+    // This executes the query and returns the result.
+    $result = $client->update($update);
   }
 
 } 

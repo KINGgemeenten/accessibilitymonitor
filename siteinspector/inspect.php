@@ -43,7 +43,7 @@ function main($operation = NULL, $workerCount = 2) {
       print "Performing tests\n";
       $pdo = getDatabaseConnection();
 
-      $tester = new QuailTester(5, $workerCount, $pdo);
+      $tester = new QuailTester(100, $workerCount, $pdo);
       $tester->test();
       break;
 
