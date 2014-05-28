@@ -29,10 +29,7 @@ class PhantomQuailWorker extends Thread {
    */
   public function run() {
     // First delete all solr records for this url.
-    $escaped_string = escapeUrlForSolr($this->urlObject->full_url);
-    $solrQuery = 'url_id:' . $escaped_string;
-//    $solrQuery = '*:*';
-    deleteFromSolr($solrQuery, $this->phantomcore_name);
+    $this->deleteCasesFromSolr();
 
     $url = $this->urlObject->full_url;
     // Execute phantomjs.
@@ -70,13 +67,36 @@ class PhantomQuailWorker extends Thread {
     }
     $this->rawQuailResults = $quailResults;
     $this->processQuailResults();
-    // Now sent the result to Solr.
-//    postToSolr($this->quailResults, $this->phantomcore_name);
+
+    // Now send the case results to solr.
+    $this->sendCaseResultsToSolr();
 
     // Update the result.
     $this->result = $this->urlObject->url_id;
   }
 
+  /**
+   * Delete all the cases from solr.
+   */
+  protected function deleteCasesFromSolr() {
+    // Create the client to solr.
+    $phantomcore_config = get_setting('solr_phantom');
+    $client = new Solarium\Client($phantomcore_config);
+
+    // Get a delete query.
+    $update = $client->createUpdate();
+
+    // add the delete query and a commit command to the update query
+    $escaped_string = escapeUrlForSolr($this->urlObject->full_url);
+    $solrQuery = 'url_id:' . $escaped_string;
+
+    $update->addDeleteQuery($solrQuery);
+    $update->addCommit();
+
+    // this executes the query and returns the result
+    $result = $client->update($update);
+
+  }
 
   /**
    * Process the quail results.
@@ -121,6 +141,92 @@ class PhantomQuailWorker extends Thread {
     }
     $this->quailCases = $quailCases;
     $this->quailFinalResult = $quailFinalResult;
+  }
+
+  /**
+   * Send all the cases to solr.
+   */
+  protected function sendCaseResultsToSolr() {
+    // First check if there are results to send.
+    if (count($this->quailCases)) {
+      // Create the client to solr.
+      $phantomcore_config = get_setting('solr_phantom');
+      $client = new Solarium\Client($phantomcore_config);
+
+      // Create an update query.
+      $updateQuery = $client->createUpdate();
+
+      // Create an array of documents.
+      $docs = array();
+      // Now start adding the cases.
+      foreach ($this->quailCases as $case) {
+        $doc = $this->caseToSolrDocument($updateQuery, $case);
+        if ($doc) {
+          $docs[] = $doc;
+        }
+      }
+      // add the documents and a commit command to the update query
+      $updateQuery->addDocuments($docs);
+      $updateQuery->addCommit();
+
+      // this executes the query and returns the result.
+      // TODO: catch exceptions.
+      $result = $client->update($updateQuery);
+    }
+  }
+
+  /**
+   * Create a solr document from a case.
+   *
+   * @param $updateQuery
+   * @param $case
+   *
+   * @return $doc
+   *   Solr document
+   */
+  protected function caseToSolrDocument($updateQuery, $case) {
+    // Create a solr document.
+    if (property_exists($case, 'status')) {
+      $doc = $updateQuery->createDocument();
+      $doc->id = $this->createCaseSolrId($case);
+      $doc->content = json_encode($case);
+      $doc->url = $case->url;
+      $doc->url_id = $case->url_id;
+      $doc->url_main = $case->url_main;
+      $doc->url_sub = $case->url_sub;
+      $doc->element = '';
+      if (property_exists($case, 'title')) {
+        $doc->name = $case->title->en;
+      }
+      if (property_exists($case, 'applicationframework')) {
+        $doc->applicationframework = $case->applicationframework;
+      }
+      if (property_exists($case, 'techniques')) {
+        $doc->techniques = $case->techniques;
+      }
+      $doc->tags = $case->tags;
+      $doc->testability = $case->testability;
+      $doc->test_result = $case->status;
+      $doc->testtype = $case->type;
+      if (property_exists($case, 'severity')) {
+        $doc->severity = $case->severity;
+      }
+
+      return $doc;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Create a solr id for a case.
+   *
+   * @param $case
+   *
+   * @return string
+   *   Case id.
+   */
+  protected function createCaseSolrId($case) {
+    return 'case_' . $case->id . '_' . $case->url_id;
   }
 
   /**
@@ -169,10 +275,6 @@ class PhantomQuailWorker extends Thread {
 
         $quailResult->techniques = array_unique($quailResult->techniques);
       }
-      if (count($quailResult->cases) > 1) {
-        $oie = 'oei';
-      }
-
       return $quailResult;
     }
     return FALSE;

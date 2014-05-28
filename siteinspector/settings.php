@@ -12,7 +12,8 @@ $global_vars['solr_phantom'] = array(
     'localhost' => array(
       'host' => '127.0.0.1',
       'port' => 8080,
-      'path' => '/solr/phantomcore',
+      'path' => '/solr/phatnomcore',
+      'timeout' => 30,
     )
   )
 );

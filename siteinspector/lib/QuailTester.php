@@ -54,6 +54,7 @@ class QuailTester {
         $this->workers[] = $worker;
       }
 
+      // Process the finished workers.
       $this->processFinishedWorkers();
 
       // Break if there are no more targets.
@@ -74,6 +75,8 @@ class QuailTester {
       $message = 'Analysis used ' . $this->elapsedTime . ' seconds for ' . $this->workerCount . 'workers';
       $this->log($message);
     }
+    // Process the finished workers.
+    $this->processFinishedWorkers();
     $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
     $this->log($message);
   }
@@ -92,13 +95,13 @@ class QuailTester {
 
     // Now loop the results, and set the urls to be processing.
     foreach ($results as $result) {
-//      $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-//      $query->execute(
-//        array(
-//          'status' => STATUS_TESTING,
-//          'url_id' => $result->url_id,
-//        )
-//      );
+      $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
+      $query->execute(
+        array(
+          'status' => STATUS_TESTING,
+          'url_id' => $result->url_id,
+        )
+      );
     }
     return $results;
   }
