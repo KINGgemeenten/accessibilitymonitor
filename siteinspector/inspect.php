@@ -1,5 +1,8 @@
 <?php
 
+// Composer autoloader.
+require('vendor/autoload.php');
+require('./settings.php');
 include_once('lib/pid.php');
 include_once('lib/PhantomQuailWorker.php');
 include_once('lib/QuailTester.php');
@@ -16,7 +19,7 @@ main($argv[1], $argv[2]);
 
 function main($operation = NULL, $workerCount = 2) {
   // First update the status.
-  updateStatus();
+//  updateStatus();
 
   // Main controller for the script.
   if (!isset($operation)) {
@@ -49,10 +52,31 @@ function main($operation = NULL, $workerCount = 2) {
       // Update the url's which need to be tested.
       updateUrlFromNutch();
       break;
+
+    case 'solr':
+      testSolr();
+      break;
   }
 
 }
 
+/**
+ * Test solr connection.
+ */
+function testSolr() {
+  $config = get_setting('solr_nutch');
+  // create a client instance
+  $client = new Solarium\Client($config);
+
+  // get a select query instance
+  $query = $client->createQuery($client::QUERY_SELECT);
+
+  // this executes the query and returns the result
+  $resultset = $client->execute($query);
+
+  // display the total number of documents found by solr.
+  print 'NumFound: '.$resultset->getNumFound() . "\n";
+}
 
 /**
  * Update the website entries in the database;
@@ -273,12 +297,9 @@ function getDatabaseConnection() {
  * @return string
  */
 function get_setting($setting) {
-  static $global_settings;
-  if (! isset($global_settings)) {
-    $global_settings = parse_ini_file('settings.ini');
-  }
-  if (isset($global_settings[$setting])) {
-    return $global_settings[$setting];
+  global $global_vars;
+  if (isset($global_vars[$setting])) {
+    return $global_vars[$setting];
   }
   return '';
 }
