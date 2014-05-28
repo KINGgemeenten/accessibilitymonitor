@@ -95,22 +95,26 @@ class PhantomQuailWorker extends Thread {
         // Unset the cases.
         unset($caseItem->cases);
         $caseItem->status = $case->status;
-        $caseItem->selector = $case->selector;
+        if (isset($case->selector)) {
+          $caseItem->selector = $case->selector;
+        }
         // Add the quailCase.
         $quailCases[] = $caseItem;
 
-        // Add the case to the final result.
-        foreach ($case->applicationframework as $wcagItem) {
-          // Add the case to the specific wcag item.
-          if (! isset($quailFinalResult[$wcagItem]['cases'])) {
-            $quailFinalResult[$wcagItem]['cases'];
+        if (isset($caseItem->applicationframework)) {
+          // Add the case to the final result.
+          foreach ($caseItem->applicationframework as $wcagItem) {
+            // Add the case to the specific wcag item.
+            if (!isset($quailFinalResult[$wcagItem]['cases'])) {
+              $quailFinalResult[$wcagItem]['cases'] = array();
+            }
+            $quailFinalResult[$wcagItem]['cases'][] = $caseItem;
+            // Increment counters on the status.
+            if (!isset($quailFinalResult[$wcagItem]['statuses'][$caseItem->status])) {
+              $quailFinalResult[$wcagItem]['statuses'][$caseItem->status] = 0;
+            }
+            $quailFinalResult[$wcagItem]['statuses'][$caseItem->status]++;
           }
-          $quailFinalResult[$wcagItem]['cases'][] = $case;
-          // Increment counters on the status.
-          if (!isset($quailFinalResult[$wcagItem]['statuses'][$case->status])) {
-            $quailFinalResult[$wcagItem]['statuses'][$case->status] = 0;
-          }
-          $quailFinalResult[$wcagItem]['statuses'][$case->status]++;
         }
 
       }
