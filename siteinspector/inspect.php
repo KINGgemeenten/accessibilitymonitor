@@ -1,5 +1,8 @@
 <?php
 
+// Composer autoloader.
+require('vendor/autoload.php');
+require('./settings.php');
 include_once('lib/pid.php');
 include_once('lib/PhantomQuailWorker.php');
 include_once('lib/QuailTester.php');
@@ -8,9 +11,11 @@ define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
 define('STATUS_TESTED', 2);
 
-// Execute main with the first argument.
+// Execute main with arguments.
+$argument1 = isset($argv[1]) ? $argv[1] : NULL;
+$argument2 = isset($argv[2]) ? $argv[2] : NULL;
 
-main($argv[1], $argv[2]);
+main($argument1, $argument2);
 
 
 
@@ -44,15 +49,34 @@ function main($operation = NULL, $workerCount = 2) {
 
     // Update site may always run.
     case 'update-sitelist':
-      // Update the entries which should be tested.
-      updateWebsiteEntries();
       // Update the url's which need to be tested.
       updateUrlFromNutch();
+      break;
+
+    case 'solr':
+      testSolr();
       break;
   }
 
 }
 
+/**
+ * Test solr connection.
+ */
+function testSolr() {
+  $config = get_setting('solr_nutch');
+  // create a client instance
+  $client = new Solarium\Client($config);
+
+  // get a select query instance
+  $query = $client->createQuery($client::QUERY_SELECT);
+
+  // this executes the query and returns the result
+  $resultset = $client->execute($query);
+
+  // display the total number of documents found by solr.
+  print 'NumFound: '.$resultset->getNumFound() . "\n";
+}
 
 /**
  * Update the website entries in the database;
@@ -122,19 +146,27 @@ function updateUrlFromNutch() {
           ));
       }
       else {
-        // Get records from nutch.
-        $nutchCore = get_setting('solr_nutch_corename');
-        // Create the solr q query.
-        // TODO: better baseurl detection.
+        // Create a Solarium instance.
+        $nutch_config = get_setting('solr_nutch');
+        $client = new Solarium\Client($nutch_config);
+
+        // Create a query.
+        $query = $client->createQuery($client::QUERY_SELECT);
+
+        // Add the filter.
         $baseUrl = str_replace('www.', '', $entry->url);
-        $solrQuery = 'domain:' . $baseUrl;
-        // Create the custom query string.
-        $customParams = 'fl=url+score';
-        $solrResponse = fetchSolrData($nutchCore, $solrQuery, $customParams);
-        $parsedResponse = json_decode($solrResponse);
-        $docs = $parsedResponse->response->docs;
-        foreach ($docs as $doc) {
-          // TODO: optimize the insert statement.
+        $query->setQuery('domain:' . $baseUrl);
+
+        // Set the fields.
+        $query->setFields(array('url', 'score'));
+
+        // Set the rows.
+        $query->setRows(10);
+
+        // Get the results.
+        $solrResults = $client->select($query);
+
+        foreach ($solrResults as $doc) {
           // Insert a new entry.
           $sql = "INSERT INTO urls (wid,full_url,status) VALUES (:wid,:full_url,:status)";
           $insert = $pdo->prepare($sql);
@@ -273,139 +305,9 @@ function getDatabaseConnection() {
  * @return string
  */
 function get_setting($setting) {
-  static $global_settings;
-  if (! isset($global_settings)) {
-    $global_settings = parse_ini_file('settings.ini');
-  }
-  if (isset($global_settings[$setting])) {
-    return $global_settings[$setting];
+  global $global_vars;
+  if (isset($global_vars[$setting])) {
+    return $global_vars[$setting];
   }
   return '';
-}
-
-/**
- * Fetch solr data.
- *
- * TODO: this is a very ugly function.
- * This should be replaced with a proper way of doing when time is available.
- *
- * @param $collection
- * @param $query
- * @param $customParams
- *
- * @return mixed
- * @throws Exception
- */
-function fetchSolrData($collection, $query, $customParams) {
-  $result = FALSE;
-  $http_post = FALSE;
-  // TODO: make solr host configurable.
-  $search_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $collection . '/select';
-  $querystring = "stylesheet=&q=" . trim(urlencode($query)) . "&" . $customParams . "&qt=standard&rows=" . get_setting('batch_rows') . "&wt=json";
-  $selecturl = "/?$querystring";
-  $search_url .= $selecturl;
-  $header[] = "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5";
-  $header[] = "Accept-Language: en-us,en;q=0.5";
-  $header[] = "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7";
-  $ch = curl_init();
-  curl_setopt($ch, CURLOPT_URL, $search_url); // set url to post to
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_TIMEOUT, 300);
-  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-  curl_setopt($ch, CURLOPT_ENCODING, "");
-  //curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-  curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-  curl_setopt($ch, CURLOPT_DNS_USE_GLOBAL_CACHE, 0);
-
-  $data = curl_exec($ch);
-  if (curl_errno($ch)) {
-    throw new Exception(curl_error($ch));
-  }
-  else {
-    curl_close($ch);
-  }
-
-  return $data;
-}
-
-/**
- * Post results to Solr.
- *
- * @param $documents
- * @param $core
- *
- * @return bool
- * @throws Exception
- */
-function postToSolr($documents, $core) {
-
-  $ch = curl_init();
-  // TODO: make solr host configurable
-  $post_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $core . '/update?commit=true';
-  // Create an array of jason docs.
-  $json_docs = array();
-  foreach ($documents as $doc) {
-    $json_docs[] = '"add":{"doc":' . json_encode($doc) . '}';
-  }
-  // Now create the total json object.
-  $json_post = '{' . implode(',', $json_docs) . '}';
-  $header = array("Content-type:application/json; charset=utf-8");
-  curl_setopt($ch, CURLOPT_URL, $post_url);
-  curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_POST, 1);
-  curl_setopt($ch, CURLOPT_POSTFIELDS, $json_post);
-  curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-
-  $data = curl_exec($ch);
-
-  if (curl_errno($ch)) {
-    throw new Exception ("curl_error:" . curl_error($ch));
-    print $curl_error($ch);
-  }
-  else {
-    curl_close($ch);
-//    print $data;
-
-    return TRUE;
-  }
-}
-
-
-/**
- * Delete documents from solr.
- *
- * @param $query
- * @param $collection
- *
- * @throws Exception
- */
-function deleteFromSolr($query, $collection) {
-  $ch = curl_init();
-
-  $delete_url = 'http://' . get_setting('solr_host') . ': ' . get_setting('solr_port') . '/solr/' . $collection . '/update?commit=true';
-
-  $json_fields = '{"delete":{"query":"' . $query . '" }}';
-//  print_r($query);
-  $header = array("Content-type:application/json; charset=utf-8");
-  curl_setopt($ch, CURLOPT_URL, $delete_url);
-  curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_POST, 1);
-  curl_setopt($ch, CURLOPT_POSTFIELDS, $json_fields);
-  curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
-  curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-
-  $data = curl_exec($ch);
-
-  if (curl_errno($ch)) {
-    throw new Exception ("curl_error:" . curl_error($ch));
-    print $curl_error($ch);
-  }
-  else {
-    curl_close($ch);
-//    print $data;
-    return TRUE;
-  }
 }

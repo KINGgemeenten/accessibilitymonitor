@@ -49,11 +49,17 @@ class QuailTester {
       foreach ($targets as $target) {
         // Create a PhantomQuailWorker for each url.
         $worker = new PhantomQuailWorker($target, $target->url_id);
-//        $worker->start();
-        $worker->run();
+        // First delete all documents from solr.
+        $worker->deleteCasesFromSolr();
+        // Now start the thread.
+        $worker->start();
+//        $worker->run();
         $this->workers[] = $worker;
       }
+      $this->sendCommitToPhantomcoreSolr();
 
+
+      // Process the finished workers.
       $this->processFinishedWorkers();
 
       // Break if there are no more targets.
@@ -74,6 +80,8 @@ class QuailTester {
       $message = 'Analysis used ' . $this->elapsedTime . ' seconds for ' . $this->workerCount . 'workers';
       $this->log($message);
     }
+    // Process the finished workers.
+    $this->processFinishedWorkers();
     $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
     $this->log($message);
   }
@@ -92,13 +100,13 @@ class QuailTester {
 
     // Now loop the results, and set the urls to be processing.
     foreach ($results as $result) {
-//      $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-//      $query->execute(
-//        array(
-//          'status' => STATUS_TESTING,
-//          'url_id' => $result->url_id,
-//        )
-//      );
+      $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
+      $query->execute(
+        array(
+          'status' => STATUS_TESTING,
+          'url_id' => $result->url_id,
+        )
+      );
     }
     return $results;
   }
@@ -128,6 +136,23 @@ class QuailTester {
    */
   protected function log($message) {
     print $message . "\n";
+  }
+
+  /**
+   * Send a commit to phantomcore solr.
+   */
+  protected function sendCommitToPhantomcoreSolr() {
+    // Send a commit to solr.
+    $phantomcore_config = get_setting('solr_phantom');
+    $client = new Solarium\Client($phantomcore_config);
+
+    // Get an update query instance.
+    $update = $client->createUpdate();
+
+    $update->addCommit();
+
+    // This executes the query and returns the result.
+    $result = $client->update($update);
   }
 
 } 
