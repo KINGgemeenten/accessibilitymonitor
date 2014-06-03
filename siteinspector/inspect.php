@@ -53,8 +53,14 @@ function main($operation = NULL, $workerCount = 2) {
       updateUrlFromNutch();
       break;
 
+    // Test solr.
     case 'solr':
       testSolr();
+      break;
+
+    // Delete solr phantomcore.
+    case 'purge-solr':
+      purgeSolr();
       break;
   }
 
@@ -76,6 +82,26 @@ function testSolr() {
 
   // display the total number of documents found by solr.
   print 'NumFound: '.$resultset->getNumFound() . "\n";
+}
+
+/**
+ * Purge the phantom solr core.
+ */
+function purgeSolr() {
+  $config = get_setting('solr_phantom');
+
+  $client = new Solarium\Client($config);
+
+  // Get a delete query.
+  $update = $client->createUpdate();
+
+  $solrQuery = '*:*';
+
+  $update->addDeleteQuery($solrQuery);
+  $update->addCommit();
+
+  // this executes the query and returns the result
+  $result = $client->update($update);
 }
 
 /**

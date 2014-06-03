@@ -126,6 +126,9 @@ class PhantomQuailWorker extends Thread {
         if (isset($case->selector)) {
           $caseItem->selector = $case->selector;
         }
+        if (isset($case->html)) {
+          $caseItem->html = $case->html;
+        }
         // Add the quailCase.
         $quailCases[] = $caseItem;
 
@@ -201,7 +204,9 @@ class PhantomQuailWorker extends Thread {
       $doc->url_id = $case->url_id;
       $doc->url_main = $case->url_main;
       $doc->url_sub = $case->url_sub;
-      $doc->element = '';
+      if (property_exists($case, 'html')) {
+        $doc->element = $case->html;
+      }
       if (property_exists($case, 'title')) {
         $doc->name = $case->title->en;
       }
@@ -215,9 +220,7 @@ class PhantomQuailWorker extends Thread {
       $doc->testability = $case->testability;
       $doc->test_result = $case->status;
       $doc->testtype = $case->type;
-      if (property_exists($case, 'severity')) {
-        $doc->severity = $case->severity;
-      }
+      $doc->severity = $case->testability;
 
       // Add document type.
       $doc->document_type = 'case';
