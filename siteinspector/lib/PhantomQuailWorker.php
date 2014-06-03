@@ -44,7 +44,8 @@ class PhantomQuailWorker extends Thread {
     // Execute phantomjs.
     // First get the path to the phantomjs executable.
     $phantomjsExecutable = get_setting('phantomjs_executable');
-    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes /opt/siteinspector/phantomquail.js ' . $url;
+    $phantomDir = __DIR__ . '/../';
+    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes ' . $phantomDir . 'phantomquail.js ' . $url;
     $output = shell_exec($command);
     // Now process the results from quail.
     // We have to generate a unique id later.
