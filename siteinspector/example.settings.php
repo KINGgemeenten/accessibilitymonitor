@@ -8,6 +8,8 @@ $global_vars['mysql_username'] = 'inspector';
 $global_vars['mysql_password'] = 'z31lb00t';
 $global_vars['urls_per_sample'] = 10;
 $global_vars['max_execution_time'] = 100;
+
+$global_vars['phantomjs_executable'] = '/usr/bin/phantomjs';
 // Solr settings.
 $global_vars['solr_phantom'] = array(
   'endpoint' => array(
