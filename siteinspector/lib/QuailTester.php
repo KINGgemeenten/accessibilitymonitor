@@ -92,7 +92,7 @@ class QuailTester {
    * @return mixed
    */
   protected function getTestingTargets() {
-    $query = $this->pdo->prepare("SELECT * FROM urls WHERE status=:status LIMIT " . $this->workerCount);
+    $query = $this->pdo->prepare("SELECT * FROM urls WHERE status=:status ORDER BY priority ASC LIMIT " . $this->workerCount);
     $query->execute(array(
         'status' => STATUS_SCHEDULED,
       ));

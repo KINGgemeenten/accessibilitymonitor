@@ -29,6 +29,4 @@ $global_vars['solr_nutch'] = array(
   )
 );
 
-
-
  

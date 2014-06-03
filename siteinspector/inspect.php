@@ -43,7 +43,9 @@ function main($operation = NULL, $workerCount = 2) {
       print "Performing tests\n";
       $pdo = getDatabaseConnection();
 
-      $tester = new QuailTester(100, $workerCount, $pdo);
+      $max_execution_time = get_setting('max_execution_time');
+
+      $tester = new QuailTester($max_execution_time, $workerCount, $pdo);
       $tester->test();
       break;
 
@@ -53,35 +55,12 @@ function main($operation = NULL, $workerCount = 2) {
       updateUrlFromNutch();
       break;
 
-    // Test solr.
-    case 'solr':
-      testSolr();
-      break;
-
     // Delete solr phantomcore.
     case 'purge-solr':
       purgeSolr();
       break;
   }
 
-}
-
-/**
- * Test solr connection.
- */
-function testSolr() {
-  $config = get_setting('solr_nutch');
-  // create a client instance
-  $client = new Solarium\Client($config);
-
-  // get a select query instance
-  $query = $client->createQuery($client::QUERY_SELECT);
-
-  // this executes the query and returns the result
-  $resultset = $client->execute($query);
-
-  // display the total number of documents found by solr.
-  print 'NumFound: '.$resultset->getNumFound() . "\n";
 }
 
 /**
@@ -186,21 +165,29 @@ function updateUrlFromNutch() {
         // Set the fields.
         $query->setFields(array('url', 'score'));
 
+        // First check how many rows we should ask from nutch.
+        $urls_per_sample = get_setting('urls_per_sample');
+
         // Set the rows.
-        $query->setRows(10);
+        $query->setRows($urls_per_sample);
 
         // Get the results.
         $solrResults = $client->select($query);
 
+        // Set the priority to 1, for the first document and increase.
+        $priority = 1;
         foreach ($solrResults as $doc) {
           // Insert a new entry.
-          $sql = "INSERT INTO urls (wid,full_url,status) VALUES (:wid,:full_url,:status)";
+          $sql = "INSERT INTO urls (wid,full_url,status,priority) VALUES (:wid,:full_url,:status,:priority)";
           $insert = $pdo->prepare($sql);
-          $insert->execute(array(
+          $result = $insert->execute(array(
               'wid' => $entry->wid,
               'full_url' => $doc->url,
-              'status' => STATUS_SCHEDULED
+              'status' => STATUS_SCHEDULED,
+              'priority' => $priority,
             ));
+          // Increase the priority.
+          $priority++;
         }
       }
     }
