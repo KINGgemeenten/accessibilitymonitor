@@ -1,5 +1,6 @@
 var system = require('system');
 var page = require('webpage').create();
+var fs = require('fs');
 var address, dir;
 
 page.onConsoleMessage = function (msg, line, source) {
@@ -22,7 +23,8 @@ page.onResourceTimeout = function (e) {
 
 // Open the page at the provided URL in Phantom.
 address = system.args[1];
-dir = '/opt/siteinspector';
+// Get the workingdir.
+dir = fs.workingDirectory;
 page.open(address, function (status) {
   if (status !== 'success') {
     console.log('FAIL to load the address');
