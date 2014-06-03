@@ -105,7 +105,8 @@ page.open(address, function (status) {
           caseResolve: function (eventName, test, _case) {
             output.cases.push({
               status: _case.get('status'),
-              selector: _case.get('selector')
+              selector: _case.get('selector'),
+              html: _case.get('html')
             });
           },
           // Called when all the Cases in a Test are resolved.
