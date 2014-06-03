@@ -23,14 +23,19 @@ page.onResourceTimeout = function (e) {
 
 // Open the page at the provided URL in Phantom.
 address = system.args[1];
-// Get the workingdir.
-dir = fs.workingDirectory;
+
+// We need the path of the script.
+// This is kind of a workaround, but it works.
+var relativeScriptPath = system.args[0];
+var absoluteScriptPath = fs.absolute(relativeScriptPath);
+var absoluteScriptDir = absoluteScriptPath.substring(0, absoluteScriptPath.lastIndexOf('/'));
+
+dir = absoluteScriptDir;
 page.open(address, function (status) {
   if (status !== 'success') {
     console.log('FAIL to load the address');
   }
   else {
-    var fs = require('fs');
     var guidelinedata = fs.read(dir + '/guideline.json');
     var guidelines = JSON.parse(guidelinedata);
 
