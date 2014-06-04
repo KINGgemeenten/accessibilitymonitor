@@ -121,7 +121,7 @@ class PhantomQuailWorker extends Thread {
       // First do the quailResults.
       $quailResults[] = $result;
       // Expand on case
-      if (property_exists($result, 'cases')) {
+      if (property_exists($result, 'cases') && count($result->cases)) {
         foreach ($result->cases as $case) {
           $caseItem = $result;
           // Unset the cases.
