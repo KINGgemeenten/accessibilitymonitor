@@ -2,7 +2,7 @@
 
 // Composer autoloader.
 require('vendor/autoload.php');
-require('./settings.php');
+require('settings.php');
 include_once('lib/pid.php');
 include_once('lib/PhantomQuailWorker.php');
 include_once('lib/QuailTester.php');
