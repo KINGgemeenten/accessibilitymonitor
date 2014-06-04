@@ -74,10 +74,13 @@ class QuailTester {
       }
 
       // Update the elapsed time.
+      $oldElapsedTime = $this->elapsedTime;
       $this->elapsedTime = microtime(TRUE) - $this->startTime;
 
+      // ProcessTime.
+      $processTime = $this->elapsedTime - $oldElapsedTime;
       // Log to the console.
-      $message = 'Analysis used ' . $this->elapsedTime . ' seconds for ' . $this->workerCount . 'workers';
+      $message = 'Analysis used ' . $processTime . ' seconds for ' . $this->workerCount . 'workers';
       $this->log($message);
     }
     // Process the finished workers.

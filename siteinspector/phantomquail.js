@@ -66,8 +66,8 @@ page.open(address, function (status) {
 
 
     // Inject assets into the page.
-    page.injectJs(dir + '/js/jquery-1.10.1.min.js');
-    page.injectJs(dir + '/js/jquery.hasEventListener-2.0.4.min.js');
+    page.injectJs('js/jquery-1.10.1.js');
+    page.injectJs('js/jquery.hasEventListener-2.0.4.js');
     page.injectJs('/opt/quail/dist/quail.jquery.js');
 
     // Handle results from the test runs.
