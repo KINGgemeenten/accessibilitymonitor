@@ -10,6 +10,7 @@ include_once('lib/QuailTester.php');
 define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
 define('STATUS_TESTED', 2);
+define('STATUS_ERROR', 3);
 
 // Execute main with arguments.
 $argument1 = isset($argv[1]) ? $argv[1] : NULL;
@@ -317,10 +318,99 @@ function getDatabaseConnection() {
  *
  * @return string
  */
-function get_setting($setting) {
+function get_setting($setting, $default = NULL) {
   global $global_vars;
   if (isset($global_vars[$setting])) {
     return $global_vars[$setting];
   }
-  return '';
+  return $default;
+}
+
+/**
+ * Execute a command and return it's output. Either wait until the command exits or the timeout has expired.
+ *
+ * This function is based on the following solution:
+ * http://blog.dubbelboer.com/2012/08/24/execute-with-timeout.html
+ *
+ * @param string $cmd     Command to execute.
+ * @param number $timeout Timeout in seconds.
+ * @return string Output of the command.
+ * @throws \Exception
+ */
+function exec_timeout($cmd, $timeout) {
+  $timedOut = true;
+  // File descriptors passed to the process.
+  $descriptors = array(
+    0 => array('pipe', 'r'),  // stdin
+    1 => array('pipe', 'w'),  // stdout
+    2 => array('pipe', 'w')   // stderr
+  );
+
+  // Start the process.
+  $process = proc_open('exec ' . $cmd, $descriptors, $pipes);
+
+  if (!is_resource($process)) {
+    throw new \Exception('Could not execute process');
+  }
+
+  // Set the stdout stream to none-blocking.
+  stream_set_blocking($pipes[1], 0);
+
+  // Turn the timeout into microseconds.
+  $timeout = $timeout * 1000000;
+
+  // Output buffer.
+  $buffer = '';
+
+  // While we have time to wait.
+  while ($timeout > 0) {
+    $start = microtime(true);
+
+    // Wait until we have output or the timer expired.
+    $read  = array($pipes[1]);
+    $other = array();
+    stream_select($read, $other, $other, 0, $timeout);
+
+    // Get the status of the process.
+    // Do this before we read from the stream,
+    // this way we can't lose the last bit of output if the process dies between these functions.
+    $status = proc_get_status($process);
+
+    // Read the contents from the buffer.
+    // This function will always return immediately as the stream is none-blocking.
+    $buffer .= stream_get_contents($pipes[1]);
+
+    if (!$status['running']) {
+      $timedOut = false;
+      // Break from this loop if the process exited before the timeout.
+      break;
+    }
+
+    // Subtract the number of microseconds that we waited.
+    $timeout -= (microtime(true) - $start) * 1000000;
+  }
+
+  if ($timedOut) {
+    throw new \Exception('Operation timed out');
+  }
+
+  // Check if there were any errors.
+  $errors = stream_get_contents($pipes[2]);
+
+  if (!empty($errors)) {
+    throw new \Exception($errors);
+  }
+
+  // Kill the process in case the timeout expired and it's still running.
+  // If the process already exited this won't do anything.
+  proc_terminate($process, 9);
+
+  // Close all streams.
+  fclose($pipes[0]);
+  fclose($pipes[1]);
+  fclose($pipes[2]);
+
+  proc_close($process);
+
+  return $buffer;
 }

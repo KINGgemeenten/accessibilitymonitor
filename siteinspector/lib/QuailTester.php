@@ -124,7 +124,7 @@ class QuailTester {
         $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
         $query->execute(
           array(
-            'status' => STATUS_TESTED,
+            'status' => $finishedWorker->getStatus(),
             'url_id' => $finishedWorker->getQueueId(),
           )
         );

@@ -6,6 +6,8 @@ class PhantomQuailWorker extends Thread {
   protected $phantomcore_name;
   protected $result;
 
+  protected $status = STATUS_TESTING;
+
   // Array to hold all the raw results per test.
   protected $rawQuailResults = array();
   // Array to hold all the results per test.
@@ -47,44 +49,53 @@ class PhantomQuailWorker extends Thread {
     $phantomDir = __DIR__ . '/../';
 
     $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes ' . $phantomDir . 'phantomquail.js ' . $url;
-    $output = shell_exec($command);
-    // Now process the results from quail.
-    // We have to generate a unique id later.
-    // In order to do this, we count the results, so it can be
-    // included in the unique id.
-    $count = 0;
+    try {
+      $phantomjsTimout = get_setting('phantomjs_timeout', 10);
+      $output = exec_timeout($command, $phantomjsTimout);
+      // Now process the results from quail.
+      // We have to generate a unique id later.
+      // In order to do this, we count the results, so it can be
+      // included in the unique id.
+      $count = 0;
 
-    // Create an array for all quail results.
-    // We need to use this 'in between array' because in threads object variable
-    // arrays don't allow array_push or [].
-    $quailResults = array();
-    // Create an array for
-    foreach(preg_split("/((\r?\n)|(\r\n?))/", $output) as $line){
-      if ($line != '' && preg_match("/^{/", $line)) {
-        // do stuff with $line
-        $quailResult = json_decode($line);
+      // Create an array for all quail results.
+      // We need to use this 'in between array' because in threads object variable
+      // arrays don't allow array_push or [].
+      $quailResults = array();
+      // Create an array for
+      foreach (preg_split("/((\r?\n)|(\r\n?))/", $output) as $line) {
+        if ($line != '' && preg_match("/^{/", $line)) {
+          // do stuff with $line
+          $quailResult = json_decode($line);
 
-        // Add the url to the quailResult.
-        $quailResult->url = $this->urlObject->full_url;
+          // Add the url to the quailResult.
+          $quailResult->url = $this->urlObject->full_url;
 
 
-        // Process the quail result to a json object which can be send to solr.
-        $processedResult = $this->preprocessQuailResult($quailResult, $count);
-        if ($processedResult) {
-          // Add the documents to the document list in solr.
-          $quailResults[] = $processedResult;
-          $count++;
+          // Process the quail result to a json object which can be send to solr.
+          $processedResult = $this->preprocessQuailResult($quailResult, $count);
+          if ($processedResult) {
+            // Add the documents to the document list in solr.
+            $quailResults[] = $processedResult;
+            $count++;
+          }
         }
       }
+      $this->rawQuailResults = $quailResults;
+      $this->processQuailResults();
+
+      // Now send the case results to solr.
+      $this->sendCaseResultsToSolr();
+
+      // Update the result.
+      $this->result = $this->urlObject->url_id;
+      // Set the status to tested.
+      $this->status = STATUS_TESTED;
+    } catch (Exception $e) {
+      // If there is an exception, probably phantomjs timed out.
+      $this->status = STATUS_ERROR;
+      $this->debugMessage($e->getMessage());
     }
-    $this->rawQuailResults = $quailResults;
-    $this->processQuailResults();
-
-    // Now send the case results to solr.
-    $this->sendCaseResultsToSolr();
-
-    // Update the result.
-    $this->result = $this->urlObject->url_id;
   }
 
   /**
@@ -121,7 +132,7 @@ class PhantomQuailWorker extends Thread {
       // First do the quailResults.
       $quailResults[] = $result;
       // Expand on case
-      if (property_exists($result, 'cases') && count($result->cases) > 0) {
+      if (isset($result->cases) && count($result->cases) > 0 && is_array($result->cases)) {
         foreach ($result->cases as $case) {
           $caseItem = $result;
           // Unset the cases.
@@ -285,8 +296,10 @@ class PhantomQuailWorker extends Thread {
           foreach ($quailResult->guidelines->wcag as $wcagCode => $wcagItem) {
             $quailResult->applicationframework[] = $wcagCode;
             // Add the techniques.
-            foreach ($wcagItem->techniques as $technique) {
-              $quailResult->techniques[] = $technique;
+            if (isset($wcagItem->techniques) && count($wcagItem->techniques) > 0 && is_array($wcagItem->techniques)) {
+              foreach ($wcagItem->techniques as $technique) {
+                $quailResult->techniques[] = $technique;
+              }
             }
           }
         }
@@ -324,6 +337,17 @@ class PhantomQuailWorker extends Thread {
   public function getResult() {
     return $this->result;
   }
+
+  /**
+   * Get status.
+   *
+   * @return int
+   */
+  public function getStatus() {
+    return $this->status;
+  }
+
+
 
   /**
    * Print a debug message.
