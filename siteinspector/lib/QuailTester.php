@@ -56,8 +56,13 @@ class QuailTester {
 //        $worker->run();
         $this->workers[] = $worker;
       }
+      // Add some debugging.
+      $this->log('Prepare to send commit to solr.');
+
       $this->sendCommitToPhantomcoreSolr();
 
+
+      $this->log('Commit to solr done.');
 
       // Process the finished workers.
       $this->processFinishedWorkers();
@@ -67,11 +72,13 @@ class QuailTester {
         break;
       }
 
+      $this->log('Workers activated, waiting.');
       // Join workers and put them in the finishedWorkers array.
       foreach ($this->workers as $worker) {
         $worker->join();
         $this->finishedWorkers[] = $worker;
       }
+      $this->log('All workers joined, continuing');
 
       // Update the elapsed time.
       $oldElapsedTime = $this->elapsedTime;
@@ -83,6 +90,7 @@ class QuailTester {
       $message = 'Analysis used ' . $processTime . ' seconds for ' . $this->workerCount . 'workers';
       $this->log($message);
     }
+    $this->log('Elapsed time exceeded. Finishing.');
     // Process the finished workers.
     $this->processFinishedWorkers();
     $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
@@ -138,7 +146,7 @@ class QuailTester {
    * @param $message
    */
   protected function log($message) {
-    print $message . "\n";
+    print __CLASS__ . ':' .  $message . "\n";
   }
 
   /**
