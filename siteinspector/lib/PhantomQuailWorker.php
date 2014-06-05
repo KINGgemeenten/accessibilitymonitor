@@ -51,7 +51,10 @@ class PhantomQuailWorker extends Thread {
     $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes ' . $phantomDir . 'phantomquail.js ' . $url;
     try {
       $phantomjsTimout = get_setting('phantomjs_timeout', 10);
+      // Print some debug info.
+      $this->debugMessage('Starting phantomjs');
       $output = exec_timeout($command, $phantomjsTimout);
+      $this->debugMessage('Phantomjs executed succesfully.');
       // Now process the results from quail.
       // We have to generate a unique id later.
       // In order to do this, we count the results, so it can be
@@ -85,7 +88,9 @@ class PhantomQuailWorker extends Thread {
       $this->processQuailResults();
 
       // Now send the case results to solr.
+      $this->debugMessage('Sending results to Solr.');
       $this->sendCaseResultsToSolr();
+      $this->debugMessage('Results sended to Solr.');
 
       // Update the result.
       $this->result = $this->urlObject->url_id;
@@ -345,6 +350,15 @@ class PhantomQuailWorker extends Thread {
    */
   public function getStatus() {
     return $this->status;
+  }
+
+  /**
+   * Get the website id of the url.
+   *
+   * @return mixed
+   */
+  public function getWebsiteId() {
+    return $this->urlObject->wid;
   }
 
 
