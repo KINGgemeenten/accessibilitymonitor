@@ -129,11 +129,21 @@ class QuailTester {
     // If there are finished workers, process the results and die.
     if (count($this->finishedWorkers)) {
       foreach ($this->finishedWorkers as $finishedWorker) {
+        // Update the status of the url.
         $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
         $query->execute(
           array(
             'status' => $finishedWorker->getStatus(),
             'url_id' => $finishedWorker->getQueueId(),
+          )
+        );
+        // Set the last_analysis date.
+        $time = time();
+        $query = $this->pdo->prepare("UPDATE website SET last_analysis=:time WHERE wid=:wid");
+        $query->execute(
+          array(
+            'time' => $time,
+            'wid' => $finishedWorker->getWebsiteId(),
           )
         );
       }
