@@ -1,0 +1,9 @@
+# Init module for vagrant integration.
+
+- hosts: 127.0.0.1
+  connection: local
+
+  tasks:
+
+    - name: Checkout triquanta server control
+      git: dest=servercontrol repo=git@bitbucket.org:triquanta/ansible-toegankelijk.git version=master

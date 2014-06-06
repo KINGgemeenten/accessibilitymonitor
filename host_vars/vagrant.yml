@@ -1,0 +1,98 @@
+ansible_triquanta_files_subdir: /servercontrol
+
+lamp:
+  admin_email: beheer@triquanta.nl
+  apache:
+    port: 80
+    root: /var/www/
+    modules:
+        - alias
+        - auth_basic
+        - autoindex
+        - deflate
+        - dir
+        - env
+        - expires
+        - php5
+        - rewrite
+        - setenvif
+        - status
+        - vhost_alias
+  php:
+    timezone: Europe/Berlin
+    php_version: 5
+    max_execution_time: 30
+    max_input_time: 60
+    memory_limit: 256M
+    upload_max_filesize: 24M
+    post_max_size: 24M
+    allow_url_fopen: On
+    allow_url_include: Off
+    session_cookie_httponly: 1
+    display_errors: Off
+    error_reporting: E_ALL & ~E_NOTICE & ~E_STRICT & ~E_DEPRECATED
+    apc_shm_size: 256M
+
+  mysql:
+    root_password: 123456
+    users:
+        - name: gt_test
+          password: z31lb00t
+          privs: "gt_test.*:ALL"
+        - name: gt_acc
+          password: z31lb00t
+          privs: "gt_acc.*:ALL"
+        - name: inspector
+          password: z31lb00t
+          privs: "inspector.*:ALL"
+
+
+mysql:
+  root_password: 123456
+  users:
+    - name: inspector
+      password: z31lb00t
+      privs: "inspector.*:ALL"
+      host: '%'
+
+
+users:
+  - name: root
+    authorized:
+      - ../../../files/keys/jur.pub
+      - ../../../files/keys/server-control.pub
+
+phantomjs_version: "1.9.2"
+phantomjs_url: "https://phantomjs.googlecode.com/files/phantomjs-1.9.2-linux-x86_64.tar.bz2"
+
+tomcat6_memory_xmx: 1096m
+
+solr_cores:
+  - name: "nutch"
+    solr_conf: "default/nutch/conf"
+  - name: "phatnomcore"
+    solr_conf: "default/phantomcore-v2.0/conf"
+
+
+solr_version: "4.5.1"
+
+php_cli_xdebug_remote_host: 192.168.50.1
+
+ufw_whitelisted_ports:
+  -  { port: 22,  protocol: tcp }
+  -  { port: 53,  protocol: udp }
+  -  { port: 80,  protocol: tcp }
+  -  { port: 443, protocol: tcp }
+  -  { port: 8080, protocol: tcp }
+  -  { port: 3306, protocol: tcp }
+  -  { port: 9000, protocol: tcp }
+
+ufw_whitelisted_ipv4_addresses:
+  - { address: 192.168.50.1,    port: 8080, protocol: tcp }
+  - { address: 192.168.50.1,    port: 8000, protocol: tcp }
+#  - { address: 192.168.50.1,    port: 3306, protocol: tcp }
+
+#  - name: www-data
+#    authorized:
+#      - ../../../files/keys/jur.pub
+#      - ../../../files/keys/server-control.pub
