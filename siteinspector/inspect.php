@@ -154,26 +154,31 @@ function updateUrlFromNutch() {
 
   // Get the database connection.
   $pdo = getDatabaseConnection();
-  $query = $pdo->prepare("SELECT * FROM website WHERE status=:status");
-  $query->execute(array('status' => STATUS_SCHEDULED));
+  $query = $pdo->prepare("SELECT * FROM website WHERE status IN (:status1, :status2)");
+  $query->execute(array(
+      ':status1' => STATUS_SCHEDULED,
+      ':status2' => STATUS_TESTED,
+    ));
   $toBeTested = $query->fetchAll(PDO::FETCH_OBJ);
 
   if (count($toBeTested)) {
     foreach ($toBeTested as $entry) {
-      // Now check if there are already url's available for this website.
-      // If so, set the status to scheduled, otherwise get a bunch of url's from nutch solr.
-      $query = $pdo->prepare("SELECT * FROM urls WHERE wid=:wid");
-      $query->execute(array('wid' => $entry->wid));
-      $results = $query->fetchAll(PDO::FETCH_OBJ);
-      if (count($results)) {
-        // Update the records.
-        $update = $pdo->prepare("UPDATE urls SET status=:status WHERE wid=:wid");
-        $update->execute(array(
-            'status' => STATUS_SCHEDULED,
-            'wid' => $entry->wid
+      // Now check if there are still url's to be tested for this website.
+      // If not, try to get more from solr..
+      $query = $pdo->prepare("SELECT count(*) FROM urls WHERE wid=:wid AND status=:status");
+      $query->execute(array(
+          'wid' => $entry->wid,
+          'status' => STATUS_SCHEDULED
+        ));
+      $results = $query->fetchColumn();
+      if ($results == 0) {
+        // Get the total amount url's so we can define a start for Solr.
+        $query = $pdo->prepare("SELECT count(*) FROM urls WHERE wid=:wid");
+        $query->execute(array(
+            'wid' => $entry->wid,
           ));
-      }
-      else {
+        $start = $query->fetchColumn();
+
         // Create a Solarium instance.
         $nutch_config = get_setting('solr_nutch');
         $client = new Solarium\Client($nutch_config);
@@ -193,6 +198,8 @@ function updateUrlFromNutch() {
 
         // Set the rows.
         $query->setRows($urls_per_sample);
+        // Set the start
+        $query->setStart($start);
 
         // Get the results.
         $solrResults = $client->select($query);
@@ -200,17 +207,29 @@ function updateUrlFromNutch() {
         // Set the priority to 1, for the first document and increase.
         $priority = 1;
         foreach ($solrResults as $doc) {
-          // Insert a new entry.
-          $sql = "INSERT INTO urls (wid,full_url,status,priority) VALUES (:wid,:full_url,:status,:priority)";
-          $insert = $pdo->prepare($sql);
-          $result = $insert->execute(array(
+          // Check if entry already exists.
+          $query = $pdo->prepare("SELECT count(*) FROM urls WHERE wid=:wid AND full_url=:full_url");
+          $query->execute(array(
               'wid' => $entry->wid,
               'full_url' => $doc->url,
-              'status' => STATUS_SCHEDULED,
-              'priority' => $priority,
             ));
-          // Increase the priority.
-          $priority++;
+          $present = $query->fetchColumn();
+
+          if (! $present) {
+            // Insert a new entry.
+            $sql = "INSERT INTO urls (wid,full_url,status,priority) VALUES (:wid,:full_url,:status,:priority)";
+            $insert = $pdo->prepare($sql);
+            $result = $insert->execute(
+              array(
+                'wid'      => $entry->wid,
+                'full_url' => $doc->url,
+                'status'   => STATUS_SCHEDULED,
+                'priority' => $priority,
+              )
+            );
+            // Increase the priority.
+            $priority++;
+          }
         }
       }
     }
