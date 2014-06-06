@@ -467,6 +467,9 @@ class PhantomQuailWorker extends Thread {
    * @param $message
    */
   public function debugMessage($message) {
-    print $this->urlObject->url_id . ': ' . $message . "\n";
+    $debug  = get_setting('debug', FALSE);
+    if ($debug) {
+      print $this->urlObject->url_id . ': ' . $message . "\n";
+    }
   }
 }

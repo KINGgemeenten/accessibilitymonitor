@@ -57,12 +57,12 @@ class QuailTester {
         $this->workers[] = $worker;
       }
       // Add some debugging.
-      $this->log('Prepare to send commit to solr.');
+      $this->debugMessage('Prepare to send commit to solr.');
 
       $this->sendCommitToPhantomcoreSolr();
 
 
-      $this->log('Commit to solr done.');
+      $this->debugMessage('Commit to solr done.');
 
       // Process the finished workers.
       $this->processFinishedWorkers();
@@ -72,13 +72,13 @@ class QuailTester {
         break;
       }
 
-      $this->log('Workers activated, waiting.');
+      $this->debugMessage('Workers activated, waiting.');
       // Join workers and put them in the finishedWorkers array.
       foreach ($this->workers as $worker) {
         $worker->join();
         $this->finishedWorkers[] = $worker;
       }
-      $this->log('All workers joined, continuing');
+      $this->debugMessage('All workers joined, continuing');
 
       // Update the elapsed time.
       $oldElapsedTime = $this->elapsedTime;
@@ -160,6 +160,18 @@ class QuailTester {
    */
   protected function log($message) {
     print __CLASS__ . ':' .  $message . "\n";
+  }
+
+  /**
+   * Print a debug message.
+   *
+   * @param $message
+   */
+  public function debugMessage($message) {
+    $debug  = get_setting('debug', FALSE);
+    if ($debug) {
+      print __CLASS__ . ':' . $message . "\n";
+    }
   }
 
   /**

@@ -10,6 +10,9 @@ $global_vars['urls_per_sample'] = 10;
 $global_vars['max_execution_time'] = 100;
 
 $global_vars['phantomjs_executable'] = '/usr/bin/phantomjs';
+$global_vars['phantomjs_timeout'] = 10;
+
+$global_vars['debug'] = FALSE;
 // Solr settings.
 $global_vars['solr_phantom'] = array(
   'endpoint' => array(
