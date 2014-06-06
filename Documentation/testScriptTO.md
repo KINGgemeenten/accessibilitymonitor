@@ -82,3 +82,23 @@ We are going to use one script and start threads using pthreads to parallel proc
 
 
     }
+
+### Hanging threads
+
+Very often the threads hang, which causes the whole inpector script to become stalled.
+To account for this, the method of thread handling should be altered:
+
+Quailtester:
+
+- Alter the getTestingTargets function to getTestingTarget so only one result is added each time.
+- Add workers to the workers array until the maximum is reached.
+- Do some general work
+- Sleep for 0.1 seconds (100000000 nanoseconds).
+- Check the workers. If they are done, or exceed the maximum time, join or kill it, put it in the finishedWorkers array and unset it from the workers array.
+
+PhantomQuailWorker:
+
+- Record the start time in the constructor
+- Add a method to check if a timeout occured
+- Store the process in execTimeout in a object var
+- Alter the kill method, so it also kills the phantomjs process.
