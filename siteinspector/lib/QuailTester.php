@@ -139,7 +139,7 @@ class QuailTester {
         );
         // Set the last_analysis date.
         $time = time();
-        $this->log('time: ' . $time);
+        $this->debugMessage('time: ' . $time);
         $query = $this->pdo->prepare("UPDATE website SET last_analysis=:time WHERE wid=:wid");
         $query->execute(
           array(
