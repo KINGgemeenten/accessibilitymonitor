@@ -64,7 +64,8 @@ class PhantomQuailWorker extends Thread {
     if (! preg_match('/^http/', $testUrl)) {
       $testUrl = 'http://' . $testUrl;
     }
-    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes node_modules/phantalyzer/phantalyzer.js ' . $testUrl;
+    $phantomDir = __DIR__ . '/../';
+    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes ' . $phantomDir . 'node_modules/phantalyzer/phantalyzer.js ' . $testUrl;
     $output = shell_exec($command);
     $preg_split = preg_split("/((\r?\n)|(\r\n?))/", $output);
     $detectedAppsArray = array();
