@@ -24,6 +24,9 @@ function main($operation = NULL, $workerCount = 2) {
   // First update the status.
   updateStatus();
 
+  // Then kill all stalled phantomjs processes.
+  killStalledProcesses();
+
   // Main controller for the script.
   if (!isset($operation)) {
     print "inspect.php excepts 1 argument: check or update-sitelist\n";
@@ -54,6 +57,11 @@ function main($operation = NULL, $workerCount = 2) {
     case 'update-sitelist':
       // Update the url's which need to be tested.
       updateUrlFromNutch();
+      break;
+
+    case 'detect-cms':
+      // Detect the cms.
+      detectCms();
       break;
 
     // Delete solr phantomcore.
@@ -105,7 +113,35 @@ function commitSolr() {
   $result = $client->update($update);
 }
 
+/**
+ * Kill all stalled phantomjs processes.
+ */
+function killStalledProcesses() {
+  shell_exec('killall --older-than 2m phantomjs');
+}
 
+/**
+ * Detect the cms of the first url which is not detected.
+ */
+function detectCms() {
+  // Get the database connection.
+  $pdo = getDatabaseConnection();
+
+  $query = $pdo->prepare("SELECT * FROM urls WHERE cms IS NULL");
+  $query->execute();
+  if ($row = $query->fetch()) {
+    // Phantomjs path.
+    $phantomjsExecutable = get_setting('phantomjs_executable');
+    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes node_modules/phantalyzer/phantalyzer.js ' . $row['full_url'] . ' | grep detectedApps';
+    $output = shell_exec($command);
+    $detectedApps = str_replace('detectedApps: ', '', $output);
+    $update = $pdo->prepare("UPDATE urls SET cms=:cms WHERE url_id=:url_id");
+    $update->execute(array(
+        'cms' => $detectedApps,
+        'url_id' => $row['url_id'],
+      ));
+  }
+}
 /**
  * Update the website entries in the database;
  */
