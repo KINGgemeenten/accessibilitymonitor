@@ -3,8 +3,14 @@
 class PhantomQuailWorker extends Thread {
 
   protected $urlObject;
+  protected $websiteObject;
   protected $phantomcore_name;
   protected $result;
+
+  // Store the website cms.
+  protected $websiteCms;
+  // Store the website id, if the website analysis has been done.
+  protected $wid;
 
   protected $status = STATUS_TESTING;
 
@@ -20,8 +26,13 @@ class PhantomQuailWorker extends Thread {
   // Store the queueid of the object.
   protected $queueId;
 
-  public function __construct($urlObject, $queueId) {
-    $this->urlObject = $urlObject;
+  public function __construct($urlObject, $websiteObject, $queueId) {
+   $this->urlObject = $urlObject;
+    $this->websiteObject = $websiteObject;
+    // Fill the websiteCms if present.
+    if (isset($websiteObject->cms) && $websiteObject->cms != '') {
+      $this->websiteCms = $websiteObject->cms;
+    }
     $this->queueId = $queueId;
     $this->phantomcore_name = get_setting('solr_phantom_corename');
   }
@@ -38,7 +49,70 @@ class PhantomQuailWorker extends Thread {
     // Composer autoloader.
     require( __DIR__ . '/../vendor/autoload.php');
     require( __DIR__ . '/../settings.php');
+    // If the website has not yet a cms detected, perform the detection here.
+    $this->detectCms();
+    $this->analyzeQuail();
+  }
 
+  /**
+   * Detect the cms of the main website.
+   */
+  protected function detectCms() {
+    $phantomjsExecutable = get_setting('phantomjs_executable');
+    $testUrl = $this->websiteObject->url;
+    // Add http, if not present.
+    if (! preg_match('/^http/', $testUrl)) {
+      $testUrl = 'http://' . $testUrl;
+    }
+    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes node_modules/phantalyzer/phantalyzer.js ' . $testUrl;
+    $output = shell_exec($command);
+    $preg_split = preg_split("/((\r?\n)|(\r\n?))/", $output);
+    $detectedAppsArray = array();
+    foreach ($preg_split as $line) {
+      // Check the line detectedApps.
+      if ($line != '' && preg_match("/^detectedApps/", $line)) {
+        $detectedApps = str_replace('detectedApps: ', '', $line);
+        $detectedAppsArray = explode('|', $detectedApps);
+      }
+      // Also check the generator.
+      if ($line != '' && preg_match('/<meta name="generator" content="([A-Za-z\s]*)"/', $line, $matches)) {
+        $generator = $matches[1];
+      }
+    }
+    // If a generator is found, add it to the detected apps.
+    if (isset($generator)) {
+      // Add the generator to the detected apps.
+      $detectedAppsArray[] = $generator;
+    }
+    $this->websiteCms = implode('|', $detectedAppsArray);
+    // Fill the wid property in order to trigger the save in the quailTester.
+    $this->wid = $this->websiteObject->wid;
+  }
+
+  /**
+   * Get the website id.
+   *
+   * This property only returns result, if a succesful cms detection has been performed.
+   *
+   * @return mixed
+   */
+  public function getWid() {
+    return $this->wid;
+  }
+
+  /**
+   * Get the website cms.
+   *
+   * @return mixed
+   */
+  public function getWebsiteCms() {
+    return $this->websiteCms;
+  }
+
+  /**
+   * Perform the quail analysis.
+   */
+  protected function analyzeQuail() {
     // First delete all solr records for this url.
     $this->deleteCasesFromSolr();
 
@@ -134,6 +208,13 @@ class PhantomQuailWorker extends Thread {
     $quailCases = array();
     $quailFinalResult = array();
     foreach ($this->rawQuailResults as $result) {
+      // Add the technologies.
+      if (isset($this->websiteCms)) {
+        $technologies = explode('|', $this->websiteCms);
+        if (count($technologies) > 0) {
+          $result->technologies = $technologies;
+        }
+      }
       // First do the quailResults.
       $quailResults[] = $result;
       // Expand on case
@@ -236,6 +317,9 @@ class PhantomQuailWorker extends Thread {
       }
       if (property_exists($case, 'techniques')) {
         $doc->techniques = $case->techniques;
+      }
+      if (property_exists($case, 'technologies')) {
+        $doc->technologies = $case->technologies;
       }
       $doc->tags = $case->tags;
       $doc->testability = $case->testability;
