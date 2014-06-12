@@ -84,6 +84,9 @@ function main($operation = NULL, $workerCount = 2) {
       break;
   }
 
+  // Explicitly exit when at the end.
+  exit;
+
 }
 
 /**
