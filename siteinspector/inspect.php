@@ -38,8 +38,18 @@ function main($operation = NULL, $workerCount = 2) {
       // If so, exit.
       $pid = new pid('/tmp');
       if($pid->already_running) {
-        echo "Already running.\n";
-        exit;
+        echo "Already running. Checking last update.\n";
+        $lastUpdateTimeAgo = getTimeAgoLastAnalysis();
+        // If the last update was more than 40 seconds ago. The process might be stalled.
+        // In that case, kill the process.
+        if ($lastUpdateTimeAgo > 40) {
+          shell_exec('kill -KILL ' . $pid->pid);
+          echo "Process killed because last action was " . $lastUpdateTimeAgo . " seconds ago.\n";
+        }
+        else {
+          echo "Process is still running\n";
+          exit;
+        }
       }
       else {
         echo "Running...\n";
@@ -118,6 +128,23 @@ function commitSolr() {
  */
 function killStalledProcesses() {
   shell_exec('killall --older-than 2m phantomjs');
+}
+
+/**
+ * Get amount of seconds after last update.
+ *
+ * @return int
+ */
+function getTimeAgoLastAnalysis() {
+  // Get the database connection.
+  $pdo = getDatabaseConnection();
+
+  // Get the total amount url's so we can define a start for Solr.
+  $query = $pdo->prepare("SELECT last_analysis FROM website ORDER BY last_analysis DESC LIMIT 1");
+  $query->execute();
+  $lastAnalysis = $query->fetchColumn();
+  $now = time();
+  return $now - $lastAnalysis;
 }
 
 /**
