@@ -90,7 +90,7 @@ To account for this, the method of thread handling should be altered:
 
 Quailtester:
 
-- Alter the getTestingTargets function to getTestingTarget so only one result is added each time.
+- Alter the getTestingUrls function to getTestingTarget so only one result is added each time.
 - Add workers to the workers array until the maximum is reached.
 - Do some general work
 - Sleep for 0.1 seconds (100000000 nanoseconds).
