@@ -252,9 +252,28 @@ function updateUrlFromNutch() {
         // Create a query.
         $query = $client->createQuery($client::QUERY_SELECT);
 
+        // Set some query parameters.
+        $query->addParam('defType', 'edismax');
+        $query->addParam('qf', 'host^0.001 url^2');
+        $query->addParam('df', 'host');
+
         // Add the filter.
-        $baseUrl = str_replace('www.', '', $entry->url);
-        $query->setQuery('domain:' . $baseUrl);
+//        $baseUrl = str_replace('www.', '', $entry->url);
+        // Get the host of the url.
+        $parts = parse_url($entry->url);
+        $host = $parts['host'];
+//        $query->setQuery('host:' . $host);
+        $query->setQuery($host);
+
+        // Add a filter application type, so we only have html and no pdf's!
+        $type = 'application/xhtml+xml';
+        $type = htmlspecialchars($type);
+        $type_query = 'type:application/xhtml+xml OR type:text/html';
+        $query->createFilterQuery('type')->setQuery($type_query);
+
+        // Now also add a filter query for host.
+        $host_query = 'host:"' . $host . '"';
+        $query->createFilterQuery('host')->setQuery($host_query);
 
         // Set the fields.
         $query->setFields(array('url', 'score'));
