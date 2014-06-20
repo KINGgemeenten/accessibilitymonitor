@@ -266,8 +266,6 @@ function updateUrlFromNutch() {
         $query->setQuery($host);
 
         // Add a filter application type, so we only have html and no pdf's!
-        $type = 'application/xhtml+xml';
-        $type = htmlspecialchars($type);
         $type_query = 'type:application/xhtml+xml OR type:text/html';
         $query->createFilterQuery('type')->setQuery($type_query);
 
