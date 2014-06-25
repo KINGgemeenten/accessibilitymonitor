@@ -62,119 +62,72 @@ page.open(address, function (status) {
       tests[testFromCLI] = singleTest;
       console.log(singleTest);
     }
-    else {
-      tests = allTests;
-    }
+
+
 
     // Inject assets into the page.
     page.injectJs('js/jquery-1.10.1.js');
     page.injectJs('js/jquery.hasEventListener-2.0.4.js');
     page.injectJs('/opt/quail/dist/quail.jquery.js');
 
-    // The number of items that will attempt to write data from the evaluation.
-    // When the evaulation starts, it will register how many items will
-    // report back.
-    var len = 0;
+    // Handle results from the test runs.
+    var len = size(tests);
+
     // Open a write stream to an output file.
-    var stream = fs.open(dir + '/results.js', 'w');
-    // The callback function reachable from the page.evaluate* methods.
-    page.onCallback = function(action, data) {
-      switch (action) {
-        // Len is the number of times we expect to log data.
-        case 'setCounter':
-          len = data;
-          break;
-        case 'writeData':
-          --len;
-          // All the tests have completed.
-          if (len === 0) {
-            stream.write(data);
-            stream.close();
-            quitPhantom('Testing complete');
-          }
-          break;
-        case 'quit':
-          quitPhantom(data);
-          break;
-        default:
-          break;
+//    var stream = fs.open(dir + '/results.js', 'w');
+    page.onCallback = function(data) {
+      var test = JSON.parse(data);
+//      console.log('Finished testing ' + test.id + '.');
+      console.log(data);
+//      stream.write(data);
+      --len;
+      // All the tests have completed.
+      if (len === 0) {
+//        stream.close();
+        quitPhantom('Testing complete');
       }
     };
 
-    // Run the evaluation.
-    page.evaluateAsync(function (address, tests, size) {
+    var testname;
+    for (testname in tests) {
+      page.evaluateAsync(function (address, tests, testname) {
 //        console.log('Running ' + testname + '...')
-      jQuery.noConflict();
-      var callPhantom = window && window.callPhantom || function () {};
-      // Tell the client that we're starting the test run.
-      var scLen = size(quail.guidelines.wcag.successCriteria);
-      console.log('Beginning evaluation of ' + size(tests) + ' tests and ' + scLen + ' Success Criteria.');
-      // Determine how many data writes we'll make.
-      callPhantom('setCounter', scLen + 1); // +1 because we attempt a data write once for all tests on testCollectionComplete
-      // Basic output structure attributes.
-      var output = {
-        tests: {},
-        successCriteria: {}
-      };
-      jQuery('html').quail({
-        accessibilityTests: tests,
-        // Called when an individual Case in a test is resolved.
-        caseResolve: function (eventName, test, _case) {
-          var name = test.get('name');
-          if (!output.tests[name]) {
-            output.tests[name] = {
-              id: name,
-              title: test.get('title'),
-              description: test.get('description'),
-              type: test.get('type'),
-              testability: test.get('testability'),
-              guidelines: test.get('guidelines') || {},
-              tags: test.get('tags'),
-              cases: []
-            };
-          }
-          // Push the case into the results for this test.
-          output.tests[name].cases.push({
-            status: _case.get('status'),
-            selector: _case.get('selector'),
-            html: _case.get('html')
-          });
-        },
-        // Called when all the Cases in a Test are resolved.
-        testComplete: function (eventName, test) {
-          console.log('Finished testing ' + test.get('name') + '.');
-        },
-        // Called when all the Tests in a TestCollection are completed.
-        testCollectionComplete: function (eventName, testCollection) {
-          // Push the results of the test out to the Phantom listener.
-          console.log('The test collection has been evaluated.');
-          callPhantom('writeData', JSON.stringify(output));
-        },
-        successCriteriaEvaluated : function (eventName, successCriteria, testCollection) {
-          var name = successCriteria.get('name');
-          var result;
-          console.log('Evaluating: ' + name);
-          // Push the results of the test out to the Phantom listener.
-          output.successCriteria[name] = {};
-          // Get some stringifyable data from the results.
-          for (result in successCriteria.results) {
-            if (successCriteria.results.hasOwnProperty(result)) {
-              output.successCriteria[name][result] = [];
-              var looper = function (index, _case) {
-                output.successCriteria[name][result].push({
-                  selector: _case.get('selector'),
-                  html: _case.get('html')
-                });
-              };
-              // Go through each case for this result and get its selector and HTML.
-              successCriteria.results[result].each(looper);
+        jQuery.noConflict();
+        var test = tests[testname];
+        // Basic test attributes.
+        var output = {
+          id: testname,
+          title: test.title,
+          description: test.description,
+          type: test.type,
+          testability: test.testability,
+          guidelines: test.guidelines || {},
+          tags: test.tags,
+          cases: []
+        };
+        jQuery('html').quail({
+          accessibilityTests: tests,
+          guideline: [testname],
+          // Called when an individual Case in a test is resolved.
+          caseResolve: function (eventName, test, _case) {
+            output.cases.push({
+              status: _case.get('status'),
+              selector: _case.get('selector'),
+              html: _case.get('html')
+            });
+          },
+          // Called when all the Cases in a Test are resolved.
+          testComplete: function (eventName, test) {},
+          // Called when all the Tests in a TestCollection are completed.
+          complete: function (eventName, testCollection) {
+            // Push the results of the test out to the Phantom listener.
+            if (typeof window.callPhantom === 'function') {
+              window.callPhantom(JSON.stringify(output));
             }
           }
-          // Attempt to write out the data.
-          callPhantom('writeData', JSON.stringify(output));
-        }
-      });
-    }, 0, size, tests, address);
+        });
+      }, 0, testname, tests, address);
+    }
   }
 });
 
@@ -196,11 +149,11 @@ function quitPhantom (reason) {
  *   The size of the object determined by the number of keys.
  */
 function size (obj) {
-  var s = 0, key;
+  var size = 0, key;
   for (key in obj) {
     if (obj.hasOwnProperty(key)) {
-      s++;
+      size++;
     }
   }
-  return s;
+  return size;
 }
