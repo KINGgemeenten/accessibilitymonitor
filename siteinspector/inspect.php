@@ -21,8 +21,10 @@ main($argument1, $argument2);
 
 
 function main($operation = NULL, $workerCount = 2) {
-  // First update the status.
-  updateStatus();
+  if (get_setting('is_master', FALSE)) {
+    // First update the status.
+    updateStatus();
+  }
 
   // Then kill all stalled phantomjs processes.
   killStalledProcesses();
