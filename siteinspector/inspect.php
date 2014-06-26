@@ -427,7 +427,8 @@ function getDatabaseConnection() {
     $database = get_setting('mysql_database');
     $username = get_setting('mysql_username');
     $password = get_setting('mysql_password');
-    $dsn = 'mysql:host=localhost;dbname=' . $database;
+    $host = get_setting('mysql_host');
+    $dsn = 'mysql:host=' . $host . ';dbname=' . $database;
     $pdo_object = new PDO($dsn, $username, $password);
     $pdo_object->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   }

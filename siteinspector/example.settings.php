@@ -6,6 +6,7 @@ $global_vars = array();
 $global_vars['mysql_database'] = 'inspector';
 $global_vars['mysql_username'] = 'inspector';
 $global_vars['mysql_password'] = 'z31lb00t';
+$global_vars['mysql_host'] = 'localhost';
 $global_vars['urls_per_sample'] = 10;
 $global_vars['max_execution_time'] = 100;
 
