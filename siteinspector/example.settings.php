@@ -14,6 +14,12 @@ $global_vars['phantomjs_executable'] = '/usr/bin/phantomjs';
 $global_vars['phantomjs_timeout'] = 10;
 
 $global_vars['debug'] = FALSE;
+
+// Google Pagespeed API settings.
+$global_vars['google_pagespeed_api_url'] = 'https://www.googleapis.com/pagespeedonline/v1/runPagespeed';
+$global_vars['google_pagespeed_api_key'] = 'AIzaSyA3Q_W9PO_ibkvSzVGxfncaMNNu3382lcw';
+$global_vars['google_pagespeed_api_strategy'] = 'mobile';
+
 // Solr settings.
 $global_vars['solr_phantom'] = array(
   'endpoint' => array(
