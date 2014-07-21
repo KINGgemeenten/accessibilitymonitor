@@ -2,9 +2,9 @@
 # Version 1191
 # http://code.google.com/p/sequel-pro
 #
-# Host: 192.168.50.5 (MySQL 5.5.37-0ubuntu0.12.04.1)
-# Database: inspector
-# Generation Time: 2014-06-03 11:44:22 +0000
+# Host: vps38899.public.cloudvps.com (MySQL 5.5.38-0ubuntu0.12.04.1)
+# Database: inspector_acc
+# Generation Time: 2014-07-21 09:04:38 +0000
 # ************************************************************
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -28,8 +28,9 @@ CREATE TABLE `urls` (
   `full_url` varchar(1024) NOT NULL,
   `status` int(11) NOT NULL,
   `priority` int(11) DEFAULT NULL,
+  `cms` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`url_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=841 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=102277 DEFAULT CHARSET=latin1;
 
 
 
@@ -43,9 +44,10 @@ CREATE TABLE `website` (
   `url` varchar(1024) NOT NULL,
   `status` int(10) unsigned NOT NULL,
   `last_analysis` int(11) DEFAULT NULL,
+  `cms` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`wid`),
   KEY `url` (`url`(767))
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=125 DEFAULT CHARSET=latin1;
 
 
 
