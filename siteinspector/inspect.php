@@ -185,11 +185,17 @@ function determine_page_speed() {
   $google_pagespeed_api_url = get_setting('google_pagespeed_api_url');
   $google_pagespeed_api_key = get_setting('google_pagespeed_api_key');
   $google_pagespeed_api_strategy = get_setting('google_pagespeed_api_strategy');
+  $google_pagespeed_api_fetch_limit = get_setting('google_pagespeed_api_fetch_limit');
 
   // Get a database connection.
   $pdo = getDatabaseConnection();
 
-  $query = $pdo->prepare("SELECT * FROM urls WHERE mobile_score IS NULL");
+  if ($google_pagespeed_api_fetch_limit) {
+    $query = $pdo->prepare("SELECT * FROM urls WHERE mobile_score IS NULL limit " . $google_pagespeed_api_fetch_limit);
+  } else {
+    $query = $pdo->prepare("SELECT * FROM urls WHERE mobile_score IS NULL");
+  }
+
   $query->execute();
   if ($inspector_urls = $query->fetchAll()) {
     foreach($inspector_urls as $inspector_url) {
