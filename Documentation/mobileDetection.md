@@ -82,3 +82,25 @@ function testMobile($url = NULL) {
 
 }
 ````
+
+## Settings and setup
+
+The Mobile scoring logic needs to be setup before it can be used. Using the example.settings.php you will find the following settings which need to be present in your settings.php:
+
+* _google_pagespeed_api_url_ -> enter the Google API url here.
+* _google_pagespeed_api_key_ -> enter you Google API key here.
+* _google_pagespeed_api_strategy_ -> enter the testing strategy mobile or desktop.
+* (optional) _google_pagespeed_api_fetch_limit_ -> enter a limit here to fetch in one execution.
+
+When updating a server without Google pagespeed API mobile scoring, import the new database structure using the mysql structure update script:
+
+`mobile_scoring_table_updater.sql`
+
+
+## Execution on command line
+
+use the option _google_pagespeed_ :
+
+`	``
+php inspector.php google_pagespeed
+```
