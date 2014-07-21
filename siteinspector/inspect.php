@@ -76,6 +76,11 @@ function main($operation = NULL, $workerCount = 2) {
       detectCms();
       break;
 
+    // Perform Google pagespeed mobile tests.
+    case 'google_pagespeed':
+      determine_page_speed();
+      break;
+
     // Delete solr phantomcore.
     case 'purge-solr':
       purgeSolr();
@@ -174,6 +179,53 @@ function detectCms() {
       ));
   }
 }
+
+function determine_page_speed() {
+  // Geting settings from settings.php.
+  $google_pagespeed_api_url = get_setting('google_pagespeed_api_url');
+  $google_pagespeed_api_key = get_setting('google_pagespeed_api_key');
+  $google_pagespeed_api_strategy = get_setting('google_pagespeed_api_strategy');
+
+  // Get a database connection.
+  $pdo = getDatabaseConnection();
+
+  $query = $pdo->prepare("SELECT * FROM urls WHERE mobile_score IS NULL");
+  $query->execute();
+  if ($inspector_urls = $query->fetchAll()) {
+    foreach($inspector_urls as $inspector_url) {
+      // Get cURL resource
+      $curl = curl_init();
+      // Set some options - we are passing in a user agent too here
+      curl_setopt_array($curl, array(
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_URL => $google_pagespeed_api_url . '?' .
+          'key=' . $google_pagespeed_api_key .
+          '&url=' . $inspector_url['full_url'] .
+          '&strategy=' . $google_pagespeed_api_strategy,
+        CURLOPT_USERAGENT => 'GT inspector script',
+      ));
+
+      // Send the request and get the response.
+      $result_string = curl_exec($curl);
+
+      // Close request to clear up some resources
+      curl_close($curl);
+
+      // Decode the JSON result string to a PHP object to obtain values.
+      $result = json_decode($result_string);
+
+      // Save score if we have one.
+      if(isset($result->responseCode) && $result->responseCode == 200) {
+        $update = $pdo->prepare("UPDATE urls SET mobile_score=:mobile_score WHERE url_id=:url_id");
+        $update->execute(array(
+          'mobile_score' => $result->score,
+          'url_id' => $inspector_url['url_id'],
+        ));
+      }
+    }
+  }
+}
+
 /**
  * Update the website entries in the database;
  */
