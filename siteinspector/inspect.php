@@ -21,8 +21,13 @@ main($argument1, $argument2);
 
 
 function main($operation = NULL, $workerCount = 2) {
-  // First update the status.
-  updateStatus();
+  if (get_setting('is_master', FALSE)) {
+    // First update the status.
+    updateStatus();
+  }
+
+  // Then kill all stalled phantomjs processes.
+  killStalledProcesses();
 
   // Main controller for the script.
   if (!isset($operation)) {
@@ -35,8 +40,18 @@ function main($operation = NULL, $workerCount = 2) {
       // If so, exit.
       $pid = new pid('/tmp');
       if($pid->already_running) {
-        echo "Already running.\n";
-        exit;
+        echo "Already running. Checking last update.\n";
+        $lastUpdateTimeAgo = getTimeAgoLastAnalysis();
+        // If the last update was more than 40 seconds ago. The process might be stalled.
+        // In that case, kill the process.
+        if ($lastUpdateTimeAgo > 40) {
+          shell_exec('kill -KILL ' . $pid->pid);
+          echo "Process killed because last action was " . $lastUpdateTimeAgo . " seconds ago.\n";
+        }
+        else {
+          echo "Process is still running\n";
+          exit;
+        }
       }
       else {
         echo "Running...\n";
@@ -56,6 +71,16 @@ function main($operation = NULL, $workerCount = 2) {
       updateUrlFromNutch();
       break;
 
+    case 'detect-cms':
+      // Detect the cms.
+      detectCms();
+      break;
+
+    // Perform Google pagespeed mobile tests.
+    case 'google_pagespeed':
+      determine_page_speed();
+      break;
+
     // Delete solr phantomcore.
     case 'purge-solr':
       purgeSolr();
@@ -65,6 +90,9 @@ function main($operation = NULL, $workerCount = 2) {
       commitSolr();
       break;
   }
+
+  // Explicitly exit when at the end.
+  exit;
 
 }
 
@@ -105,6 +133,104 @@ function commitSolr() {
   $result = $client->update($update);
 }
 
+/**
+ * Kill all stalled phantomjs processes.
+ */
+function killStalledProcesses() {
+  shell_exec('killall --older-than 2m phantomjs');
+}
+
+/**
+ * Get amount of seconds after last update.
+ *
+ * @return int
+ */
+function getTimeAgoLastAnalysis() {
+  // Get the database connection.
+  $pdo = getDatabaseConnection();
+
+  // Get the total amount url's so we can define a start for Solr.
+  $query = $pdo->prepare("SELECT last_analysis FROM website ORDER BY last_analysis DESC LIMIT 1");
+  $query->execute();
+  $lastAnalysis = $query->fetchColumn();
+  $now = time();
+  return $now - $lastAnalysis;
+}
+
+/**
+ * Detect the cms of the first url which is not detected.
+ */
+function detectCms() {
+  // Get the database connection.
+  $pdo = getDatabaseConnection();
+
+  $query = $pdo->prepare("SELECT * FROM urls WHERE cms IS NULL");
+  $query->execute();
+  if ($row = $query->fetch()) {
+    // Phantomjs path.
+    $phantomjsExecutable = get_setting('phantomjs_executable');
+    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes node_modules/phantalyzer/phantalyzer.js ' . $row['full_url'] . ' | grep detectedApps';
+    $output = shell_exec($command);
+    $detectedApps = str_replace('detectedApps: ', '', $output);
+    $update = $pdo->prepare("UPDATE urls SET cms=:cms WHERE url_id=:url_id");
+    $update->execute(array(
+        'cms' => $detectedApps,
+        'url_id' => $row['url_id'],
+      ));
+  }
+}
+
+function determine_page_speed() {
+  // Geting settings from settings.php.
+  $google_pagespeed_api_url = get_setting('google_pagespeed_api_url');
+  $google_pagespeed_api_key = get_setting('google_pagespeed_api_key');
+  $google_pagespeed_api_strategy = get_setting('google_pagespeed_api_strategy');
+  $google_pagespeed_api_fetch_limit = get_setting('google_pagespeed_api_fetch_limit');
+
+  // Get a database connection.
+  $pdo = getDatabaseConnection();
+
+  if ($google_pagespeed_api_fetch_limit) {
+    $query = $pdo->prepare("SELECT * FROM urls WHERE mobile_score IS NULL limit " . $google_pagespeed_api_fetch_limit);
+  } else {
+    $query = $pdo->prepare("SELECT * FROM urls WHERE mobile_score IS NULL");
+  }
+
+  $query->execute();
+  if ($inspector_urls = $query->fetchAll()) {
+    foreach($inspector_urls as $inspector_url) {
+      // Get cURL resource
+      $curl = curl_init();
+      // Set some options - we are passing in a user agent too here
+      curl_setopt_array($curl, array(
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_URL => $google_pagespeed_api_url . '?' .
+          'key=' . $google_pagespeed_api_key .
+          '&url=' . $inspector_url['full_url'] .
+          '&strategy=' . $google_pagespeed_api_strategy,
+        CURLOPT_USERAGENT => 'GT inspector script',
+      ));
+
+      // Send the request and get the response.
+      $result_string = curl_exec($curl);
+
+      // Close request to clear up some resources
+      curl_close($curl);
+
+      // Decode the JSON result string to a PHP object to obtain values.
+      $result = json_decode($result_string);
+
+      // Save score if we have one.
+      if(isset($result->responseCode) && $result->responseCode == 200) {
+        $update = $pdo->prepare("UPDATE urls SET mobile_score=:mobile_score WHERE url_id=:url_id");
+        $update->execute(array(
+          'mobile_score' => $result->score,
+          'url_id' => $inspector_url['url_id'],
+        ));
+      }
+    }
+  }
+}
 
 /**
  * Update the website entries in the database;
@@ -186,9 +312,26 @@ function updateUrlFromNutch() {
         // Create a query.
         $query = $client->createQuery($client::QUERY_SELECT);
 
+        // Set some query parameters.
+        $query->addParam('defType', 'edismax');
+        $query->addParam('qf', 'host^0.001 url^2');
+        $query->addParam('df', 'host');
+
         // Add the filter.
-        $baseUrl = str_replace('www.', '', $entry->url);
-        $query->setQuery('domain:' . $baseUrl);
+//        $baseUrl = str_replace('www.', '', $entry->url);
+        // Get the host of the url.
+        $parts = parse_url($entry->url);
+        $host = $parts['host'];
+//        $query->setQuery('host:' . $host);
+        $query->setQuery($host);
+
+        // Add a filter application type, so we only have html and no pdf's!
+        $type_query = 'type:application/xhtml+xml OR type:text/html';
+        $query->createFilterQuery('type')->setQuery($type_query);
+
+        // Now also add a filter query for host.
+        $host_query = 'host:"' . $host . '"';
+        $query->createFilterQuery('host')->setQuery($host_query);
 
         // Set the fields.
         $query->setFields(array('url', 'score'));
@@ -344,7 +487,8 @@ function getDatabaseConnection() {
     $database = get_setting('mysql_database');
     $username = get_setting('mysql_username');
     $password = get_setting('mysql_password');
-    $dsn = 'mysql:host=localhost;dbname=' . $database;
+    $host = get_setting('mysql_host');
+    $dsn = 'mysql:host=' . $host . ';dbname=' . $database;
     $pdo_object = new PDO($dsn, $username, $password);
     $pdo_object->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   }

@@ -42,13 +42,15 @@ class QuailTester {
   public function test() {
     while ($this->elapsedTime < $this->maxTime) {
       // Get the url's to test.
-      $targets = $this->getTestingTargets();
+      $urls = $this->getTestingUrls();
 
       // Create the workers.
       $this->workers = array();
-      foreach ($targets as $target) {
+      foreach ($urls as $url) {
+        // Get the website record from the database.
+        $website = $this->getWebsite($url->wid);
         // Create a PhantomQuailWorker for each url.
-        $worker = new PhantomQuailWorker($target, $target->url_id);
+        $worker = new PhantomQuailWorker($url, $website, $url->url_id);
         // First delete all documents from solr.
         $worker->deleteCasesFromSolr();
         // Now start the thread.
@@ -68,7 +70,7 @@ class QuailTester {
       $this->processFinishedWorkers();
 
       // Break if there are no more targets.
-      if (count($targets) === 0) {
+      if (count($urls) === 0) {
         break;
       }
 
@@ -102,7 +104,7 @@ class QuailTester {
    *
    * @return mixed
    */
-  protected function getTestingTargets() {
+  protected function getTestingUrls() {
     $query = $this->pdo->prepare("SELECT * FROM urls WHERE status=:status ORDER BY priority ASC LIMIT " . $this->workerCount);
     $query->execute(array(
         'status' => STATUS_SCHEDULED,
@@ -123,35 +125,81 @@ class QuailTester {
   }
 
   /**
+   * Get the website for an url.
+   *
+   * @param $wid
+   *
+   * @return mixed
+   */
+  protected function getWebsite($wid) {
+    $query = $this->pdo->prepare("SELECT * FROM website WHERE wid=:wid");
+    $query->execute(array(
+        'wid' => $wid,
+      ));
+    $result = $query->fetch(PDO::FETCH_OBJ);
+    return $result;
+  }
+  /**
    * Process the finished workers.
    */
   protected function processFinishedWorkers() {
     // If there are finished workers, process the results and die.
     if (count($this->finishedWorkers)) {
       foreach ($this->finishedWorkers as $key => $finishedWorker) {
-        // Update the status of the url.
-        $query = $this->pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
-        $query->execute(
-          array(
-            'status' => $finishedWorker->getStatus(),
-            'url_id' => $finishedWorker->getQueueId(),
-          )
-        );
-        // Set the last_analysis date.
-        $time = time();
-        $this->debugMessage('time: ' . $time);
-        $query = $this->pdo->prepare("UPDATE website SET last_analysis=:time WHERE wid=:wid");
-        $query->execute(
-          array(
-            'time' => $time,
-            'wid' => $finishedWorker->getWebsiteId(),
-          )
-        );
+        $this->processQuailResult($finishedWorker);
+        $this->processWappalyzerResults($finishedWorker);
+
         // Now unset the finished worker in the array.
         unset($this->finishedWorkers[$key]);
       }
     }
   }
+
+  /**
+   * Process the quail results.
+   *
+   * @param $finishedWorker
+   */
+  protected function processQuailResult($finishedWorker) {
+    // Update the status of the url.
+    $query = $this->pdo->prepare("UPDATE urls SET status=:status, cms=:cms WHERE url_id=:url_id");
+    $query->execute(
+      array(
+        'status' => $finishedWorker->getStatus(),
+        'url_id' => $finishedWorker->getQueueId(),
+        'cms' => $finishedWorker->getWebsiteCms(),
+      )
+    );
+    // Set the last_analysis date.
+    $time = time();
+    $this->debugMessage('time: ' . $time);
+    $query = $this->pdo->prepare("UPDATE website SET last_analysis=:time WHERE wid=:wid");
+    $query->execute(
+      array(
+        'time' => $time,
+        'wid'  => $finishedWorker->getWebsiteId(),
+      )
+    );
+  }
+
+  /**
+   * Store the cms in the website table.
+   *
+   * @param $finishedWorker
+   */
+  protected function processWappalyzerResults($finishedWorker) {
+    $wid = $finishedWorker->getWid();
+    if (isset($wid)) {
+      $query = $this->pdo->prepare("UPDATE website SET cms=:cms WHERE wid=:wid");
+      $query->execute(
+        array(
+          'wid' => $wid,
+          'cms' => $finishedWorker->getWebsiteCms(),
+        )
+      );
+    }
+  }
+
 
   /**
    * Log messages.
@@ -190,5 +238,4 @@ class QuailTester {
     // This executes the query and returns the result.
     $result = $client->update($update);
   }
-
 } 
