@@ -25,11 +25,16 @@ The queue table consists of the following fields:
   - urlid (int)
   - priority (int)
   - status
+  - ignored
 
 The status in the queue table is as follows:
 
     0: queued
     1: testing
+    
+The ignored in the queue tables has the following options:
+	0: not ignored
+	1: to be ignored
 
 When a test has been done, the record is removed from the queue table.
 
