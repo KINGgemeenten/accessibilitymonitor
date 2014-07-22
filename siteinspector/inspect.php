@@ -276,6 +276,9 @@ function updateWebsiteEntries() {
  * Update the list of url's to be tested from nutch.
  */
 function updateUrlFromNutch() {
+  // Make sure that all urls, which need to be tested are in the urls table.
+  updateSingleUrls();
+
   // First get all websites which need to be retested.
 
   // Get the database connection.
@@ -509,4 +512,36 @@ function get_setting($setting, $default = NULL) {
     return $global_vars[$setting];
   }
   return $default;
+}
+
+/**
+ * Helper function to prepare the urls table before sending it to Nutch.
+ *
+ * The function fetches all the single te be added urls from the single_urls table. It matches the single urls with the
+ * website id from the website table. Status will be set to 0 (scheduled) and the priority will be set high(1) to make
+ * sure the url will be tested as soon as possible.
+ */
+function updateSingleUrls() {
+  try {
+    // Get DB connection.
+    $pdo = getDatabaseConnection();
+    // Read all active the be added url's with their corresponding website id's from single urls.
+    $query = $pdo->prepare("select w.wid, s.single_url from single_urls s INNER JOIN website w ON s.website_url=w.url WHERE operation='add' AND s.single_url NOT IN (select full_url from urls);");
+    $query->execute();
+    $single_urls = $query->fetchAll(PDO::FETCH_OBJ);
+
+    foreach($single_urls as $single_url) {
+      // For now we will update the DB one row at a time, later we can update the whole set in one go.
+      $insert = $pdo->prepare("INSERT INTO urls (wid,full_url,status,priority) VALUES (:wid,:full_url,:status,:priority);");
+      $insert->execute(array(
+        'wid' => $single_url->wid,
+        'full_url' => $single_url->single_url,
+        'status' => STATUS_SCHEDULED,
+        'priority' => 1,
+      ));
+    }
+  }
+  catch (Exception $e) {
+    echo 'Error updating inspector db when updating urls: ',  $e->getMessage(), "\n";
+  }
 }
