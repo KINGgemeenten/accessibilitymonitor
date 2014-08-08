@@ -6,11 +6,13 @@ require('settings.php');
 include_once('lib/pid.php');
 include_once('lib/PhantomQuailWorker.php');
 include_once('lib/QuailTester.php');
+include_once('lib/actions.php');
 
 define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
 define('STATUS_TESTED', 2);
 define('STATUS_ERROR', 3);
+define('STATUS_EXCLUDED', 4);
 
 // Execute main with arguments.
 $argument1 = isset($argv[1]) ? $argv[1] : NULL;

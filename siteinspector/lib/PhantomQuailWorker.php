@@ -93,7 +93,7 @@ class PhantomQuailWorker extends Thread {
   /**
    * Get the website id.
    *
-   * This property only returns result, if a succesful cms detection has been performed.
+   * This property only returns result, if a successful cms detection has been performed.
    *
    * @return mixed
    */
