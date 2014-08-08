@@ -529,12 +529,18 @@ function get_setting($setting, $default = NULL) {
  * @return mixed
  */
 function loadWebsiteRow($url) {
-  // Get the database connection.
-  $pdo = getDatabaseConnection();
-  $query = $pdo->prepare("SELECT * FROM website WHERE url=:url");
-  $query->execute(array('url' => $url));
-  $row = $query->fetch();
-  return $row;
+  // Try to match the website on hostname only.
+  $url_parts = parse_url($url);
+  if (isset($url_parts['host'])) {
+    // Get the database connection.
+    $pdo = getDatabaseConnection();
+    $query = $pdo->prepare("SELECT * FROM website WHERE url LIKE :url");
+    $query->execute(array('url' => '%' . $url_parts['host']));
+    $row = $query->fetch();
+    return $row;
+  }
+  return FALSE;
+
 }
 
 /**

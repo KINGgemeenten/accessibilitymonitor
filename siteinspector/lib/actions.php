@@ -88,8 +88,33 @@ function addWebsite($domain) {
  * @param $domain
  */
 function rescanWebsite($domain) {
-  // Delete all results for the website domain.
-  // Update all urls to status 0.
+  // First validate domain.
+  $domain = validateDomain($domain);
+  if ($domain) {
+    // First try to find the website record.
+    $record = loadWebsiteRow($domain);
+    // If there is no record, exit.
+    if (!$record) {
+      return FALSE;
+    }
+    $pdo = getDatabaseConnection();
+    // Delete all results for the website domain.
+    deleteResults('website', $record);
+    // Update all urls to status 0.
+    $update = $pdo->prepare("UPDATE urls SET status=:status WHERE wid=:wid");
+    $update->execute(array(
+        'status' => STATUS_SCHEDULED,
+        'wid' => $record['wid'],
+      ));
+    // Update the website to scheduled.
+    $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
+    $update->execute(array(
+        'status' => STATUS_SCHEDULED,
+        'wid' => $record['wid'],
+      ));
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**
