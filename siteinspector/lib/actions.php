@@ -11,9 +11,60 @@
  * @param $domain
  */
 function excludeWebsite($domain) {
-  // Set the belonging website to status excluded.
-  // Delete all results for the website domain
-  // Update all url's to status excluded
+  // First validate domain.
+  $domain = validateDomain($domain);
+  if ($domain) {
+    // First try to find the website record.
+    $record = loadWebsiteRow($domain);
+    // If there is no record, insert it.
+    $pdo = getDatabaseConnection();
+    if (!$record) {
+      $sql = "INSERT INTO website (url,status) VALUES (:url,:status)";
+      $insert = $pdo->prepare($sql);
+      $insert->execute(
+        array(
+          'url'    => $domain,
+          'status' => STATUS_EXCLUDED,
+        ));
+    }
+    else {
+      // Set the belonging website to status excluded.
+      $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
+      $update->execute(
+        array(
+          'status' => STATUS_EXCLUDED,
+          'wid'    => $record['wid']
+        )
+      );
+      // Delete all results for the website domain
+      deleteResults('website', $record);
+      // Update all url's to status excluded.
+      $update = $pdo->prepare("UPDATE urls SET status=:status WHERE wid=:wid");
+      $update->execute(array(
+          'status' => STATUS_EXCLUDED,
+          'wid' => $record['wid'],
+        ));
+    }
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Validate a domain.
+ *
+ * @param $domain
+ *
+ * @return bool|string
+ */
+function validateDomain($domain) {
+  $domain_parts = parse_url($domain);
+  // If the scheme and host is set, we have a valid domain name.
+  if (isset($domain_parts['scheme']) && isset($domain_parts['host']) && (! isset($domain_parts['path']) || $domain_parts['path'] == '/') ) {
+    return $domain_parts['scheme'] . '://' . $domain_parts['host'];
+  }
+  // In all other cases fail.
+  return FALSE;
 }
 
 
@@ -78,11 +129,38 @@ function excludeUrl($url) {
  *
  * @param $type
  *   website or url
- * @param $id
- *   the numeric id for the website or url
+ * @param $record
+ *   the loaded database record for the website or url
  */
-function deleteResults($type, $id) {
+function deleteResults($type, $record) {
   //delete results from solr or mongo.
+  switch ($type) {
+    case 'website':
+      // First delete from solr.
+
+      // Create the client to solr.
+      $phantomcore_config = get_setting('solr_phantom');
+      $client = new Solarium\Client($phantomcore_config);
+
+      // Get a delete query.
+      $update = $client->createUpdate();
+
+      // add the delete query and a commit command to the update query
+      $parts = parse_url($record['url']);
+      $solrQuery = 'url_sub:' . $parts['host'];
+
+      $update->addDeleteQuery($solrQuery);
+
+      // this executes the query and returns the result
+      $result = $client->update($update);
+
+      // Now send a commit to solr.
+      commitSolr();
+      break;
+
+    default:
+      break;
+  }
 }
 
 /**
@@ -126,4 +204,32 @@ function trackWebsite($website, $status) {
 //        else {
 //          insert
 //        }
+}
+
+/**
+ * Test the actions.
+ *
+ * @param $action
+ * @param $object
+ */
+function testActions($action, $object) {
+  echo 'Action: ' . $action . ', object: ' . $object . "\n";
+  performAction($action, $object);
+}
+
+/**
+ * Perform an action
+ *
+ * @param $action
+ * @param $object
+ *
+ * @return bool
+ */
+function performAction($action, $object) {
+  if (function_exists($action)) {
+    $action($object);
+    return TRUE;
+  }
+  // If function is not executed, return FALSE.
+  return FALSE;
 }

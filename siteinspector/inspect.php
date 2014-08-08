@@ -17,12 +17,13 @@ define('STATUS_EXCLUDED', 4);
 // Execute main with arguments.
 $argument1 = isset($argv[1]) ? $argv[1] : NULL;
 $argument2 = isset($argv[2]) ? $argv[2] : NULL;
+$argument3 = isset($argv[3]) ? $argv[3] : NULL;
 
-main($argument1, $argument2);
+main($argument1, $argument2, $argument3);
 
 
 
-function main($operation = NULL, $workerCount = 2) {
+function main($operation = NULL, $workerCount = 2, $arg3) {
   if (get_setting('is_master', FALSE)) {
     // First update the status.
     updateStatus();
@@ -90,6 +91,10 @@ function main($operation = NULL, $workerCount = 2) {
 
     case 'solr-commit':
       commitSolr();
+      break;
+
+    case 'test-actions':
+      testActions($workerCount, $arg3);
       break;
   }
 
@@ -248,9 +253,8 @@ function updateWebsiteEntries() {
     // Loop through the websites and check if there are new items.
     foreach ($newWebsites as $url) {
       // First try to load the website.
-      $query = $pdo->prepare("SELECT * FROM website WHERE url=:url");
-      $query->execute(array('url' => $url));
-      if ($row = $query->fetch()) {
+      $row = loadWebsiteRow($pdo, $url);
+      if ($row) {
         // If the website is already present, update it.
         $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
         $update->execute(
@@ -511,4 +515,24 @@ function get_setting($setting, $default = NULL) {
     return $global_vars[$setting];
   }
   return $default;
+}
+
+/********************************************************************
+ * Helper settings.
+ ********************************************************************/
+/**
+ * Load the row for the website.
+ *
+ * @param $url
+ *   The domain url
+ *
+ * @return mixed
+ */
+function loadWebsiteRow($url) {
+  // Get the database connection.
+  $pdo = getDatabaseConnection();
+  $query = $pdo->prepare("SELECT * FROM website WHERE url=:url");
+  $query->execute(array('url' => $url));
+  $row = $query->fetch();
+  return $row;
 }
