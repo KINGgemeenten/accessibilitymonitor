@@ -51,24 +51,6 @@ function excludeWebsite($domain) {
 }
 
 /**
- * Validate a domain.
- *
- * @param $domain
- *
- * @return bool|string
- */
-function validateDomain($domain) {
-  $domain_parts = parse_url($domain);
-  // If the scheme and host is set, we have a valid domain name.
-  if (isset($domain_parts['scheme']) && isset($domain_parts['host']) && (! isset($domain_parts['path']) || $domain_parts['path'] == '/') ) {
-    return $domain_parts['scheme'] . '://' . $domain_parts['host'];
-  }
-  // In all other cases fail.
-  return FALSE;
-}
-
-
-/**
  * Add a website so it can be tested.
  *
  * This is an action.
@@ -77,6 +59,25 @@ function validateDomain($domain) {
  */
 function addWebsite($domain) {
   // Add the website to the website table if not already present.
+  // First validate domain.
+  $domain = validateDomain($domain);
+  if ($domain) {
+    // First try to find the website record.
+    $record = loadWebsiteRow($domain);
+    // If there is no record, insert it.
+    $pdo = getDatabaseConnection();
+    if (!$record) {
+      $sql = "INSERT INTO website (url,status) VALUES (:url,:status)";
+      $insert = $pdo->prepare($sql);
+      $insert->execute(
+        array(
+          'url'    => $domain,
+          'status' => STATUS_SCHEDULED,
+        ));
+    }
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**

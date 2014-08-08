@@ -536,3 +536,20 @@ function loadWebsiteRow($url) {
   $row = $query->fetch();
   return $row;
 }
+
+/**
+ * Validate a domain.
+ *
+ * @param $domain
+ *
+ * @return bool|string
+ */
+function validateDomain($domain) {
+  $domain_parts = parse_url($domain);
+  // If the scheme and host is set, we have a valid domain name.
+  if (isset($domain_parts['scheme']) && isset($domain_parts['host']) && (! isset($domain_parts['path']) || $domain_parts['path'] == '/') ) {
+    return $domain_parts['scheme'] . '://' . $domain_parts['host'];
+  }
+  // In all other cases fail.
+  return FALSE;
+}
