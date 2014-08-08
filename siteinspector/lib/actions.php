@@ -166,6 +166,19 @@ function excludeUrl($url) {
   // - set status to excluded.
   // else
   // Add url to urls table with status excluded.
+  $websiteRecord = loadWebsiteRow($url);
+  $pdo = getDatabaseConnection();
+  if ($websiteRecord) {
+    // Try to load the url.
+    $urlRecord = loadUrlRow($url);
+    if ($urlRecord) {
+      $update = $pdo->prepare("UPDATE urls SET status=:status WHERE url_id=:url_id");
+      $update->execute(array(
+          'status' => STATUS_EXCLUDED,
+          'url_id' => $urlRecord['url_id'],
+        ));
+    }
+  }
   return FALSE;
 }
 
