@@ -129,6 +129,25 @@ function rescanWebsite($domain) {
 function addUrl($url) {
   // Add the url to the url's table when the website belonging
   // to the url is found. Set status to 0 and prio to 1.
+  // First try to load the website record.
+  $websiteRecord = loadWebsiteRow($url);
+  $pdo = getDatabaseConnection();
+  if ($websiteRecord) {
+    // Try to load the url.
+    $urlRecord = loadUrlRow($url);
+    if (!$urlRecord) {
+      $sql = "INSERT INTO urls (wid,full_url,status,priority) VALUES (:wid,:full_url,:status,:priority)";
+      $insert = $pdo->prepare($sql);
+      $result = $insert->execute(
+        array(
+          'wid'      => $websiteRecord['wid'],
+          'full_url' => $url,
+          'status'   => STATUS_SCHEDULED,
+          'priority' => 1,
+        )
+      );
+    }
+  }
   return FALSE;
 }
 

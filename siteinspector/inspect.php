@@ -544,6 +544,24 @@ function loadWebsiteRow($url) {
 }
 
 /**
+ * Load the row for the url.
+ *
+ * @param $url
+ *   The full url
+ *
+ * @return mixed
+ */
+function loadUrlRow($url) {
+  // Get the database connection.
+  $pdo = getDatabaseConnection();
+  $query = $pdo->prepare("SELECT * FROM urls WHERE full_url=:url");
+  $query->execute(array('url' => $url));
+  $row = $query->fetch();
+  return $row;
+}
+
+
+/**
  * Validate a domain.
  *
  * @param $domain
