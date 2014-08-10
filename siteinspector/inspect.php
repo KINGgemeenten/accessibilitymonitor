@@ -6,21 +6,24 @@ require('settings.php');
 include_once('lib/pid.php');
 include_once('lib/PhantomQuailWorker.php');
 include_once('lib/QuailTester.php');
+include_once('lib/actions.php');
 
 define('STATUS_SCHEDULED', 0);
 define('STATUS_TESTING', 1);
 define('STATUS_TESTED', 2);
 define('STATUS_ERROR', 3);
+define('STATUS_EXCLUDED', 4);
 
 // Execute main with arguments.
 $argument1 = isset($argv[1]) ? $argv[1] : NULL;
 $argument2 = isset($argv[2]) ? $argv[2] : NULL;
+$argument3 = isset($argv[3]) ? $argv[3] : NULL;
 
-main($argument1, $argument2);
+main($argument1, $argument2, $argument3);
 
 
 
-function main($operation = NULL, $workerCount = 2) {
+function main($operation = NULL, $workerCount = 2, $arg3) {
   if (get_setting('is_master', FALSE)) {
     // First update the status.
     updateStatus();
@@ -88,6 +91,10 @@ function main($operation = NULL, $workerCount = 2) {
 
     case 'solr-commit':
       commitSolr();
+      break;
+
+    case 'test-actions':
+      testActions($workerCount, $arg3);
       break;
   }
 
@@ -246,9 +253,8 @@ function updateWebsiteEntries() {
     // Loop through the websites and check if there are new items.
     foreach ($newWebsites as $url) {
       // First try to load the website.
-      $query = $pdo->prepare("SELECT * FROM website WHERE url=:url");
-      $query->execute(array('url' => $url));
-      if ($row = $query->fetch()) {
+      $row = loadWebsiteRow($pdo, $url);
+      if ($row) {
         // If the website is already present, update it.
         $update = $pdo->prepare("UPDATE website SET status=:status WHERE wid=:wid");
         $update->execute(
@@ -509,4 +515,65 @@ function get_setting($setting, $default = NULL) {
     return $global_vars[$setting];
   }
   return $default;
+}
+
+/********************************************************************
+ * Helper settings.
+ ********************************************************************/
+/**
+ * Load the row for the website.
+ *
+ * @param $url
+ *   The domain url
+ *
+ * @return mixed
+ */
+function loadWebsiteRow($url) {
+  // Try to match the website on hostname only.
+  $url_parts = parse_url($url);
+  if (isset($url_parts['host'])) {
+    // Get the database connection.
+    $pdo = getDatabaseConnection();
+    $query = $pdo->prepare("SELECT * FROM website WHERE url LIKE :url");
+    $query->execute(array('url' => '%' . $url_parts['host']));
+    $row = $query->fetch();
+    return $row;
+  }
+  return FALSE;
+
+}
+
+/**
+ * Load the row for the url.
+ *
+ * @param $url
+ *   The full url
+ *
+ * @return mixed
+ */
+function loadUrlRow($url) {
+  // Get the database connection.
+  $pdo = getDatabaseConnection();
+  $query = $pdo->prepare("SELECT * FROM urls WHERE full_url=:url");
+  $query->execute(array('url' => $url));
+  $row = $query->fetch();
+  return $row;
+}
+
+
+/**
+ * Validate a domain.
+ *
+ * @param $domain
+ *
+ * @return bool|string
+ */
+function validateDomain($domain) {
+  $domain_parts = parse_url($domain);
+  // If the scheme and host is set, we have a valid domain name.
+  if (isset($domain_parts['scheme']) && isset($domain_parts['host']) && (! isset($domain_parts['path']) || $domain_parts['path'] == '/') ) {
+    return $domain_parts['scheme'] . '://' . $domain_parts['host'];
+  }
+  // In all other cases fail.
+  return FALSE;
 }
