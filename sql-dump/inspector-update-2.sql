@@ -4,7 +4,7 @@
 #
 # Host: 192.168.50.5 (MySQL 5.5.37-0ubuntu0.12.04.1)
 # Database: inspector
-# Generation Time: 2014-08-08 07:47:36 +0000
+# Generation Time: 2014-08-12 11:23:46 +0000
 # ************************************************************
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -17,31 +17,37 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
-# Dump of table actions
+# Dump of table urls
 # ------------------------------------------------------------
 
-DROP TABLE IF EXISTS `actions`;
+DROP TABLE IF EXISTS `urls`;
 
-CREATE TABLE `actions` (
-  `aid` int(11) DEFAULT NULL,
-  `action` varchar(255) NOT NULL,
-  `item_uid` varchar(512) DEFAULT NULL,
-  `timestamp` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE `urls` (
+  `url_id` int(11) NOT NULL AUTO_INCREMENT,
+  `wid` int(10) unsigned NOT NULL,
+  `full_url` varchar(1024) NOT NULL,
+  `status` int(11) NOT NULL,
+  `priority` int(11) DEFAULT NULL,
+  `cms` varchar(1024) DEFAULT NULL,
+  PRIMARY KEY (`url_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=530 DEFAULT CHARSET=latin1;
 
 
 
-# Dump of table test_results
+# Dump of table website
 # ------------------------------------------------------------
 
-DROP TABLE IF EXISTS `test_results`;
+DROP TABLE IF EXISTS `website`;
 
-CREATE TABLE `test_results` (
-  `tid` int(11) DEFAULT NULL,
-  `wid` int(11) DEFAULT NULL,
-  `type` varchar(255) DEFAULT NULL,
-  `result` varchar(2048) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+CREATE TABLE `website` (
+  `wid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `url` varchar(1024) NOT NULL,
+  `status` int(10) unsigned NOT NULL,
+  `last_analysis` int(11) DEFAULT NULL,
+  `cms` varchar(1024) DEFAULT NULL,
+  PRIMARY KEY (`wid`),
+  KEY `url` (`url`(767))
+) ENGINE=InnoDB AUTO_INCREMENT=328 DEFAULT CHARSET=latin1;
 
 
 

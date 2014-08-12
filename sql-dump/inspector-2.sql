@@ -4,7 +4,7 @@
 #
 # Host: 192.168.50.5 (MySQL 5.5.37-0ubuntu0.12.04.1)
 # Database: inspector
-# Generation Time: 2014-08-08 07:46:54 +0000
+# Generation Time: 2014-08-12 11:23:33 +0000
 # ************************************************************
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -23,11 +23,12 @@
 DROP TABLE IF EXISTS `actions`;
 
 CREATE TABLE `actions` (
-  `aid` int(11) DEFAULT NULL,
+  `aid` int(11) NOT NULL AUTO_INCREMENT,
   `action` varchar(255) NOT NULL,
   `item_uid` varchar(512) DEFAULT NULL,
-  `timestamp` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `timestamp` int(11) DEFAULT '0',
+  PRIMARY KEY (`aid`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
 
 
@@ -37,10 +38,11 @@ CREATE TABLE `actions` (
 DROP TABLE IF EXISTS `test_results`;
 
 CREATE TABLE `test_results` (
-  `tid` int(11) DEFAULT NULL,
+  `tid` int(11) NOT NULL AUTO_INCREMENT,
   `wid` int(11) DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
-  `result` varchar(2048) DEFAULT NULL
+  `result` varchar(2048) DEFAULT NULL,
+  PRIMARY KEY (`tid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
@@ -58,7 +60,7 @@ CREATE TABLE `urls` (
   `priority` int(11) DEFAULT NULL,
   `cms` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`url_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=529 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=530 DEFAULT CHARSET=latin1;
 
 
 
@@ -75,7 +77,7 @@ CREATE TABLE `website` (
   `cms` varchar(1024) DEFAULT NULL,
   PRIMARY KEY (`wid`),
   KEY `url` (`url`(767))
-) ENGINE=InnoDB AUTO_INCREMENT=326 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=328 DEFAULT CHARSET=latin1;
 
 
 

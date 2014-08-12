@@ -27,6 +27,8 @@ function main($operation = NULL, $workerCount = 2, $arg3) {
   if (get_setting('is_master', FALSE)) {
     // First update the status.
     updateStatus();
+    // Then perform all actions.
+    performActions();
   }
 
   // Then kill all stalled phantomjs processes.
@@ -437,7 +439,39 @@ function updateStatus() {
         'wid' => $website->wid
       ));
   }
+}
 
+/**
+ * Perform scheduled actions.
+ */
+function performActions() {
+  // Get all actions for which no timestamp has been set.
+  $pdo = getDatabaseConnection();
+  $actionQuery = $pdo->prepare("SELECT * FROM actions WHERE timestamp=0");
+  $actionQuery->execute(array());
+  $actions = $actionQuery->fetchAll(PDO::FETCH_OBJ);
+  // Perform the actions.
+  foreach ($actions as $action) {
+    // The action is a function. We perform the function with argument item_id.
+    // The item_id contains the full url, or the domain,
+    // depending on the action.
+    $function = $action->action;
+    if (function_exists($function)) {
+      $result = $function($action->item_uid);
+      // If the result is true, set the timestamp to the current time.
+      // Else we set it to -1, to indicate an error.
+      $timestamp = -1;
+      if ($result) {
+        $timestamp = time();
+      }
+      // Perform the update action.
+      $updateQuery = $pdo->prepare("UPDATE actions SET timestamp=:timestamp WHERE aid=:aid");
+      $updateQuery->execute(array(
+          'timestamp' => $timestamp,
+          'aid' => $action->aid,
+        ));
+    }
+  }
 }
 
 /**
