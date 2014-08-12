@@ -3,7 +3,7 @@ var page = require('webpage').create();
 var fs = require('fs');
 var address, dir;
 
-page.onConsoleMessage = function (msg, line, source) {
+page.onConsoleMessage = function (msg) {
   console.log(msg);
 };
 
@@ -15,18 +15,32 @@ if (system.args.length <= 1) {
 
 // Catch script evaluation errors; quit Phantom.
 page.onError = function (msg, trace) {
-  quitPhantom(JSON.stringify(['Page error', msg, trace]));
-};
-
-// This is the last chance to catch catestrophic errors; quit Phantom.
-phantom.onError = function(msg, trace) {
-  quitPhantom(JSON.stringify(['Phantom error', msg, trace]));
+  console.log(JSON.stringify([
+    'Error on the evaluated page',
+    msg,
+    trace
+  ], undefined, 2));
 };
 
 page.settings.resourceTimeout = 5000; // 5 seconds
 
+page.onResourceRequested = function (request) {
+  console.log(JSON.stringify([
+    'Requested (' + request.method + ')',
+    request.url
+  ]));
+};
+
+page.onResourceReceived = function(response) {
+  console.log(JSON.stringify([
+    'Received',
+    response.status,
+    response.url
+  ]));
+};
+
 page.onResourceTimeout = function (error) {
-  quitPhantom(JSON.stringify([
+  console.log(JSON.stringify([
     'Resource timeout',
     error.errorCode, // it'll probably be 408
     error.errorString, // it'll probably be 'Network timeout on resource'
@@ -35,12 +49,21 @@ page.onResourceTimeout = function (error) {
 };
 
 page.onResourceError = function (error) {
-  quitPhantom(JSON.stringify([
+  console.log(JSON.stringify([
     'Resource error',
-    error.errorCode,
+    'Error code: ' + error.errorCode,
     error.errorString,
     error.url
-  ]));
+  ], undefined, 2));
+};
+
+// This is the last chance to catch catestrophic errors.
+phantom.onError = function(msg, trace) {
+  console.log(JSON.stringify([
+    'Error in the phantom runner',
+    msg,
+    trace
+  ], undefined, 2));
 };
 
 // Open the page at the provided URL in Phantom.
@@ -91,6 +114,7 @@ var len = 0;
 var stream = fs.open(dir + '/results.js', 'w');
 // The data to be written to file.
 var output = {};
+var start = (new Date()).getTime();
 // The callback function reachable from the page.evaluate* methods.
 page.onCallback = function(action, data) {
   switch (action) {
@@ -120,6 +144,8 @@ page.onCallback = function(action, data) {
       }
       // All the tests have completed.
       if (len === 0) {
+        console.log('Elapsed time: ' + ((new Date()).getTime() - start) / 1000 + ' seconds');
+        console.log('Cases found: ' + output.stats.cases);
         var out = JSON.stringify(output);
         stream.write(out);
         stream.close();
@@ -134,112 +160,123 @@ page.onCallback = function(action, data) {
   }
 };
 
-page.open(address, function (status) {
-  if (status !== 'success') {
-    quitPhantom('FAIL to load the address');
-    return;
-  }
-  else {
-    console.log('Page opened successfully: ' + address);
-  }
-});
+page.open(address);
 
 // Decorate the page once the HTML has been loaded.
 // This is where we run the tests.
 page.onLoadFinished = function (status) {
-  page.injectJs('js/jquery-1.10.1.js');
-  page.injectJs('js/jquery.hasEventListener-2.0.4.js');
-  page.injectJs('/opt/quail/dist/quail.jquery.js');
+  if (status === 'success') {
+    console.log('Page opened successfully: ' + address);
+    page.injectJs('js/jquery-1.10.1.js');
+    page.injectJs('js/jquery.hasEventListener-2.0.4.js');
+    page.injectJs('/opt/quail/dist/quail.jquery.js');
 
-  // Run the evaluation.
-  //
-  // The evaluation is executed in its own function scope. Closures that
-  // incorporate outside scopes are not possible.
-  page.evaluate(function (tests, size) {
-    var callPhantom = window && window.callPhantom || function () {};
-    // Tell the client that we're starting the test run.
-    var scLen = size(quail.guidelines.wcag.successCriteria);
-    console.log('Beginning evaluation of ' + size(tests) + ' tests and ' + scLen + ' Success Criteria.');
-    // Determine how many data writes we'll make.
-    callPhantom('setCounter', scLen + 1); // +1 because we attempt a data write once for all tests on testCollectionComplete
-    // Basic output structure attributes.
-    var output = {
-      tests: {},
-      successCriteria: {}
-    };
-    jQuery('html').quail({
-      accessibilityTests: tests,
-      // Called when an individual Case in a test is resolved.
-      caseResolve: function (eventName, test, _case) {
-        var name = test.get('name');
-        if (!output.tests[name]) {
-          output.tests[name] = {
-            id: name,
-            title: test.get('title'),
-            description: test.get('description'),
-            type: test.get('type'),
-            testability: test.get('testability'),
-            guidelines: test.get('guidelines') || {},
-            tags: test.get('tags'),
-            cases: []
-          };
-        }
-        // Push the case into the results for this test.
-        output.tests[name].cases.push({
-          status: _case.get('status'),
-          selector: _case.get('selector'),
-          html: _case.get('html')
-        });
-      },
-      // Called when all the Cases in a Test are resolved.
-      testComplete: function (eventName, test) {
-        console.log('Finished testing ' + test.get('name') + '.');
-      },
-      // Called when all the Tests in a TestCollection are completed.
-      testCollectionComplete: function (eventName, testCollection) {
-        // Push the results of the test out to the Phantom listener.
-        console.log('The test collection has been evaluated.');
-        callPhantom('writeData', JSON.stringify(output));
-      },
-      successCriteriaEvaluated : function (eventName, successCriteria, testCollection) {
-        var name = successCriteria.get('name');
-        var status = successCriteria.get('status');
+    // Run the evaluation.
+    //
+    // The evaluation is executed in its own function scope. Closures that
+    // incorporate outside scopes are not possible.
+    try {
+      page.evaluate(function (tests, size) {
+        var callPhantom = window && window.callPhantom || function () {};
+        // Tell the client that we're starting the test run.
+        var scLen = size(quail.guidelines.wcag.successCriteria);
+        console.log('Beginning evaluation of ' + size(tests) + ' tests and ' + scLen + ' Success Criteria.');
+        // Determine how many data writes we'll make.
+        callPhantom('setCounter', scLen + 1); // +1 because we attempt a data write once for all tests on testCollectionComplete
+        // Basic output structure attributes.
         var output = {
-          successCriteria: {}
-        };
-        var result;
-        // Get some stringifyable data from the results.
-        var looper = function (index, _case) {
-          output.successCriteria[name][result].push({
-            selector: _case.get('selector'),
-            html: _case.get('html')
-          });
-        };
-
-        // Push the results of the test out to the Phantom listener.
-        // If the SC was untested, report that as its status.
-        if (status === 'untested') {
-          output.successCriteria[name] = status;
-        }
-        // Otherwise get the cases and report them under their status.
-        else {
-          output.successCriteria[name] = {};
-          var results = successCriteria.get('results');
-          for (result in results) {
-            if (results.hasOwnProperty(result)) {
-              output.successCriteria[name][result] = [];
-              // Go through each case for this result and get its selector and HTML.
-              results[result].each(looper);
-            }
+          tests: {},
+          successCriteria: {},
+          stats: {
+            tests: 0,
+            cases: 0
           }
-        }
-        // Echo
-        console.log('Evaluated: ' + name, 'conclusion: ' + status);
-        // Attempt to write out the data.
-        callPhantom('writeData', JSON.stringify(output));
-      }
-    });
-  }, tests, size);
+        };
+        jQuery('html').quail({
+          accessibilityTests: tests,
+          // Called when an individual Case in a test is resolved.
+          caseResolve: function (eventName, test, _case) {
+            var name = test.get('name');
+            if (!output.tests[name]) {
+              output.tests[name] = {
+                id: name,
+                title: test.get('title'),
+                description: test.get('description'),
+                type: test.get('type'),
+                testability: test.get('testability'),
+                guidelines: test.get('guidelines') || {},
+                tags: test.get('tags'),
+                cases: []
+              };
+            }
+            // Push the case into the results for this test.
+            output.tests[name].cases.push({
+              status: _case.get('status'),
+              selector: _case.get('selector'),
+              html: _case.get('html')
+            });
+            // Increment the cases count.
+            output.stats.cases++;
+          },
+          // Called when all the Cases in a Test are resolved.
+          testComplete: function (eventName, test) {
+            console.log('Finished testing ' + test.get('name') + '.');
+            // Increment the tests count.
+            output.stats.tests++;
+          },
+          // Called when all the Tests in a TestCollection are completed.
+          testCollectionComplete: function (eventName, testCollection) {
+            // Push the results of the test out to the Phantom listener.
+            console.log('The test collection has been evaluated.');
+            callPhantom('writeData', JSON.stringify(output));
+          },
+          successCriteriaEvaluated : function (eventName, successCriteria, testCollection) {
+            var name = successCriteria.get('name');
+            var status = successCriteria.get('status');
+            var output = {
+              successCriteria: {}
+            };
+            var result;
+            // Get some stringifyable data from the results.
+            var looper = function (index, _case) {
+              output.successCriteria[name][result].push({
+                selector: _case.get('selector'),
+                html: _case.get('html')
+              });
+            };
+
+            // Push the results of the test out to the Phantom listener.
+            // If the SC was untested, report that as its status.
+            if (status === 'untested') {
+              output.successCriteria[name] = status;
+            }
+            // Otherwise get the cases and report them under their status.
+            else {
+              output.successCriteria[name] = {};
+              var results = successCriteria.get('results');
+              for (result in results) {
+                if (results.hasOwnProperty(result)) {
+                  output.successCriteria[name][result] = [];
+                  // Go through each case for this result and get its selector and HTML.
+                  results[result].each(looper);
+                }
+              }
+            }
+            // Echo
+            console.log('Evaluated: ' + name, 'conclusion: ' + status);
+            // Attempt to write out the data.
+            callPhantom('writeData', JSON.stringify(output));
+          }
+        });
+      }, tests, size);
+    }
+    catch (error) {
+      callPhantom('quit', error);
+    }
+  }
+  else {
+    callPhantom('quit', 'Page failed to load');
+  }
 };
 
 /**
