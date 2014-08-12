@@ -173,8 +173,8 @@ function detectCms() {
   // Get the database connection.
   $pdo = getDatabaseConnection();
 
-  $query = $pdo->prepare("SELECT * FROM urls WHERE cms IS NULL");
-  $query->execute();
+  $query = $pdo->prepare("SELECT * FROM urls WHERE cms IS NULL AND status!=:status");
+  $query->execute(array('status' => STATUS_EXCLUDED));
   if ($row = $query->fetch()) {
     // Phantomjs path.
     $phantomjsExecutable = get_setting('phantomjs_executable');
