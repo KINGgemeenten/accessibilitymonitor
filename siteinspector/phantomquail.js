@@ -86,14 +86,6 @@ var testsdata = fs.read('/opt/quail/dist/tests.json');
 var allTests = JSON.parse(testsdata);
 var tests = {};
 
-// Only add the tests which are defined in the guidelines.
-for ( var i = 0 ; i < guidelines.length; i++) {
-  var key = guidelines[i];
-  if (allTests[key]) {
-    tests[key] = allTests[key];
-  }
-}
-
 // If a specific test is requested, just use that one.
 var testFromCLI = system.args[2];
 
@@ -101,6 +93,15 @@ if (testFromCLI && allTests[testFromCLI]) {
   var singleTest = allTests[testFromCLI];
   tests = {};
   tests[testFromCLI] = singleTest;
+}
+else if (guidelines.length) {
+  // Only add the tests which are defined in the guidelines.
+  for ( var i = 0 ; i < guidelines.length; i++) {
+    var key = guidelines[i];
+    if (allTests[key]) {
+      tests[key] = allTests[key];
+    }
+  }
 }
 else {
   tests = allTests;
