@@ -75,6 +75,16 @@ function addWebsite($domain) {
           'status' => STATUS_SCHEDULED,
         ));
     }
+    else {
+      // Set status to scheduled.
+      $sql = "UPDATE website SET status=:status WHERE url=:url";
+      $update = $pdo->prepare($sql);
+      $update->execute(
+        array(
+          'status' => STATUS_SCHEDULED,
+          'url'    => $domain,
+        ));
+    }
     return TRUE;
   }
   return FALSE;
@@ -146,6 +156,14 @@ function addUrl($url) {
           'priority' => 1,
         )
       );
+    }
+    else {
+      $sql = "UPDATE urls SET status=:status WHERE url_id=:url_id";
+      $update = $pdo->prepare($sql);
+      $result = $update->execute(array(
+          'status' => STATUS_SCHEDULED,
+          'url_id' => $urlRecord['url_id'],
+        ));
     }
   }
   return FALSE;
