@@ -20,6 +20,8 @@ class PhantomQuailWorker extends Thread {
   protected $quailResults = array();
   // Array to hold all the cases of all tests together with the result.
   protected $quailCases = array();
+  // Array to hold examples of failed cases.
+  protected $failedCaseExamples = array();
   // Array to hold the final results per wcag thingy.
   protected $quailFinalResult = array();
 
@@ -139,27 +141,27 @@ class PhantomQuailWorker extends Thread {
       // Create an array for all quail results.
       // We need to use this 'in between array' because in threads object variable
       // arrays don't allow array_push or [].
-      $quailResults = array();
+      $rawQuailResults = array();
       // Create an array for
       foreach (preg_split("/((\r?\n)|(\r\n?))/", $output) as $line) {
         if ($line != '' && preg_match("/^{/", $line)) {
           // do stuff with $line
-          $quailResult = json_decode($line);
+          $rawResults = json_decode($line);
 
-          // Add the url to the quailResult.
-          $quailResult->url = $this->urlObject->full_url;
+          foreach ($rawResults->tests as $testId => $quailResult) { // Add the url to the quailResult.
+            $quailResult->url = $this->urlObject->full_url;
 
-
-          // Process the quail result to a json object which can be send to solr.
-          $processedResult = $this->preprocessQuailResult($quailResult, $count);
-          if ($processedResult) {
-            // Add the documents to the document list in solr.
-            $quailResults[] = $processedResult;
-            $count++;
+            // Process the quail result to a json object which can be send to solr.
+            $processedResult = $this->preprocessQuailResult($quailResult, $count);
+            if ($processedResult) {
+              // Add the documents to the document list in solr.
+              $rawQuailResults[$testId] = $processedResult;
+              $count++;
+            }
           }
         }
       }
-      $this->rawQuailResults = $quailResults;
+      $this->rawQuailResults = $rawQuailResults;
       $this->processQuailResults();
 
       // Now send the case results to solr.
@@ -207,8 +209,9 @@ class PhantomQuailWorker extends Thread {
     // Loop the quail results to create the different arrays.
     $quailResults = array();
     $quailCases = array();
+    $failedCaseExamples = array();
     $quailFinalResult = array();
-    foreach ($this->rawQuailResults as $result) {
+    foreach ($this->rawQuailResults as $key => $result) {
       // Add the technologies.
       if (isset($this->websiteCms)) {
         $technologies = explode('|', $this->websiteCms);
@@ -234,14 +237,16 @@ class PhantomQuailWorker extends Thread {
           // Add the quailCase.
           $quailCases[] = $caseItem;
 
+          // If there is no fail example, add it here.
+          if (!isset($failedCaseExamples[$key]) && $caseItem->status == 'passed' && $caseItem->testability > 0) {
+            $exampleItem = $caseItem;
+            $exampleItem->document_type = 'failed_case_example';
+            $failedCaseExamples[$key] = $caseItem;
+          }
+
           if (isset($caseItem->applicationframework)) {
             // Add the case to the final result.
             foreach ($caseItem->applicationframework as $wcagItem) {
-              // Add the case to the specific wcag item.
-              if (!isset($quailFinalResult[$wcagItem]['cases'])) {
-                $quailFinalResult[$wcagItem]['cases'] = array();
-              }
-              $quailFinalResult[$wcagItem]['cases'][] = $caseItem;
               // Increment counters on the status.
               if (!isset($quailFinalResult[$wcagItem]['statuses'][$caseItem->status])) {
                 $quailFinalResult[$wcagItem]['statuses'][$caseItem->status] = 0;
@@ -254,6 +259,7 @@ class PhantomQuailWorker extends Thread {
       }
     }
     $this->quailCases = $quailCases;
+    $this->failedCaseExamples = $failedCaseExamples;
     $this->quailFinalResult = $quailFinalResult;
   }
 

@@ -149,6 +149,8 @@ page.onCallback = function(action, data) {
         console.log('Cases found: ' + output.stats.cases);
         var out = JSON.stringify(output);
         stream.write(out);
+        // Also write the output to the console.
+        console.log(out);
         stream.close();
         quitPhantom('Testing complete');
       }
