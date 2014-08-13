@@ -14,6 +14,9 @@ define('STATUS_TESTED', 2);
 define('STATUS_ERROR', 3);
 define('STATUS_EXCLUDED', 4);
 
+define('TEST_TYPE_WAPPALYZER', 'cms');
+define('TEST_TYPE_GOOGLE_PAGESPEED', 'google_pagespeed');
+
 // Execute main with arguments.
 $argument1 = isset($argv[1]) ? $argv[1] : NULL;
 $argument2 = isset($argv[2]) ? $argv[2] : NULL;
@@ -239,6 +242,48 @@ function determine_page_speed() {
       }
     }
   }
+}
+
+/**
+ * @param $url
+ *
+ * @return bool|mixed
+ */
+function performGooglePagespeedRequest($url) {
+  // Geting settings from settings.php.
+  $google_pagespeed_api_url = get_setting('google_pagespeed_api_url');
+  $google_pagespeed_api_key = get_setting('google_pagespeed_api_key');
+  $google_pagespeed_api_strategy = get_setting('google_pagespeed_api_strategy');
+
+  // Get cURL resource
+  $curl = curl_init();
+  // Set some options - we are passing in a user agent too here
+  curl_setopt_array(
+    $curl,
+    array(
+      CURLOPT_RETURNTRANSFER => 1,
+      CURLOPT_URL            => $google_pagespeed_api_url . '?' .
+        'key=' . $google_pagespeed_api_key .
+        '&url=' . $url .
+        '&strategy=' . $google_pagespeed_api_strategy,
+      CURLOPT_USERAGENT      => 'GT inspector script',
+    )
+  );
+
+  // Send the request and get the response.
+  $result_string = curl_exec($curl);
+
+  // Close request to clear up some resources
+  curl_close($curl);
+
+  // Decode the JSON result string to a PHP object to obtain values.
+  $result = json_decode($result_string);
+
+  // Save score if we have one.
+  if (isset($result->responseCode) && $result->responseCode == 200) {
+    return $result;
+  }
+  return FALSE;
 }
 
 /**

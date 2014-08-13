@@ -49,13 +49,17 @@ class QuailTester {
       foreach ($urls as $url) {
         // Get the website record from the database.
         $website = $this->getWebsite($url->wid);
+        // Determine which tests should be done.
+        $testGooglePagespeed = $this->determinePerformTest(TEST_TYPE_GOOGLE_PAGESPEED, $url->wid);
+        $testCms = $this->determinePerformTest(TEST_TYPE_WAPPALYZER, $url->wid);
+
         // Create a PhantomQuailWorker for each url.
-        $worker = new PhantomQuailWorker($url, $website, $url->url_id);
+        $worker = new PhantomQuailWorker($url, $website, $url->url_id, $testCms, $testGooglePagespeed);
         // First delete all documents from solr.
         $worker->deleteCasesFromSolr();
         // Now start the thread.
-        $worker->start();
-//        $worker->run();
+//        $worker->start();
+        $worker->run();
         $this->workers[] = $worker;
       }
       // Add some debugging.
@@ -139,6 +143,27 @@ class QuailTester {
     $result = $query->fetch(PDO::FETCH_OBJ);
     return $result;
   }
+
+  /**
+   * Determine if a test should be done.
+   *
+   * @param $testType
+   * @param $wid
+   */
+  protected function determinePerformTest($testType, $wid) {
+    $query = $this->pdo->prepare("SELECT COUNT(*) FROM test_results WHERE type=:type and wid=:wid");
+    $query->execute(array(
+        'wid' => $wid,
+        'type' => $testType,
+      ));
+    $result = $query->fetch(PDO::FETCH_NUM);
+    if ($result[0] > 0) {
+      return FALSE;
+    }
+    return TRUE;
+
+  }
+
   /**
    * Process the finished workers.
    */
@@ -190,11 +215,33 @@ class QuailTester {
   protected function processWappalyzerResults($finishedWorker) {
     $wid = $finishedWorker->getWid();
     if (isset($wid)) {
-      $query = $this->pdo->prepare("UPDATE website SET cms=:cms WHERE wid=:wid");
+      $query = $this->pdo->prepare("INSERT INTO test_results (wid,type,result) VALUES (:wid,:type,:result)");
       $query->execute(
         array(
           'wid' => $wid,
-          'cms' => $finishedWorker->getWebsiteCms(),
+          'type' => TEST_TYPE_WAPPALYZER,
+          'result' => $finishedWorker->getWebsiteCms(),
+        )
+      );
+    }
+  }
+
+  /**
+   * Store the google pagespeed results.
+   *
+   * @param $finishedWorker
+   */
+  protected function processGooglePagespeed($finishedWorker) {
+    $wid = $finishedWorker->getWid();
+    // If there is a result, insert it.
+    $pagespeedResult = $finishedWorker->getPageSpeedResult();
+    if ($pagespeedResult) {
+      $query = $this->pdo->prepare("INSERT INTO test_results (wid,type,result) VALUES (:wid,:type,:result)");
+      $query->execute(
+        array(
+          'wid' => $wid,
+          'type' => TEST_TYPE_GOOGLE_PAGESPEED,
+          'result' => $pagespeedResult,
         )
       );
     }

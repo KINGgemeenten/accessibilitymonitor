@@ -7,6 +7,12 @@ class PhantomQuailWorker extends Thread {
   protected $phantomcore_name;
   protected $result;
 
+  protected $determineCms;
+  protected $cmsResult;
+
+  protected $performGooglePagespeed = FALSE;
+  protected $pageSpeedResult = FALSE;
+
   // Store the website cms.
   protected $websiteCms;
   // Store the website id, if the website analysis has been done.
@@ -28,9 +34,11 @@ class PhantomQuailWorker extends Thread {
   // Store the queueid of the object.
   protected $queueId;
 
-  public function __construct($urlObject, $websiteObject, $queueId) {
-   $this->urlObject = $urlObject;
+  public function __construct($urlObject, $websiteObject, $queueId, $determineCms, $executeGooglePagespeed) {
+    $this->urlObject = $urlObject;
     $this->websiteObject = $websiteObject;
+    $this->performGooglePagespeed = $executeGooglePagespeed;
+    $this->determineCms = $determineCms;
     // Fill the websiteCms if present.
     if (isset($websiteObject->cms) && $websiteObject->cms != '') {
       $this->websiteCms = $websiteObject->cms;
@@ -52,7 +60,12 @@ class PhantomQuailWorker extends Thread {
     require( __DIR__ . '/../vendor/autoload.php');
     require( __DIR__ . '/../settings.php');
     // If the website has not yet a cms detected, perform the detection here.
-    $this->detectCms();
+    if ($this->determineCms) {
+      $this->detectCms();
+    }
+    if ($this->performGooglePagespeed) {
+      $this->executeGooglePagespeed();
+    }
     $this->analyzeQuail();
   }
 
@@ -91,6 +104,16 @@ class PhantomQuailWorker extends Thread {
     // Fill the wid property in order to trigger the save in the quailTester.
     $this->wid = $this->websiteObject->wid;
   }
+
+  /**
+   * Perform a google pagespeed test.
+   */
+  protected function executeGooglePagespeed() {
+    $url = $this->websiteObject->url;
+    $pageSpeedResult = performGooglePagespeedRequest($url);
+    $this->pageSpeedResult = json_encode($pageSpeedResult);
+  }
+
 
   /**
    * Get the website id.
@@ -548,6 +571,24 @@ class PhantomQuailWorker extends Thread {
    */
   public function getWebsiteId() {
     return $this->urlObject->wid;
+  }
+
+  /**
+   * Get the cms result.
+   *
+   * @return mixed
+   */
+  public function getCmsResult() {
+    return $this->cmsResult;
+  }
+
+  /**
+   * Get the google pagespeed result.
+   *
+   * @return mixed
+   */
+  public function getPageSpeedResult() {
+    return $this->pageSpeedResult;
   }
 
 
