@@ -58,8 +58,8 @@ class QuailTester {
         // First delete all documents from solr.
         $worker->deleteCasesFromSolr();
         // Now start the thread.
-//        $worker->start();
-        $worker->run();
+        $worker->start();
+//        $worker->run();
         $this->workers[] = $worker;
       }
       // Add some debugging.
@@ -173,6 +173,7 @@ class QuailTester {
       foreach ($this->finishedWorkers as $key => $finishedWorker) {
         $this->processQuailResult($finishedWorker);
         $this->processWappalyzerResults($finishedWorker);
+        $this->processGooglePagespeed($finishedWorker);
 
         // Now unset the finished worker in the array.
         unset($this->finishedWorkers[$key]);
