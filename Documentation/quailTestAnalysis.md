@@ -22,7 +22,7 @@ The raw test data contains the following information:
 
 We can further extract those data the following way:
 
-- Explode by casus: explode the documents to casus, so these can be indexed later.
+- Explode by cases: explode the documents to cases, so these can be indexed later.
 - Order by wcag: order the cases bij wcag
 
 ## Errors, passes and other
@@ -57,6 +57,9 @@ Per url we want to aggregate the results as well. The results will have the foll
         - amount cannot tell
         - amount inapplicable
 
+## Failed cases (broncode fouten)
+
+For each test 1 fail should be send to Solr, so we can use that as examples of fails.
 
 # Current situation
 

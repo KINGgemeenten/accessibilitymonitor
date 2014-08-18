@@ -3,8 +3,20 @@
 class PhantomQuailWorker extends Thread {
 
   protected $urlObject;
+  protected $websiteObject;
   protected $phantomcore_name;
   protected $result;
+
+  protected $determineCms;
+  protected $cmsResult;
+
+  protected $performGooglePagespeed = FALSE;
+  protected $pageSpeedResult = FALSE;
+
+  // Store the website cms.
+  protected $websiteCms;
+  // Store the website id, if the website analysis has been done.
+  protected $wid;
 
   protected $status = STATUS_TESTING;
 
@@ -14,14 +26,23 @@ class PhantomQuailWorker extends Thread {
   protected $quailResults = array();
   // Array to hold all the cases of all tests together with the result.
   protected $quailCases = array();
+  // Array to hold examples of failed cases.
+  protected $failedCaseExamples = array();
   // Array to hold the final results per wcag thingy.
   protected $quailFinalResult = array();
 
   // Store the queueid of the object.
   protected $queueId;
 
-  public function __construct($urlObject, $queueId) {
+  public function __construct($urlObject, $websiteObject, $queueId, $determineCms, $executeGooglePagespeed) {
     $this->urlObject = $urlObject;
+    $this->websiteObject = $websiteObject;
+    $this->performGooglePagespeed = $executeGooglePagespeed;
+    $this->determineCms = $determineCms;
+    // Fill the websiteCms if present.
+    if (isset($websiteObject->cms) && $websiteObject->cms != '') {
+      $this->websiteCms = $websiteObject->cms;
+    }
     $this->queueId = $queueId;
     $this->phantomcore_name = get_setting('solr_phantom_corename');
   }
@@ -38,7 +59,86 @@ class PhantomQuailWorker extends Thread {
     // Composer autoloader.
     require( __DIR__ . '/../vendor/autoload.php');
     require( __DIR__ . '/../settings.php');
+    // If the website has not yet a cms detected, perform the detection here.
+    if ($this->determineCms) {
+      $this->detectCms();
+    }
+    if ($this->performGooglePagespeed) {
+      $this->executeGooglePagespeed();
+    }
+    $this->analyzeQuail();
+  }
 
+  /**
+   * Detect the cms of the main website.
+   */
+  protected function detectCms() {
+    $phantomjsExecutable = get_setting('phantomjs_executable');
+    $testUrl = $this->websiteObject->url;
+    // Add http, if not present.
+    if (! preg_match('/^http/', $testUrl)) {
+      $testUrl = 'http://' . $testUrl;
+    }
+    $phantomDir = __DIR__ . '/../';
+    $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes ' . $phantomDir . 'node_modules/phantalyzer/phantalyzer.js ' . $testUrl;
+    $output = shell_exec($command);
+    $preg_split = preg_split("/((\r?\n)|(\r\n?))/", $output);
+    $detectedAppsArray = array();
+    foreach ($preg_split as $line) {
+      // Check the line detectedApps.
+      if ($line != '' && preg_match("/^detectedApps/", $line)) {
+        $detectedApps = str_replace('detectedApps: ', '', $line);
+        $detectedAppsArray = explode('|', $detectedApps);
+      }
+      // Also check the generator.
+      if ($line != '' && preg_match('/<meta name="generator" content="([A-Za-z\s]*)"/', $line, $matches)) {
+        $generator = $matches[1];
+      }
+    }
+    // If a generator is found, add it to the detected apps.
+    if (isset($generator)) {
+      // Add the generator to the detected apps.
+      $detectedAppsArray[] = $generator;
+    }
+    $this->websiteCms = implode('|', $detectedAppsArray);
+    // Fill the wid property in order to trigger the save in the quailTester.
+    $this->wid = $this->websiteObject->wid;
+  }
+
+  /**
+   * Perform a google pagespeed test.
+   */
+  protected function executeGooglePagespeed() {
+    $url = $this->websiteObject->url;
+    $pageSpeedResult = performGooglePagespeedRequest($url);
+    $this->pageSpeedResult = json_encode($pageSpeedResult);
+  }
+
+
+  /**
+   * Get the website id.
+   *
+   * This property only returns result, if a successful cms detection has been performed.
+   *
+   * @return mixed
+   */
+  public function getWid() {
+    return $this->wid;
+  }
+
+  /**
+   * Get the website cms.
+   *
+   * @return mixed
+   */
+  public function getWebsiteCms() {
+    return $this->websiteCms;
+  }
+
+  /**
+   * Perform the quail analysis.
+   */
+  protected function analyzeQuail() {
     // First delete all solr records for this url.
     $this->deleteCasesFromSolr();
 
@@ -64,27 +164,27 @@ class PhantomQuailWorker extends Thread {
       // Create an array for all quail results.
       // We need to use this 'in between array' because in threads object variable
       // arrays don't allow array_push or [].
-      $quailResults = array();
+      $rawQuailResults = array();
       // Create an array for
       foreach (preg_split("/((\r?\n)|(\r\n?))/", $output) as $line) {
         if ($line != '' && preg_match("/^{/", $line)) {
           // do stuff with $line
-          $quailResult = json_decode($line);
+          $rawResults = json_decode($line);
 
-          // Add the url to the quailResult.
-          $quailResult->url = $this->urlObject->full_url;
+          foreach ($rawResults->tests as $testId => $quailResult) { // Add the url to the quailResult.
+            $quailResult->url = $this->urlObject->full_url;
 
-
-          // Process the quail result to a json object which can be send to solr.
-          $processedResult = $this->preprocessQuailResult($quailResult, $count);
-          if ($processedResult) {
-            // Add the documents to the document list in solr.
-            $quailResults[] = $processedResult;
-            $count++;
+            // Process the quail result to a json object which can be send to solr.
+            $processedResult = $this->preprocessQuailResult($quailResult, $count);
+            if ($processedResult) {
+              // Add the documents to the document list in solr.
+              $rawQuailResults[$testId] = $processedResult;
+              $count++;
+            }
           }
         }
       }
-      $this->rawQuailResults = $quailResults;
+      $this->rawQuailResults = $rawQuailResults;
       $this->processQuailResults();
 
       // Now send the case results to solr.
@@ -132,8 +232,16 @@ class PhantomQuailWorker extends Thread {
     // Loop the quail results to create the different arrays.
     $quailResults = array();
     $quailCases = array();
+    $failedCaseExamples = array();
     $quailFinalResult = array();
-    foreach ($this->rawQuailResults as $result) {
+    foreach ($this->rawQuailResults as $key => $result) {
+      // Add the technologies.
+      if (isset($this->websiteCms)) {
+        $technologies = explode('|', $this->websiteCms);
+        if (count($technologies) > 0) {
+          $result->technologies = $technologies;
+        }
+      }
       // First do the quailResults.
       $quailResults[] = $result;
       // Expand on case
@@ -152,14 +260,16 @@ class PhantomQuailWorker extends Thread {
           // Add the quailCase.
           $quailCases[] = $caseItem;
 
+          // If there is no fail example, add it here.
+          if (!isset($failedCaseExamples[$key]) && $caseItem->status == 'passed' && $caseItem->testability > 0) {
+            $exampleItem = $caseItem;
+            $exampleItem->document_type = 'failed_case_example';
+            $failedCaseExamples[$key] = $caseItem;
+          }
+
           if (isset($caseItem->applicationframework)) {
             // Add the case to the final result.
             foreach ($caseItem->applicationframework as $wcagItem) {
-              // Add the case to the specific wcag item.
-              if (!isset($quailFinalResult[$wcagItem]['cases'])) {
-                $quailFinalResult[$wcagItem]['cases'] = array();
-              }
-              $quailFinalResult[$wcagItem]['cases'][] = $caseItem;
               // Increment counters on the status.
               if (!isset($quailFinalResult[$wcagItem]['statuses'][$caseItem->status])) {
                 $quailFinalResult[$wcagItem]['statuses'][$caseItem->status] = 0;
@@ -172,6 +282,7 @@ class PhantomQuailWorker extends Thread {
       }
     }
     $this->quailCases = $quailCases;
+    $this->failedCaseExamples = $failedCaseExamples;
     $this->quailFinalResult = $quailFinalResult;
   }
 
@@ -236,6 +347,9 @@ class PhantomQuailWorker extends Thread {
       }
       if (property_exists($case, 'techniques')) {
         $doc->techniques = $case->techniques;
+      }
+      if (property_exists($case, 'technologies')) {
+        $doc->technologies = $case->technologies;
       }
       $doc->tags = $case->tags;
       $doc->testability = $case->testability;
@@ -457,6 +571,24 @@ class PhantomQuailWorker extends Thread {
    */
   public function getWebsiteId() {
     return $this->urlObject->wid;
+  }
+
+  /**
+   * Get the cms result.
+   *
+   * @return mixed
+   */
+  public function getCmsResult() {
+    return $this->cmsResult;
+  }
+
+  /**
+   * Get the google pagespeed result.
+   *
+   * @return mixed
+   */
+  public function getPageSpeedResult() {
+    return $this->pageSpeedResult;
   }
 
 
