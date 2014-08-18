@@ -163,7 +163,11 @@ page.onCallback = function(action, data) {
   }
 };
 
-page.open(address);
+page.open(address, function (status) {
+  if (status === 'fail') {
+    quitPhantom('The requested URL could not be loaded: ' + address);
+  }
+});
 
 // Decorate the page once the HTML has been loaded.
 // This is where we run the tests.
