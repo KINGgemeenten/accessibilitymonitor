@@ -556,6 +556,16 @@ class PhantomQuailWorker extends Thread {
   }
 
   /**
+   * Get the quail final result.
+   *
+   * @return array
+   */
+  public function getQuailFinalResult() {
+    return $this->quailFinalResult;
+  }
+
+
+  /**
    * Get status.
    *
    * @return int

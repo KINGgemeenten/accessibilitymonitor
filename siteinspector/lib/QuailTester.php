@@ -188,12 +188,13 @@ class QuailTester {
    */
   protected function processQuailResult($finishedWorker) {
     // Update the status of the url.
-    $query = $this->pdo->prepare("UPDATE urls SET status=:status, cms=:cms WHERE url_id=:url_id");
+    $query = $this->pdo->prepare("UPDATE urls SET status=:status, cms=:cms, quail_result=:quail_result WHERE url_id=:url_id");
     $query->execute(
       array(
         'status' => $finishedWorker->getStatus(),
         'url_id' => $finishedWorker->getQueueId(),
         'cms' => $finishedWorker->getWebsiteCms(),
+        'quail_result' => json_encode($finishedWorker->getQuailFinalResult()),
       )
     );
     // Set the last_analysis date.
