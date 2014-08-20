@@ -374,57 +374,61 @@ function updateUrlFromNutch() {
 //        $baseUrl = str_replace('www.', '', $entry->url);
         // Get the host of the url.
         $parts = parse_url($entry->url);
-        $host = $parts['host'];
+        if (isset($parts['host'])) {
+          $host = $parts['host'];
 //        $query->setQuery('host:' . $host);
-        $query->setQuery($host);
+          $query->setQuery($host);
 
-        // Add a filter application type, so we only have html and no pdf's!
-        $type_query = 'type:application/xhtml+xml OR type:text/html';
-        $query->createFilterQuery('type')->setQuery($type_query);
+          // Add a filter application type, so we only have html and no pdf's!
+          $type_query = 'type:application/xhtml+xml OR type:text/html';
+          $query->createFilterQuery('type')->setQuery($type_query);
 
-        // Now also add a filter query for host.
-        $host_query = 'host:"' . $host . '"';
-        $query->createFilterQuery('host')->setQuery($host_query);
+          // Now also add a filter query for host.
+          $host_query = 'host:"' . $host . '"';
+          $query->createFilterQuery('host')->setQuery($host_query);
 
-        // Set the fields.
-        $query->setFields(array('url', 'score'));
+          // Set the fields.
+          $query->setFields(array('url', 'score'));
 
-        // First check how many rows we should ask from nutch.
-        $urls_per_sample = get_setting('urls_per_sample');
+          // First check how many rows we should ask from nutch.
+          $urls_per_sample = get_setting('urls_per_sample');
 
-        // Set the rows.
-        $query->setRows($urls_per_sample);
-        // Set the start
-        $query->setStart($start);
+          // Set the rows.
+          $query->setRows($urls_per_sample);
+          // Set the start
+          $query->setStart($start);
 
-        // Get the results.
-        $solrResults = $client->select($query);
+          // Get the results.
+          $solrResults = $client->select($query);
 
-        // Set the priority to 1, for the first document and increase.
-        $priority = 1;
-        foreach ($solrResults as $doc) {
-          // Check if entry already exists.
-          $query = $pdo->prepare("SELECT count(*) FROM urls WHERE wid=:wid AND full_url=:full_url");
-          $query->execute(array(
-              'wid' => $entry->wid,
-              'full_url' => $doc->url,
-            ));
-          $present = $query->fetchColumn();
-
-          if (! $present) {
-            // Insert a new entry.
-            $sql = "INSERT INTO urls (wid,full_url,status,priority) VALUES (:wid,:full_url,:status,:priority)";
-            $insert = $pdo->prepare($sql);
-            $result = $insert->execute(
+          // Set the priority to 1, for the first document and increase.
+          $priority = 1;
+          foreach ($solrResults as $doc) {
+            // Check if entry already exists.
+            $query = $pdo->prepare("SELECT count(*) FROM urls WHERE wid=:wid AND full_url=:full_url");
+            $query->execute(
               array(
                 'wid'      => $entry->wid,
                 'full_url' => $doc->url,
-                'status'   => STATUS_SCHEDULED,
-                'priority' => $priority,
               )
             );
-            // Increase the priority.
-            $priority++;
+            $present = $query->fetchColumn();
+
+            if (!$present) {
+              // Insert a new entry.
+              $sql = "INSERT INTO urls (wid,full_url,status,priority) VALUES (:wid,:full_url,:status,:priority)";
+              $insert = $pdo->prepare($sql);
+              $result = $insert->execute(
+                array(
+                  'wid'      => $entry->wid,
+                  'full_url' => $doc->url,
+                  'status'   => STATUS_SCHEDULED,
+                  'priority' => $priority,
+                )
+              );
+              // Increase the priority.
+              $priority++;
+            }
           }
         }
       }
