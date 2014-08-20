@@ -10,6 +10,8 @@ $global_vars['mysql_host'] = 'localhost';
 $global_vars['urls_per_sample'] = 10;
 $global_vars['max_execution_time'] = 100;
 
+$global_vars['amount_of_cpus'] = 2;
+
 $global_vars['phantomjs_executable'] = '/usr/bin/phantomjs';
 $global_vars['phantomjs_timeout'] = 10;
 

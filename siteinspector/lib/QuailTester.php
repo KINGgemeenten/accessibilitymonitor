@@ -136,15 +136,16 @@ class QuailTester {
    */
   protected function updateWorkerCount() {
     // Update the worker count, so the server is optimally used.
-    // If the load is below 2: increase the worker count
-    // If the load is higher than 5: decrease it.
+    // If the load is below amount of cpu's - 1: increase the worker count
+    // If the load is higher than the amount of cpu's + 1: decrease it.
     // We take the 1 minute average load.
+    $amountOfCpus = get_setting('amount_of_cpus', 2);
     $load = sys_getloadavg();
-    if ($load[0] < 2) {
+    if ($load[0] < $amountOfCpus - 1) {
       $this->workerCount++;
       $this->log('Increasing the amount of workers to ' . $this->workerCount . ', due to low load (< 2)');
     }
-    else if ($load[0] > 5) {
+    else if ($load[0] > $amountOfCpus + 1) {
       $this->workerCount--;
       $this->log('Decreasing the amount of workers to ' . $this->workerCount . ', due to high load (> 5)');
     }
