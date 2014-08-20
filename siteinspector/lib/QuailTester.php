@@ -41,6 +41,9 @@ class QuailTester {
    */
   public function test() {
     while ($this->elapsedTime < $this->maxTime) {
+      // Determine the new amount of workers based on the load.
+      $this->updateWorkerCount();
+
       // Get the url's to test.
       $urls = $this->getTestingUrls();
 
@@ -126,6 +129,25 @@ class QuailTester {
       );
     }
     return $results;
+  }
+
+  /**
+   * Update the amount of workers based on the system load.
+   */
+  protected function updateWorkerCount() {
+    // Update the worker count, so the server is optimally used.
+    // If the load is below 2: increase the worker count
+    // If the load is higher than 5: decrease it.
+    // We take the 1 minute average load.
+    $load = sys_getloadavg();
+    if ($load[0] < 2) {
+      $this->workerCount++;
+      $this->log('Increasing the amount of workers to ' . $this->workerCount . ', due to low load (< 2)');
+    }
+    else if ($load[0] > 5) {
+      $this->workerCount--;
+      $this->log('Decreasing the amount of workers to ' . $this->workerCount . ', due to high load (> 5)');
+    }
   }
 
   /**
