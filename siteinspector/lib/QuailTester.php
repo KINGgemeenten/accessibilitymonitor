@@ -145,7 +145,7 @@ class QuailTester {
       $this->workerCount++;
       $this->log('Increasing the amount of workers to ' . $this->workerCount . ', due to low load (< 2)');
     }
-    else if ($load[0] > $amountOfCpus + 1) {
+    else if ($load[0] > $amountOfCpus + 1 && $this->workerCount > 1) {
       $this->workerCount--;
       $this->log('Decreasing the amount of workers to ' . $this->workerCount . ', due to high load (> 5)');
     }
