@@ -141,7 +141,7 @@ class QuailTester {
     // We take the 1 minute average load.
     $amountOfCpus = get_setting('amount_of_cpus', 2);
     $load = sys_getloadavg();
-    if ($load[0] < $amountOfCpus - 1) {
+    if ($load[0] < $amountOfCpus - 1 && $this->workerCount < $amountOfCpus) {
       $this->workerCount++;
       $this->log('Increasing the amount of workers to ' . $this->workerCount . ', due to low load (< 2)');
     }
