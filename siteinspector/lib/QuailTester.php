@@ -239,13 +239,14 @@ class QuailTester {
    */
   protected function processWappalyzerResults($finishedWorker) {
     $wid = $finishedWorker->getWid();
-    if (isset($wid)) {
+    $websiteCms = $finishedWorker->getWebsiteCms();
+    if ($websiteCms) {
       $query = $this->pdo->prepare("INSERT INTO test_results (wid,type,result) VALUES (:wid,:type,:result)");
       $query->execute(
         array(
           'wid' => $wid,
           'type' => TEST_TYPE_WAPPALYZER,
-          'result' => $finishedWorker->getWebsiteCms(),
+          'result' => $websiteCms,
         )
       );
     }

@@ -43,6 +43,8 @@ class PhantomQuailWorker extends Thread {
     if (isset($websiteObject->cms) && $websiteObject->cms != '') {
       $this->websiteCms = $websiteObject->cms;
     }
+    // Fill the wid property.
+    $this->wid = $this->websiteObject->wid;
     $this->queueId = $queueId;
     $this->phantomcore_name = get_setting('solr_phantom_corename');
   }
@@ -101,8 +103,6 @@ class PhantomQuailWorker extends Thread {
       $detectedAppsArray[] = $generator;
     }
     $this->websiteCms = implode('|', $detectedAppsArray);
-    // Fill the wid property in order to trigger the save in the quailTester.
-    $this->wid = $this->websiteObject->wid;
   }
 
   /**
@@ -132,7 +132,9 @@ class PhantomQuailWorker extends Thread {
    * @return mixed
    */
   public function getWebsiteCms() {
-    return $this->websiteCms;
+    if ($this->determineCms) {
+      return $this->websiteCms;
+    }
   }
 
   /**
@@ -589,7 +591,10 @@ class PhantomQuailWorker extends Thread {
    * @return mixed
    */
   public function getCmsResult() {
-    return $this->cmsResult;
+    if ($this->determineCms) {
+      return $this->cmsResult;
+    }
+    return FALSE;
   }
 
   /**
@@ -598,7 +603,10 @@ class PhantomQuailWorker extends Thread {
    * @return mixed
    */
   public function getPageSpeedResult() {
-    return $this->pageSpeedResult;
+    if ($this->performGooglePagespeed) {
+      return $this->pageSpeedResult;
+    }
+    return FALSE;
   }
 
 
