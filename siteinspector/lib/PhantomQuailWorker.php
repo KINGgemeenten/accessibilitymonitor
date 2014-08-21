@@ -248,8 +248,10 @@ class PhantomQuailWorker extends Thread {
       $quailResults[] = $result;
       // Expand on case
       if (isset($result->cases) && count($result->cases) > 0 && is_array($result->cases)) {
-        foreach ($result->cases as $case) {
-          $caseItem = $result;
+        foreach ($result->cases as $key => $case) {
+          $caseItem = clone $result;
+          // Add the key to the id, so we have individual cases.
+          $caseItem->id .= '_' . $key;
           // Unset the cases.
           unset($caseItem->cases);
           $caseItem->status = $case->status;
