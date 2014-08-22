@@ -165,6 +165,7 @@ function addUrl($url) {
           'url_id' => $urlRecord['url_id'],
         ));
     }
+    return $result;
   }
   return FALSE;
 }
