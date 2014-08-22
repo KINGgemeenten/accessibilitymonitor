@@ -184,6 +184,8 @@ function detectCms() {
     $command = $phantomjsExecutable . ' --ignore-ssl-errors=yes node_modules/phantalyzer/phantalyzer.js ' . $row['full_url'] . ' | grep detectedApps';
     $output = shell_exec($command);
     $detectedApps = str_replace('detectedApps: ', '', $output);
+    // If the detected app is an empty string, put the cms to unknown.
+    $detectedApps = (strlen($detectedApps) > 0) ? $detectedApps : 'Unknown';
     $update = $pdo->prepare("UPDATE urls SET cms=:cms WHERE url_id=:url_id");
     $update->execute(array(
         'cms' => $detectedApps,
