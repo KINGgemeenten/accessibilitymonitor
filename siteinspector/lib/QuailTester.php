@@ -172,6 +172,8 @@ class QuailTester {
    *
    * @param $testType
    * @param $wid
+   *
+   * @return bool
    */
   protected function determinePerformTest($testType, $wid) {
     $query = $this->pdo->prepare("SELECT COUNT(*) FROM test_results WHERE type=:type and wid=:wid");
@@ -184,7 +186,6 @@ class QuailTester {
       return FALSE;
     }
     return TRUE;
-
   }
 
   /**
@@ -217,7 +218,7 @@ class QuailTester {
         'status' => $finishedWorker->getStatus(),
         'url_id' => $finishedWorker->getQueueId(),
         'cms' => $finishedWorker->getWebsiteCms(),
-        'quail_result' => json_encode($finishedWorker->getQuailFinalResult()),
+        'quail_result' => json_encode($finishedWorker->getQuailFinalResults()),
       )
     );
     // Set the last_analysis date.
