@@ -146,7 +146,7 @@ page.onCallback = function(action, data) {
       // All the tests have completed.
       if (len === 0) {
         console.log('Elapsed time: ' + ((new Date()).getTime() - start) / 1000 + ' seconds');
-        console.log('Cases found: ' + output.stats.cases);
+        console.log('Cases found: ' + (output.stats && output.stats.cases || 0));
         var out = JSON.stringify(output);
         stream.write(out);
         // Also write the output to the console.
@@ -236,6 +236,7 @@ page.onLoadFinished = function (status) {
           successCriteriaEvaluated : function (eventName, successCriteria, testCollection) {
             var name = successCriteria.get('name');
             var status = successCriteria.get('status');
+            var totals = successCriteria.get('totals');
             var output = {
               successCriteria: {}
             };
@@ -250,7 +251,7 @@ page.onLoadFinished = function (status) {
 
             // Push the results of the test out to the Phantom listener.
             // If the SC was untested, report that as its status.
-            if (status === 'untested') {
+            if (status === 'untested' || status === 'noResults' || status === 'noTestCoverage') {
               output.successCriteria[name] = status;
             }
             // Otherwise get the cases and report them under their status.
@@ -264,9 +265,11 @@ page.onLoadFinished = function (status) {
                   results[result].each(looper);
                 }
               }
+              // List the totals for each type of result
+              output.successCriteria[name]['totals'] = successCriteria.get('totals');
             }
             // Echo
-            console.log('Evaluated: ' + name, 'conclusion: ' + status);
+            console.log('Evaluated: ' + name, 'conclusion: ' + status, 'totals: ' + JSON.stringify(totals));
             // Attempt to write out the data.
             callPhantom('writeData', JSON.stringify(output));
           }
