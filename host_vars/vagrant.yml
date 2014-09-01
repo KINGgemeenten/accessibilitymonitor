@@ -97,4 +97,4 @@ ufw_whitelisted_ipv4_addresses:
 #      - ../../../files/keys/jur.pub
 #      - ../../../files/keys/server-control.pub
 
-quail_branch: 2.2.6
+quail_branch: dev

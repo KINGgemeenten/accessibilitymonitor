@@ -20,16 +20,21 @@ class PhantomQuailWorker extends Thread {
 
   protected $status = STATUS_TESTING;
 
-  // Array to hold all the raw results per test.
-  protected $rawQuailResults = array();
+  // Variable to hold the absolute raw result.
+  protected $rawResult;
+  // Array to hold all the raw technique results per test.
+  protected $rawQuailTechniqueResults = array();
   // Array to hold all the results per test.
   protected $quailResults = array();
   // Array to hold all the cases of all tests together with the result.
   protected $quailCases = array();
   // Array to hold examples of failed cases.
   protected $failedCaseExamples = array();
-  // Array to hold the final results per wcag thingy.
-  protected $quailFinalResult = array();
+  // Array to hold the final aggregated results stemming from raw cases per wcag thingy.
+  protected $quailAggregatedCaseResults = array();
+
+  // The final results per wcag item stemming from quail internal analyses.
+  protected $quailFinalResults = array();
 
   // Store the queueid of the object.
   protected $queueId;
@@ -172,6 +177,8 @@ class PhantomQuailWorker extends Thread {
         if ($line != '' && preg_match("/^{/", $line)) {
           // do stuff with $line
           $rawResults = json_decode($line);
+          // Since there is only one result json, this is also the exact raw result.
+          $this->rawResult = $rawResults;
 
           foreach ($rawResults->tests as $testId => $quailResult) { // Add the url to the quailResult.
             $quailResult->url = $this->urlObject->full_url;
@@ -186,8 +193,11 @@ class PhantomQuailWorker extends Thread {
           }
         }
       }
-      $this->rawQuailResults = $rawQuailResults;
+      $this->rawQuailTechniqueResults = $rawQuailResults;
       $this->processQuailResults();
+
+      // Process the direct quail result (the result on wcag level).
+      $this->processQuailAnalyzedWcagResult();
 
       // Now send the case results to solr.
       $this->debugMessage('Sending results to Solr.');
@@ -235,8 +245,8 @@ class PhantomQuailWorker extends Thread {
     $quailResults = array();
     $quailCases = array();
     $failedCaseExamples = array();
-    $quailFinalResult = array();
-    foreach ($this->rawQuailResults as $key => $result) {
+    $quailAggregatedCaseResults = array();
+    foreach ($this->rawQuailTechniqueResults as $key => $result) {
       // Add the technologies.
       if (isset($this->websiteCms)) {
         $technologies = explode('|', $this->websiteCms);
@@ -275,10 +285,10 @@ class PhantomQuailWorker extends Thread {
             // Add the case to the final result.
             foreach ($caseItem->applicationframework as $wcagItem) {
               // Increment counters on the status.
-              if (!isset($quailFinalResult[$wcagItem]['statuses'][$caseItem->status])) {
-                $quailFinalResult[$wcagItem]['statuses'][$caseItem->status] = 0;
+              if (!isset($quailAggregatedCaseResults[$wcagItem]['statuses'][$caseItem->status])) {
+                $quailAggregatedCaseResults[$wcagItem]['statuses'][$caseItem->status] = 0;
               }
-              $quailFinalResult[$wcagItem]['statuses'][$caseItem->status]++;
+              $quailAggregatedCaseResults[$wcagItem]['statuses'][$caseItem->status]++;
             }
           }
 
@@ -287,7 +297,46 @@ class PhantomQuailWorker extends Thread {
     }
     $this->quailCases = $quailCases;
     $this->failedCaseExamples = $failedCaseExamples;
-    $this->quailFinalResult = $quailFinalResult;
+    $this->quailAggregatedCaseResults = $quailAggregatedCaseResults;
+  }
+
+  /**
+   * Process the quail analyzed result.
+   */
+  protected function processQuailAnalyzedWcagResult() {
+    $successCriteriaResults = array();
+    foreach ($this->rawResult->successCriteria as $criteriumName => $result) {
+      $keyParts = explode(':', $criteriumName);
+      $key = $keyParts[1];
+      if (is_string($result)) {
+        if (isset($this->quailAggregatedCaseResults[$key]['statuses'])) {
+          $successCriteriaResults[$key] = $this->quailAggregatedCaseResults[$key]['statuses'];
+        }
+        else {
+          $successCriteriaResults[$key] = array();
+        }
+        $successCriteriaResults[$key]['resultFromQuail'] = FALSE;
+      }
+      else if (is_object($result)) {
+        // Try to count the passed, failed and notApplicable.
+        $passed = (isset($result->passed) && count($result->passed)) ? count($result->passed) : 0;
+        $failed = (isset($result->failed) && count($result->failed)) ? count($result->failed) : 0;
+        $notApplicable = (isset($result->notApplicable) && count($result->notApplicable)) ? count($result->notApplicable) : 0;
+        $success_rate = FALSE;
+        // Prevent division by 0.
+        if ($passed + $failed > 0) {
+          $success_rate = ($passed) / ($passed + $failed);
+        }
+        $successCriteriaResults[$key] = array(
+          'resultFromQuail' => TRUE,
+          'passed' => $passed,
+          'failed' => $failed,
+          'notApplicable' => $notApplicable,
+          'success_rate' => $success_rate,
+        );
+      }
+    }
+    $this->quailFinalResults = $successCriteriaResults;
   }
 
   /**
@@ -560,12 +609,21 @@ class PhantomQuailWorker extends Thread {
   }
 
   /**
+   * Get the quail aggregated case results for all wcag criteria (including level AAA).
+   *
+   * @return array
+   */
+  public function getQuailAggregatedCaseResults() {
+    return $this->quailAggregatedCaseResults;
+  }
+
+  /**
    * Get the quail final result.
    *
    * @return array
    */
-  public function getQuailFinalResult() {
-    return $this->quailFinalResult;
+  public function getQuailFinalResults() {
+    return $this->quailFinalResults;
   }
 
 

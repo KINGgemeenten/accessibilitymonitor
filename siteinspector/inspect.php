@@ -27,13 +27,6 @@ main($argument1, $argument2, $argument3);
 
 
 function main($operation = NULL, $workerCount = 2, $arg3) {
-  if (get_setting('is_master', FALSE)) {
-    // First update the status.
-    updateStatus();
-    // Then perform all actions.
-    performActions();
-  }
-
   // Then kill all stalled phantomjs processes.
   killStalledProcesses();
 
@@ -63,6 +56,14 @@ function main($operation = NULL, $workerCount = 2, $arg3) {
       }
       else {
         echo "Running...\n";
+      }
+      if (get_setting('is_master', FALSE)) {
+        // First update the status.
+        echo "Starting status update...\n";
+        updateStatus();
+        // Then perform all actions.
+        echo "Performing actions...\n";
+        performActions();
       }
       print "Performing tests\n";
       $pdo = getDatabaseConnection();
