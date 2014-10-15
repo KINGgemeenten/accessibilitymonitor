@@ -81,6 +81,10 @@ var guidelinedata = fs.read(dir + '/guideline.json');
 var guidelines = JSON.parse(guidelinedata);
 
 var testsdata = fs.read('/opt/quail/dist/tests.json');
+
+var wcag2data = fs.read('/opt/quail/dist/wcag2.json');
+var wcag2structure = JSON.parse(wcag2data);
+
 // Save the testsdata in the array all tests.
 // Some tests might need to be filtered out.
 var allTests = JSON.parse(testsdata);
@@ -179,13 +183,13 @@ page.onLoadFinished = function (status) {
     // The evaluation is executed in its own function scope. Closures that
     // incorporate outside scopes are not possible.
     try {
-      page.evaluate(function (tests, size) {
+      page.evaluate(function (tests, size, wcag2structure) {
         var callPhantom = window && window.callPhantom || function () {};
         // Tell the client that we're starting the test run.
         var scLen = size(quail.guidelines.wcag.successCriteria);
         console.log('Beginning evaluation of ' + size(tests) + ' tests and ' + scLen + ' Success Criteria.');
         // Determine how many data writes we'll make.
-        callPhantom('setCounter', scLen + 1); // +1 because we attempt a data write once for all tests on testCollectionComplete
+        callPhantom('setCounter', 1); // +1 because we attempt a data write once for all tests on testCollectionComplete
         // Basic output structure attributes.
         var output = {
           tests: {},
@@ -196,85 +200,88 @@ page.onLoadFinished = function (status) {
           }
         };
         jQuery('html').quail({
+          guideline: 'wcag2',
           accessibilityTests: tests,
+          wcag2Structure: wcag2structure,
           // Called when an individual Case in a test is resolved.
-          caseResolve: function (eventName, test, _case) {
-            var name = test.get('name');
-            if (!output.tests[name]) {
-              output.tests[name] = {
-                id: name,
-                title: test.get('title'),
-                description: test.get('description'),
-                type: test.get('type'),
-                testability: test.get('testability'),
-                guidelines: test.get('guidelines') || {},
-                tags: test.get('tags'),
-                cases: []
-              };
-            }
-            // Push the case into the results for this test.
-            output.tests[name].cases.push({
-              status: _case.get('status'),
-              selector: _case.get('selector'),
-              html: _case.get('html')
-            });
-            // Increment the cases count.
-            output.stats.cases++;
-          },
+          //caseResolve: function (eventName, test, _case) {
+          //  var name = test.get('name');
+          //  if (!output.tests[name]) {
+          //    output.tests[name] = {
+          //      id: name,
+          //      title: test.get('title'),
+          //      description: test.get('description'),
+          //      type: test.get('type'),
+          //      testability: test.get('testability'),
+          //      guidelines: test.get('guidelines') || {},
+          //      tags: test.get('tags'),
+          //      cases: []
+          //    };
+          //  }
+          //  // Push the case into the results for this test.
+          //  output.tests[name].cases.push({
+          //    status: _case.get('status'),
+          //    selector: _case.get('selector'),
+          //    html: _case.get('html')
+          //  });
+          //  // Increment the cases count.
+          //  output.stats.cases++;
+          //},
           // Called when all the Cases in a Test are resolved.
-          testComplete: function (eventName, test) {
-            console.log('Finished testing ' + test.get('name') + '.');
-            // Increment the tests count.
-            output.stats.tests++;
-          },
+          //testComplete: function (eventName, test) {
+          //  console.log('Finished testing ' + test.get('name') + '.');
+          //  // Increment the tests count.
+          //  //output.stats.tests++;
+          //},
           // Called when all the Tests in a TestCollection are completed.
           testCollectionComplete: function (eventName, testCollection) {
             // Push the results of the test out to the Phantom listener.
             console.log('The test collection has been evaluated.');
-            callPhantom('writeData', JSON.stringify(output));
-          },
-          successCriteriaEvaluated : function (eventName, successCriteria, testCollection) {
-            var name = successCriteria.get('name');
-            var status = successCriteria.get('status');
-            var totals = successCriteria.get('totals');
-            var output = {
-              successCriteria: {}
-            };
-            var result;
-            // Get some stringifyable data from the results.
-            var looper = function (index, _case) {
-              output.successCriteria[name][result].push({
-                selector: _case.get('selector'),
-                html: _case.get('html')
-              });
-            };
-
-            // Push the results of the test out to the Phantom listener.
-            // If the SC was untested, report that as its status.
-            if (status === 'untested' || status === 'noResults' || status === 'noTestCoverage') {
-              output.successCriteria[name] = status;
-            }
-            // Otherwise get the cases and report them under their status.
-            else {
-              output.successCriteria[name] = {};
-              var results = successCriteria.get('results');
-              for (result in results) {
-                if (results.hasOwnProperty(result)) {
-                  output.successCriteria[name][result] = [];
-                  // Go through each case for this result and get its selector and HTML.
-                  results[result].each(looper);
-                }
-              }
-              // List the totals for each type of result
-              output.successCriteria[name]['totals'] = successCriteria.get('totals');
-            }
-            // Echo
-            console.log('Evaluated: ' + name, 'conclusion: ' + status, 'totals: ' + JSON.stringify(totals));
-            // Attempt to write out the data.
-            callPhantom('writeData', JSON.stringify(output));
+            console.log(JSON.stringify(testCollection));
+            callPhantom('writeData', JSON.stringify(testCollection));
           }
+          //successCriteriaEvaluated : function (eventName, successCriteria, testCollection) {
+          //  var name = successCriteria.get('name');
+          //  var status = successCriteria.get('status');
+          //  var totals = successCriteria.get('totals');
+          //  var output = {
+          //    successCriteria: {}
+          //  };
+          //  var result;
+          //  // Get some stringifyable data from the results.
+          //  var looper = function (index, _case) {
+          //    output.successCriteria[name][result].push({
+          //      selector: _case.get('selector'),
+          //      html: _case.get('html')
+          //    });
+          //  };
+          //
+          //  // Push the results of the test out to the Phantom listener.
+          //  // If the SC was untested, report that as its status.
+          //  if (status === 'untested' || status === 'noResults' || status === 'noTestCoverage') {
+          //    output.successCriteria[name] = status;
+          //  }
+          //  // Otherwise get the cases and report them under their status.
+          //  else {
+          //    output.successCriteria[name] = {};
+          //    var results = successCriteria.get('results');
+          //    for (result in results) {
+          //      if (results.hasOwnProperty(result)) {
+          //        output.successCriteria[name][result] = [];
+          //        // Go through each case for this result and get its selector and HTML.
+          //        results[result].each(looper);
+          //      }
+          //    }
+          //    // List the totals for each type of result
+          //    output.successCriteria[name]['totals'] = successCriteria.get('totals');
+          //  }
+          //  // Echo
+          //  console.log('Evaluated: ' + name, 'conclusion: ' + status, 'totals: ' + JSON.stringify(totals));
+          //  // Attempt to write out the data.
+          //  callPhantom('writeData', JSON.stringify(output));
+          //}
         });
-      }, tests, size);
+      }, tests, size, wcag2structure);
     }
     catch (error) {
       callPhantom('quit', error);
