@@ -209,7 +209,7 @@ class Url implements TestingStatusInterface {
    * @return string
    */
   public function getCms() {
-    return $this->testingStatus;
+    return $this->cms;
   }
 
   /**
