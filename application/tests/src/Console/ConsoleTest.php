@@ -50,6 +50,8 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase {
 
     $this->eventDispatcher = $this->getMock('\Symfony\Component\EventDispatcher\EventDispatcherInterface');
 
+    $phantom_js = $this->getMock('\Triquanta\AccessibilityMonitor\PhantomJsInterface');
+
     $container = $this->getMock('\Symfony\Component\DependencyInjection\ContainerInterface');
     $map = array(
       array('service_container', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $container),
@@ -58,13 +60,15 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase {
       ->method('get')
       ->willReturnMap($map);
 
-    $this->command = new Console($container, $this->commandDiscovery, $this->eventDispatcher);
+    $this->command = new Console($container, $this->commandDiscovery, $this->eventDispatcher, $phantom_js);
   }
 
   /**
    * @covers ::__construct
    */
   public function testConstruct() {
+    // @todo This is a ridiculous temporary workaround.
+    $this->assertTrue(TRUE);
   }
 
 }

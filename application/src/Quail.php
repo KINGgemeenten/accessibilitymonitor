@@ -255,12 +255,12 @@ class Quail implements QuailInterface {
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
   protected function processQuailResult(PhantomQuailWorker $finishedWorker) {
-    $this->storage->updateUrl($finishedWorker->getQueueId(), $finishedWorker->getStatus(), $finishedWorker->getWebsiteCms(), $finishedWorker->getQuailFinalResults());
+    $this->storage->saveUrl($finishedWorker->getQueueId(), $finishedWorker->getStatus(), $finishedWorker->getWebsiteCms(), $finishedWorker->getQuailFinalResults());
     // Set the last_analysis date.
     $time = time();
     $this->logger->debug('time: ' . $time);
     $finishedWorker->getWebsite()->setLastAnalysis($time);
-    $this->storage->updateWebsite($finishedWorker->getWebsite());
+    $this->storage->saveWebsite($finishedWorker->getWebsite());
   }
 
   /**
@@ -272,7 +272,7 @@ class Quail implements QuailInterface {
     $websiteCms = $finishedWorker->getWebsiteCms();
     if ($websiteCms) {
       $finishedWorker->getUrl()->setCms($websiteCms);
-      $this->storage->updateUrl($finishedWorker->getUrl());
+      $this->storage->saveUrl($finishedWorker->getUrl());
     }
   }
 
@@ -287,7 +287,7 @@ class Quail implements QuailInterface {
     $pagespeedResult = $finishedWorker->getPageSpeedResult();
     if ($pagespeedResult) {
       $finishedWorker->getUrl()->setGooglePagespeedResult($pagespeedResult);
-      $this->storage->updateUrl($finishedWorker->getUrl());
+      $this->storage->saveUrl($finishedWorker->getUrl());
     }
   }
 
