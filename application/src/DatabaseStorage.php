@@ -131,7 +131,7 @@ class DatabaseStorage implements StorageInterface {
     $website->setId($record->aid)
       ->setAction($record->action)
       ->setUrl($record->item_uid)
-      ->setTimestmap($record->timestamp);
+      ->setTimestamp($record->timestamp);
 
     return $website;
   }
@@ -398,7 +398,7 @@ class DatabaseStorage implements StorageInterface {
    * {@inheritdoc}
    */
   public function getWebsiteIdForNestedUrl($nested_url) {
-    $query = $this->getConnection()->prepare("SELECT id FROM website WHERE :url LIKE CONCAT('%', url, '%')");
+    $query = $this->getConnection()->prepare("SELECT website_id FROM website WHERE :url LIKE CONCAT('%', url, '%')");
     $query->execute(array(
       'url' => $nested_url,
     ));
@@ -423,7 +423,7 @@ class DatabaseStorage implements StorageInterface {
    * {@inheritdoc}
    */
   public function getPendingActions() {
-    $query = $this->getConnection()->prepare("SELECT * FROM actions WHERE timestamp <> 0");
+    $query = $this->getConnection()->prepare("SELECT * FROM actions WHERE timestamp = 0");
     $query->execute();
     $actions = array();
     while ($record = $query->fetchObject()) {
