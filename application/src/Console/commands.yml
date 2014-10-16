@@ -9,3 +9,4 @@
 - \Triquanta\AccessibilityMonitor\Console\Command\RescanWebsite
 - \Triquanta\AccessibilityMonitor\Console\Command\ExcludeWebsite
 - \Triquanta\AccessibilityMonitor\Console\Command\ExcludeUrl
+- \Triquanta\AccessibilityMonitor\Console\Command\Queue

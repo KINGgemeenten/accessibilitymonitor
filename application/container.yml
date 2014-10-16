@@ -1,4 +1,7 @@
 parameters:
+  log.recipients: ['bart@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
+  log.sender: 'support@triquanta.nl'
+  log.file: '%root_directory%/../logs/application.log'
   solr.phantom:
     endpoint:
       localhost:
@@ -32,17 +35,19 @@ services:
   storage:
     class: \Triquanta\AccessibilityMonitor\DatabaseStorage
     arguments: ['%database.host_name%', '%database.database_name%', '%database.user_name%', '%database.password%']
-  # @todo Inject the event dispatcher when https://github.com/basdenooijer/solarium/issues/275 is fixed.
   solr.client.phantom:
-    class: \Solarium\Client
+    class: \Triquanta\AccessibilityMonitor\SolariumClient
     arguments: ['%solr.phantom%']
-  # @todo Inject the event dispatcher when https://github.com/basdenooijer/solarium/issues/275 is fixed.
+    calls:
+      - [setEventDispatcher, ['@event_dispatcher']]
   solr.client.nutch:
-    class: \Solarium\Client
+    class: \Triquanta\AccessibilityMonitor\SolariumClient
     arguments: ['%solr.nutch%']
+    calls:
+      - [setEventDispatcher, ['@event_dispatcher']]
   phantomjs:
     class: \Triquanta\AccessibilityMonitor\PhantomJs
-    arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%']
+    arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%']
   process:
     class: \Triquanta\AccessibilityMonitor\Process
   quail:
@@ -56,8 +61,16 @@ services:
     arguments: ['global']
     calls:
       - [pushHandler, ['@monolog.handler.console']]
+      - [pushHandler, ['@monolog.handler.mail']]
+      - [pushHandler, ['@monolog.handler.file']]
   monolog.handler.console:
     class: \Symfony\Bridge\Monolog\Handler\ConsoleHandler
+  monolog.handler.mail:
+    class: \Monolog\Handler\NativeMailerHandler
+    arguments: ['%log.recipients%', 'Log messages for Gewoon Toegankelijk', '%log.sender%', 400]
+  monolog.handler.file:
+    class: \Monolog\Handler\StreamHandler
+    arguments: ['%log.file%', 100]
   event_dispatcher:
     class: \Symfony\Component\EventDispatcher\EventDispatcher
     calls:
