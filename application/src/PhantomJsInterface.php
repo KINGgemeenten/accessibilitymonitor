@@ -7,6 +7,8 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Defines a Phantom JS manager.
  */
@@ -33,6 +35,15 @@ interface PhantomJsInterface {
    *   The JSON results.
    */
   public function getQuailResults($url);
+
+  /**
+   * Set the logger. Only needed in a thread situation.
+   *
+   * @param LoggerInterface $logger
+   *
+   * @return mixed
+   */
+  public function setLogger(LoggerInterface $logger);
 
   /**
    * Kill all stalled phantomjs processes.

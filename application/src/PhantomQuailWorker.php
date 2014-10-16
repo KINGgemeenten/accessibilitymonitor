@@ -224,6 +224,10 @@ class PhantomQuailWorker extends \Thread {
     // Composer autoloader.
     require( __DIR__ . '/../vendor/autoload.php');
     Application::bootstrap();
+    $container = Application::getContainer();
+    $this->logger = $container->get('logger');
+    // Set the logger to the phantomjs.
+    $this->phantomJs->setLogger($this->logger);
 
     // @todo We likely need to reboot the application.
 //    Application::bootstrap();
@@ -311,9 +315,9 @@ class PhantomQuailWorker extends \Thread {
       }
 
       // Now send the case results to solr.
-      $this->logger->debug('Sending results to Solr.');
+//      $this->logger->debug('Sending results to Solr.');
 //      $this->sendCaseResultsToSolr();
-      $this->logger->debug('Results sended to Solr.');
+//      $this->logger->debug('Results sended to Solr.');
 
       // Update the result.
       $this->result = $this->url->getId();
@@ -322,7 +326,7 @@ class PhantomQuailWorker extends \Thread {
     } catch (\Exception $e) {
       // If there is an exception, probably phantomjs timed out.
       $this->status = Url::STATUS_ERROR;
-      $this->logger->debug($e->getMessage());
+//      $this->logger->debug($e->getMessage());
     }
   }
 
