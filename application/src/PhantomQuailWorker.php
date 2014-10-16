@@ -235,7 +235,7 @@ class PhantomQuailWorker extends \Thread {
       foreach (preg_split("/((\r?\n)|(\r\n?))/", $output) as $line) {
         if ($line != '' && preg_match("/^{/", $line)) {
           // do stuff with $line
-          $rawResults = json_decode($line);
+          $rawResults = (array) json_decode($line);
           // Since there is only one result json, this is also the exact raw result.
           $this->rawResult = $rawResults;
 

@@ -93,7 +93,7 @@ class PhantomJs implements PhantomJsInterface {
    * {@inheritdoc}
    */
   public function getQuailResults($url) {
-    $command = $this->executable . ' --ignore-ssl-errors=yes ' . $this->rootDirectory . 'phantomquail.js ' . $url;
+    $command = $this->executable . ' --ignore-ssl-errors=yes ' . $this->rootDirectory . '/phantomquail.js ' . $url;
     // Print some debug info.
     $this->logger->debug('Starting phantomjs');
     $output = $this->execTimeout($command, $this->timeout);

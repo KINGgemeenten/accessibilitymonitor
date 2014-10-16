@@ -370,7 +370,7 @@ class DatabaseStorage implements StorageInterface {
    * @return int
    */
   public function countCmsTestResultsByWebsiteId($website_id) {
-    $query = $this->getConnection()->prepare("SELECT COUNT(*) FROM url WHERE website_id = :website_id AND cms NOT NULL");
+    $query = $this->getConnection()->prepare("SELECT COUNT(*) FROM url WHERE website_id = :website_id AND cms IS NOT NULL");
     $query->execute(array(
       'website_id' => $website_id,
     ));
