@@ -37,6 +37,7 @@ class Application {
     $file_locator = new FileLocator(array(__DIR__ . '/..'));
     $service_loader = new YamlFileLoader($container, $file_locator);
     $service_loader->load('container.yml');
+    $container->setParameter('root_directory', dirname(__DIR__));
     static::setContainer($container);
   }
 
@@ -56,15 +57,6 @@ class Application {
    */
   public static function setContainer(ContainerInterface $container) {
     static::$container = $container;
-  }
-
-  /**
-   * Gets the application's root directory.
-   *
-   * @return string
-   */
-  public static function getRootDirectory() {
-    return dirname(__DIR__);
   }
 
 }

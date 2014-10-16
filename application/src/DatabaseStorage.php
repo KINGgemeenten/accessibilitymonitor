@@ -119,6 +119,24 @@ class DatabaseStorage implements StorageInterface {
   }
 
   /**
+   * Creates an action from a storage record.
+   *
+   * @param \stdClass $record
+   *   A record from the actions table.
+   *
+   * @return \Triquanta\AccessibilityMonitor\Action
+   */
+  protected function createActionFromStorageRecord($record) {
+    $website = new Action();
+    $website->setId($record->aid)
+      ->setAction($record->action)
+      ->setUrl($record->item_uid)
+      ->setTimestmap($record->timestamp);
+
+    return $website;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getUrlsByStatus($status, $limit = NULL) {
@@ -399,6 +417,37 @@ class DatabaseStorage implements StorageInterface {
     $record = $query->fetchObject();
 
     return $record ? $this->createUrlFromStorageRecord($record) : NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPendingActions() {
+    $query = $this->getConnection()->prepare("SELECT * FROM actions WHERE timestamp <> 0");
+    $query->execute();
+    $actions = array();
+    while ($record = $query->fetchObject()) {
+      $actions[] = $this->createActionFromStorageRecord($record);
+    }
+
+    return $actions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function saveAction(Action $action) {
+    if (!$action->getId()) {
+      throw new \InvalidArgumentException('The action does not exist yet.');
+    }
+    $values = array(
+      'aid' => $action->getId(),
+      'timestamp' => $action->getTimestamp(),
+    );
+    $query = $this->getConnection()->prepare("UPDATE actions SET timestamp = :timestamp WHERE aid = :aid");
+    $query->execute($values);
+
+    return $this;
   }
 
 }

@@ -28,6 +28,13 @@ class PhantomJs implements PhantomJsInterface {
   protected $logger;
 
   /**
+   * The application's root directory.
+   *
+   * @var string
+   */
+  protected $rootDirectory;
+
+  /**
    * The Phantom JS timeout.
    *
    * @var int
@@ -41,10 +48,12 @@ class PhantomJs implements PhantomJsInterface {
    * @param \Psr\Log\LoggerInterface $logger
    * @param string $executable
    * @param int $timeout
+   * @param string $root_directory
    */
-  public function __construct(LoggerInterface $logger, $executable, $timeout) {
+  public function __construct(LoggerInterface $logger, $executable, $timeout, $root_directory) {
     $this->executable = $executable;
     $this->logger = $logger;
+    $this->rootDirectory = $root_directory;
     $this->timeout = $timeout;
   }
 
@@ -56,8 +65,7 @@ class PhantomJs implements PhantomJsInterface {
     if (! preg_match('/^http/', $url)) {
       $url = 'http://' . $url;
     }
-    $phantomDir = Application::getRootDirectory();
-    $command = $this->executable . ' --ignore-ssl-errors=yes ' . $phantomDir . '/node_modules/phantalyzer/phantalyzer.js ' . $url;
+    $command = $this->executable . ' --ignore-ssl-errors=yes ' . $this->rootDirectory . '/node_modules/phantalyzer/phantalyzer.js ' . $url;
     $output = shell_exec($command);
     $preg_split = preg_split("/((\r?\n)|(\r\n?))/", $output);
     $detectedAppsArray = array();
@@ -85,7 +93,7 @@ class PhantomJs implements PhantomJsInterface {
    * {@inheritdoc}
    */
   public function getQuailResults($url) {
-    $command = $this->executable . ' --ignore-ssl-errors=yes ' . Application::getRootDirectory() . 'phantomquail.js ' . $url;
+    $command = $this->executable . ' --ignore-ssl-errors=yes ' . $this->rootDirectory . 'phantomquail.js ' . $url;
     // Print some debug info.
     $this->logger->debug('Starting phantomjs');
     $output = $this->execTimeout($command, $this->timeout);

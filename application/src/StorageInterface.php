@@ -186,4 +186,18 @@ interface StorageInterface extends TestingStatusInterface {
    */
   public function getWebsiteIdForNestedUrl($url);
 
+  /**
+   * Gets all pending actions.
+   *
+   * @return \Triquanta\AccessibilityMonitor\Action[]
+   */
+  public function getPendingActions();
+
+  /**
+   * Saves an action.
+   *
+   * @parem \Triquanta\AccessibilityMonitor\Action
+   */
+  public function saveAction(Action $action);
+
 }
