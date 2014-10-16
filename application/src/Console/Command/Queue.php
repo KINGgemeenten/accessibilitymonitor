@@ -54,6 +54,7 @@ class Queue extends Command implements ContainerFactoryInterface {
   public function __construct(ActionsInterface $actions, StorageInterface $storage, LoggerInterface $logger) {
     parent::__construct();
     $this->actions = $actions;
+    $this->logger = $logger;
     $this->storage = $storage;
   }
 

@@ -98,3 +98,5 @@ ufw_whitelisted_ipv4_addresses:
 #      - ../../../files/keys/server-control.pub
 
 quail_branch: dev
+
+php55_cli_add_mongo: false
