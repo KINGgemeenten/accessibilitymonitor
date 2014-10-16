@@ -223,6 +223,8 @@ class PhantomQuailWorker extends \Thread {
     // https://github.com/krakjoe/pthreads/issues/68
     // Composer autoloader.
     require( __DIR__ . '/../vendor/autoload.php');
+    Application::bootstrap();
+
     // @todo We likely need to reboot the application.
 //    Application::bootstrap();
     // If the website has not yet a cms detected, perform the detection here.
