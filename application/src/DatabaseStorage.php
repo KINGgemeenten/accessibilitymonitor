@@ -337,7 +337,7 @@ class DatabaseStorage implements StorageInterface {
     );
     if ($website->getId()) {
       $values['website_id'] = $website->getId();
-      $query = $this->getConnection()->prepare("UPDATE website SET last_analysis = :last_analysis, url = :url, status = :status WHERE website_id = :website_id");
+      $query = $this->getConnection()->prepare("UPDATE website SET last_analysis = :last_analysis, status = :status WHERE website_id = :website_id");
       $query->execute($values);
     }
     else {

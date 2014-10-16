@@ -16,6 +16,70 @@ use Solarium\QueryType\Update\Query\Query;
  */
 class PhantomQuailWorker extends \Thread {
 
+  static $wcag20Mapping = [
+    "wcag20:text-equiv-all" => "1.1.1",
+    "wcag20:media-equiv-av-only-alt" => "1.2.1",
+    "wcag20:media-equiv-captions" => "1.2.2",
+    "wcag20:media-equiv-audio-desc" => "1.2.3",
+    "wcag20:media-equiv-real-time-captions" => "1.2.4",
+    "wcag20:media-equiv-audio-desc-only" => "1.2.5",
+    "wcag20:media-equiv-sign" => "1.2.6",
+    "wcag20:media-equiv-extended-ad" => "1.2.7",
+    "wcag20:media-equiv-text-doc" => "1.2.8",
+    "wcag20:media-equiv-live-audio-only" => "1.2.9",
+    "wcag20:content-structure-separation-programmatic" => "1.3.1",
+    "wcag20:content-structure-separation-sequence" => "1.3.2",
+    "wcag20:content-structure-separation-understanding" => "1.3.3",
+    "wcag20:visual-audio-contrast-without-color" => "1.4.1",
+    "wcag20:visual-audio-contrast-dis-audio" => "1.4.2",
+    "wcag20:visual-audio-contrast-contrast" => "1.4.3",
+    "wcag20:visual-audio-contrast-scale" => "1.4.4",
+    "wcag20:visual-audio-contrast-text-presentation" => "1.4.5",
+    "wcag20:visual-audio-contrast7" => "1.4.6",
+    "wcag20:visual-audio-contrast-noaudio" => "1.4.7",
+    "wcag20:visual-audio-contrast-visual-presentation" => "1.4.8",
+    "wcag20:visual-audio-contrast-text-images" => "1.4.9",
+    "wcag20:keyboard-operation-keyboard-operable" => "2.1.1",
+    "wcag20:keyboard-operation-trapping" => "2.1.2",
+    "wcag20:keyboard-operation-all-funcs" => "2.1.3",
+    "wcag20:time-limits-required-behaviors" => "2.2.1",
+    "wcag20:time-limits-pause" => "2.2.2",
+    "wcag20:time-limits-no-exceptions" => "2.2.3",
+    "wcag20:time-limits-postponed" => "2.2.4",
+    "wcag20:time-limits-server-timeout" => "2.2.5",
+    "wcag20:seizure-does-not-violate" => "2.3.1",
+    "wcag20:seizure-three-times" => "2.3.2",
+    "wcag20:navigation-mechanisms-skip" => "2.4.1",
+    "wcag20:navigation-mechanisms-title" => "2.4.2",
+    "wcag20:navigation-mechanisms-focus-order" => "2.4.3",
+    "wcag20:navigation-mechanisms-refs" => "2.4.4",
+    "wcag20:navigation-mechanisms-mult-loc" => "2.4.5",
+    "wcag20:navigation-mechanisms-descriptive" => "2.4.6",
+    "wcag20:navigation-mechanisms-focus-visible" => "2.4.7",
+    "wcag20:navigation-mechanisms-location" => "2.4.8",
+    "wcag20:navigation-mechanisms-link" => "2.4.9",
+    "wcag20:navigation-mechanisms-headings" => "2.4.10",
+    "wcag20:meaning-doc-lang-id" => "3.1.1",
+    "wcag20:meaning-other-lang-id" => "3.1.2",
+    "wcag20:meaning-idioms" => "3.1.3",
+    "wcag20:meaning-located" => "3.1.4",
+    "wcag20:meaning-supplements" => "3.1.5",
+    "wcag20:meaning-pronunciation" => "3.1.6",
+    "wcag20:consistent-behavior-receive-focus" => "3.2.1",
+    "wcag20:consistent-behavior-unpredictable-change" => "3.2.2",
+    "wcag20:consistent-behavior-consistent-locations" => "3.2.3",
+    "wcag20:consistent-behavior-consistent-functionality" => "3.2.4",
+    "wcag20:consistent-behavior-no-extreme-changes-context" => "3.2.5",
+    "wcag20:minimize-error-identified" => "3.3.1",
+    "wcag20:minimize-error-cues" => "3.3.2",
+    "wcag20:minimize-error-suggestions" => "3.3.3",
+    "wcag20:minimize-error-reversible" => "3.3.4",
+    "wcag20:minimize-error-context-help" => "3.3.5",
+    "wcag20:minimize-error-reversible-all" => "3.3.6",
+    "wcag20:ensure-compat-parses" => "4.1.1",
+    "wcag20:ensure-compat-rsv" => "4.1.2"
+  ];
+
   /**
    * The Google Pagespeed tester.
    *
@@ -159,15 +223,17 @@ class PhantomQuailWorker extends \Thread {
     // https://github.com/krakjoe/pthreads/issues/68
     // Composer autoloader.
     require( __DIR__ . '/../vendor/autoload.php');
+    Application::bootstrap();
+
     // @todo We likely need to reboot the application.
 //    Application::bootstrap();
     // If the website has not yet a cms detected, perform the detection here.
-    if ($this->determineCms) {
-      $this->detectCms();
-    }
-    if ($this->performGooglePagespeed) {
-      $this->executeGooglePagespeed();
-    }
+//    if ($this->determineCms) {
+//      $this->detectCms();
+//    }
+//    if ($this->performGooglePagespeed) {
+//      $this->executeGooglePagespeed();
+//    }
     $this->analyzeQuail();
   }
 
@@ -221,6 +287,7 @@ class PhantomQuailWorker extends \Thread {
     $url = $this->url->getUrl();
     try {
       $output = $this->phantomJs->getQuailResults($url);
+      // @TODO: check if we need the count for solr.
       // Now process the results from quail.
       // We have to generate a unique id later.
       // In order to do this, we count the results, so it can be
@@ -238,29 +305,14 @@ class PhantomQuailWorker extends \Thread {
           $rawResults = (array) json_decode($line);
           // Since there is only one result json, this is also the exact raw result.
           $this->rawResult = $rawResults;
-
-          foreach ($rawResults->tests as $testId => $quailResult) { // Add the url to the quailResult.
-            $quailResult->url = $this->url->getUrl();
-
-            // Process the quail result to a json object which can be send to solr.
-            $processedResult = $this->preprocessQuailResult($quailResult, $count);
-            if ($processedResult) {
-              // Add the documents to the document list in solr.
-              $rawQuailResults[$testId] = $processedResult;
-              $count++;
-            }
-          }
+          // Now process the quail result.
+          $this->processQuailResult();
         }
       }
-      $this->rawQuailTechniqueResults = $rawQuailResults;
-      $this->processQuailResults();
-
-      // Process the direct quail result (the result on wcag level).
-      $this->processQuailAnalyzedWcagResult();
 
       // Now send the case results to solr.
       $this->logger->debug('Sending results to Solr.');
-      $this->sendCaseResultsToSolr();
+//      $this->sendCaseResultsToSolr();
       $this->logger->debug('Results sended to Solr.');
 
       // Update the result.
@@ -272,6 +324,23 @@ class PhantomQuailWorker extends \Thread {
       $this->status = Url::STATUS_ERROR;
       $this->logger->debug($e->getMessage());
     }
+  }
+
+  protected function processQuailResult() {
+    // Create an array which will be written to the object property later.
+    // We need this because of the thread nature of this class.
+    $quailFinalResults = array();
+    foreach ($this->rawResult as $critirium) {
+      $criteriumNumber = self::$wcag20Mapping[$critirium->testRequirement];
+      // Now unset the hasPart, on order to save space.
+      unset($critirium->hasPart);
+      // Add criterium.
+      $critirium->criterium = $criteriumNumber;
+      $quailFinalResults[$criteriumNumber] = $critirium;
+    }
+    // Now fill the property.
+    $this->quailFinalResults = $quailFinalResults;
+
   }
 
   /**
@@ -290,108 +359,6 @@ class PhantomQuailWorker extends \Thread {
     // this executes the query and returns the result
     $result = $this->solrClient->update($update);
 
-  }
-
-  /**
-   * Process the quail results.
-   */
-  protected function processQuailResults() {
-    // Loop the quail results to create the different arrays.
-    $quailResults = array();
-    $quailCases = array();
-    $failedCaseExamples = array();
-    $quailAggregatedCaseResults = array();
-    foreach ($this->rawQuailTechniqueResults as $key => $result) {
-      // Add the technologies.
-      if (isset($this->websiteCms)) {
-        $technologies = explode('|', $this->websiteCms);
-        if (count($technologies) > 0) {
-          $result->technologies = $technologies;
-        }
-      }
-      // First do the quailResults.
-      $quailResults[] = $result;
-      // Expand on case
-      if (isset($result->cases) && count($result->cases) > 0 && is_array($result->cases)) {
-        foreach ($result->cases as $key => $case) {
-          $caseItem = clone $result;
-          // Add the key to the id, so we have individual cases.
-          $caseItem->id .= '_' . $key;
-          // Unset the cases.
-          unset($caseItem->cases);
-          $caseItem->status = $case->status;
-          if (isset($case->selector)) {
-            $caseItem->selector = $case->selector;
-          }
-          if (isset($case->html)) {
-            $caseItem->html = $case->html;
-          }
-          // Add the quailCase.
-          $quailCases[] = $caseItem;
-
-          // If there is no fail example, add it here.
-          if (!isset($failedCaseExamples[$key]) && $caseItem->status == 'passed' && $caseItem->testability > 0) {
-            $exampleItem = $caseItem;
-            $exampleItem->document_type = 'failed_case_example';
-            $failedCaseExamples[$key] = $caseItem;
-          }
-
-          if (isset($caseItem->applicationframework)) {
-            // Add the case to the final result.
-            foreach ($caseItem->applicationframework as $wcagItem) {
-              // Increment counters on the status.
-              if (!isset($quailAggregatedCaseResults[$wcagItem]['statuses'][$caseItem->status])) {
-                $quailAggregatedCaseResults[$wcagItem]['statuses'][$caseItem->status] = 0;
-              }
-              $quailAggregatedCaseResults[$wcagItem]['statuses'][$caseItem->status]++;
-            }
-          }
-
-        }
-      }
-    }
-    $this->quailCases = $quailCases;
-    $this->failedCaseExamples = $failedCaseExamples;
-    $this->quailAggregatedCaseResults = $quailAggregatedCaseResults;
-  }
-
-  /**
-   * Process the quail analyzed result.
-   */
-  protected function processQuailAnalyzedWcagResult() {
-    $successCriteriaResults = array();
-    foreach ($this->rawResult->successCriteria as $criteriumName => $result) {
-      $keyParts = explode(':', $criteriumName);
-      $key = $keyParts[1];
-      if (is_string($result)) {
-        if (isset($this->quailAggregatedCaseResults[$key]['statuses'])) {
-          $successCriteriaResults[$key] = $this->quailAggregatedCaseResults[$key]['statuses'];
-        }
-        else {
-          $successCriteriaResults[$key] = array();
-        }
-        $successCriteriaResults[$key]['resultFromQuail'] = FALSE;
-      }
-      else if (is_object($result)) {
-        // Try to count the passed, failed and notApplicable.
-        $passed = (isset($result->passed) && count($result->passed)) ? count($result->passed) : 0;
-        $failed = (isset($result->failed) && count($result->failed)) ? count($result->failed) : 0;
-        $notApplicable = (isset($result->notApplicable) && count($result->notApplicable)) ? count($result->notApplicable) : 0;
-        $success_rate = FALSE;
-        // Prevent division by 0.
-        if ($passed + $failed > 0) {
-          $success_rate = ($passed) / ($passed + $failed);
-        }
-        $successCriteriaResults[$key] = array(
-          'resultFromQuail' => TRUE,
-          'passed' => $passed,
-          'failed' => $failed,
-          'notApplicable' => $notApplicable,
-          'success_rate' => $success_rate,
-        );
-      }
-    }
-    $this->quailFinalResults = $successCriteriaResults;
   }
 
   /**
@@ -491,7 +458,7 @@ class PhantomQuailWorker extends \Thread {
    *
    * @return mixed
    */
-  protected function preprocessQuailResult($quailResult, $count) {
+  protected function preprocessQuailResultForSolr($quailResult, $count) {
     if (isset($quailResult->url) && $quailResult->url != '' && isset($quailResult->cases) && count($quailResult->cases) > 0) {
       $quailResult->url_main = "";
       $quailResult->url_sub = "";

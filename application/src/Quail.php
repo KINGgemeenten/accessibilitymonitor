@@ -255,7 +255,13 @@ class Quail implements QuailInterface {
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
   protected function processQuailResult(PhantomQuailWorker $finishedWorker) {
-    $this->storage->saveUrl($finishedWorker->getQueueId(), $finishedWorker->getStatus(), $finishedWorker->getWebsiteCms(), $finishedWorker->getQuailFinalResults());
+    $url = $finishedWorker->getUrl();
+    // Now set the data.
+    $url->setCms($finishedWorker->getWebsiteCms());
+    $url->setTestingStatus($finishedWorker->getStatus());
+    $quailFinalResult = $finishedWorker->getQuailFinalResults();
+    $url->setQuailResult($quailFinalResult);
+    $this->storage->saveUrl($url);
     // Set the last_analysis date.
     $time = time();
     $this->logger->debug('time: ' . $time);
