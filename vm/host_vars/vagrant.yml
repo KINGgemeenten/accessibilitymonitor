@@ -101,4 +101,3 @@ quail_branch: wcag2
 quail_git_repo: https://github.com/WilcoFiers/quail.git
 
 php55_cli_add_mongo: false
-

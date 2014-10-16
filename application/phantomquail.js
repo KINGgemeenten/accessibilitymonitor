@@ -189,6 +189,8 @@ page.onLoadFinished = function (status) {
         var scLen = size(quail.guidelines.wcag.successCriteria);
         console.log('Beginning evaluation of ' + size(tests) + ' tests and ' + scLen + ' Success Criteria.');
         // Determine how many data writes we'll make.
+        //console.log(JSON.stringify(tests));
+        //console.log(JSON.stringify(wcag2structure));
         callPhantom('setCounter', 1); // +1 because we attempt a data write once for all tests on testCollectionComplete
         // Basic output structure attributes.
         var output = {
@@ -228,11 +230,11 @@ page.onLoadFinished = function (status) {
           //  output.stats.cases++;
           //},
           // Called when all the Cases in a Test are resolved.
-          //testComplete: function (eventName, test) {
-          //  console.log('Finished testing ' + test.get('name') + '.');
+          testComplete: function (eventName, test) {
+            console.log('Finished testing ' + test.get('name') + '.');
           //  // Increment the tests count.
           //  //output.stats.tests++;
-          //},
+          },
           // Called when all the Tests in a TestCollection are completed.
           testCollectionComplete: function (eventName, testCollection) {
             // Push the results of the test out to the Phantom listener.
