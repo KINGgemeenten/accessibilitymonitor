@@ -15,70 +15,6 @@ use Solarium\QueryType\Update\Query\Query;
  */
 class PhantomQuailWorker extends \Thread {
 
-  static $wcag20Mapping = [
-    "wcag20:text-equiv-all" => "1.1.1",
-    "wcag20:media-equiv-av-only-alt" => "1.2.1",
-    "wcag20:media-equiv-captions" => "1.2.2",
-    "wcag20:media-equiv-audio-desc" => "1.2.3",
-    "wcag20:media-equiv-real-time-captions" => "1.2.4",
-    "wcag20:media-equiv-audio-desc-only" => "1.2.5",
-    "wcag20:media-equiv-sign" => "1.2.6",
-    "wcag20:media-equiv-extended-ad" => "1.2.7",
-    "wcag20:media-equiv-text-doc" => "1.2.8",
-    "wcag20:media-equiv-live-audio-only" => "1.2.9",
-    "wcag20:content-structure-separation-programmatic" => "1.3.1",
-    "wcag20:content-structure-separation-sequence" => "1.3.2",
-    "wcag20:content-structure-separation-understanding" => "1.3.3",
-    "wcag20:visual-audio-contrast-without-color" => "1.4.1",
-    "wcag20:visual-audio-contrast-dis-audio" => "1.4.2",
-    "wcag20:visual-audio-contrast-contrast" => "1.4.3",
-    "wcag20:visual-audio-contrast-scale" => "1.4.4",
-    "wcag20:visual-audio-contrast-text-presentation" => "1.4.5",
-    "wcag20:visual-audio-contrast7" => "1.4.6",
-    "wcag20:visual-audio-contrast-noaudio" => "1.4.7",
-    "wcag20:visual-audio-contrast-visual-presentation" => "1.4.8",
-    "wcag20:visual-audio-contrast-text-images" => "1.4.9",
-    "wcag20:keyboard-operation-keyboard-operable" => "2.1.1",
-    "wcag20:keyboard-operation-trapping" => "2.1.2",
-    "wcag20:keyboard-operation-all-funcs" => "2.1.3",
-    "wcag20:time-limits-required-behaviors" => "2.2.1",
-    "wcag20:time-limits-pause" => "2.2.2",
-    "wcag20:time-limits-no-exceptions" => "2.2.3",
-    "wcag20:time-limits-postponed" => "2.2.4",
-    "wcag20:time-limits-server-timeout" => "2.2.5",
-    "wcag20:seizure-does-not-violate" => "2.3.1",
-    "wcag20:seizure-three-times" => "2.3.2",
-    "wcag20:navigation-mechanisms-skip" => "2.4.1",
-    "wcag20:navigation-mechanisms-title" => "2.4.2",
-    "wcag20:navigation-mechanisms-focus-order" => "2.4.3",
-    "wcag20:navigation-mechanisms-refs" => "2.4.4",
-    "wcag20:navigation-mechanisms-mult-loc" => "2.4.5",
-    "wcag20:navigation-mechanisms-descriptive" => "2.4.6",
-    "wcag20:navigation-mechanisms-focus-visible" => "2.4.7",
-    "wcag20:navigation-mechanisms-location" => "2.4.8",
-    "wcag20:navigation-mechanisms-link" => "2.4.9",
-    "wcag20:navigation-mechanisms-headings" => "2.4.10",
-    "wcag20:meaning-doc-lang-id" => "3.1.1",
-    "wcag20:meaning-other-lang-id" => "3.1.2",
-    "wcag20:meaning-idioms" => "3.1.3",
-    "wcag20:meaning-located" => "3.1.4",
-    "wcag20:meaning-supplements" => "3.1.5",
-    "wcag20:meaning-pronunciation" => "3.1.6",
-    "wcag20:consistent-behavior-receive-focus" => "3.2.1",
-    "wcag20:consistent-behavior-unpredictable-change" => "3.2.2",
-    "wcag20:consistent-behavior-consistent-locations" => "3.2.3",
-    "wcag20:consistent-behavior-consistent-functionality" => "3.2.4",
-    "wcag20:consistent-behavior-no-extreme-changes-context" => "3.2.5",
-    "wcag20:minimize-error-identified" => "3.3.1",
-    "wcag20:minimize-error-cues" => "3.3.2",
-    "wcag20:minimize-error-suggestions" => "3.3.3",
-    "wcag20:minimize-error-reversible" => "3.3.4",
-    "wcag20:minimize-error-context-help" => "3.3.5",
-    "wcag20:minimize-error-reversible-all" => "3.3.6",
-    "wcag20:ensure-compat-parses" => "4.1.1",
-    "wcag20:ensure-compat-rsv" => "4.1.2"
-  ];
-
   /**
    * The Google Pagespeed tester.
    *
@@ -318,13 +254,15 @@ class PhantomQuailWorker extends \Thread {
     // Create an array which will be written to the object property later.
     // We need this because of the thread nature of this class.
     $quailFinalResults = array();
-    foreach ($this->rawResult as $critirium) {
-      $criteriumNumber = self::$wcag20Mapping[$critirium->testRequirement];
+    $rawResult = $this->rawResult;
+    $wcag20Mapping = $this->getWcag2Mapping();
+    foreach ($rawResult as $criterium) {
+      $criteriumNumber = $wcag20Mapping[$criterium->testRequirement];
       // Now unset the hasPart, on order to save space.
-      unset($critirium->hasPart);
+      unset($criterium->hasPart);
       // Add criterium.
-      $critirium->criterium = $criteriumNumber;
-      $quailFinalResults[$criteriumNumber] = $critirium;
+      $criterium->criterium = $criteriumNumber;
+      $quailFinalResults[$criteriumNumber] = $criterium;
     }
     // Now fill the property.
     $this->quailFinalResults = $quailFinalResults;
@@ -609,5 +547,81 @@ class PhantomQuailWorker extends \Thread {
 
     return $escaped_url;
   }
+
+  /**
+   * Get the wcag2 mapping array.
+   *
+   * This would be better as static variable, but that doesn't work with threads.
+   *
+   * @return array
+   */
+  protected function getWcag2Mapping() {
+    $wcag20Mapping = [
+      "wcag20:text-equiv-all" => "1.1.1",
+      "wcag20:media-equiv-av-only-alt" => "1.2.1",
+      "wcag20:media-equiv-captions" => "1.2.2",
+      "wcag20:media-equiv-audio-desc" => "1.2.3",
+      "wcag20:media-equiv-real-time-captions" => "1.2.4",
+      "wcag20:media-equiv-audio-desc-only" => "1.2.5",
+      "wcag20:media-equiv-sign" => "1.2.6",
+      "wcag20:media-equiv-extended-ad" => "1.2.7",
+      "wcag20:media-equiv-text-doc" => "1.2.8",
+      "wcag20:media-equiv-live-audio-only" => "1.2.9",
+      "wcag20:content-structure-separation-programmatic" => "1.3.1",
+      "wcag20:content-structure-separation-sequence" => "1.3.2",
+      "wcag20:content-structure-separation-understanding" => "1.3.3",
+      "wcag20:visual-audio-contrast-without-color" => "1.4.1",
+      "wcag20:visual-audio-contrast-dis-audio" => "1.4.2",
+      "wcag20:visual-audio-contrast-contrast" => "1.4.3",
+      "wcag20:visual-audio-contrast-scale" => "1.4.4",
+      "wcag20:visual-audio-contrast-text-presentation" => "1.4.5",
+      "wcag20:visual-audio-contrast7" => "1.4.6",
+      "wcag20:visual-audio-contrast-noaudio" => "1.4.7",
+      "wcag20:visual-audio-contrast-visual-presentation" => "1.4.8",
+      "wcag20:visual-audio-contrast-text-images" => "1.4.9",
+      "wcag20:keyboard-operation-keyboard-operable" => "2.1.1",
+      "wcag20:keyboard-operation-trapping" => "2.1.2",
+      "wcag20:keyboard-operation-all-funcs" => "2.1.3",
+      "wcag20:time-limits-required-behaviors" => "2.2.1",
+      "wcag20:time-limits-pause" => "2.2.2",
+      "wcag20:time-limits-no-exceptions" => "2.2.3",
+      "wcag20:time-limits-postponed" => "2.2.4",
+      "wcag20:time-limits-server-timeout" => "2.2.5",
+      "wcag20:seizure-does-not-violate" => "2.3.1",
+      "wcag20:seizure-three-times" => "2.3.2",
+      "wcag20:navigation-mechanisms-skip" => "2.4.1",
+      "wcag20:navigation-mechanisms-title" => "2.4.2",
+      "wcag20:navigation-mechanisms-focus-order" => "2.4.3",
+      "wcag20:navigation-mechanisms-refs" => "2.4.4",
+      "wcag20:navigation-mechanisms-mult-loc" => "2.4.5",
+      "wcag20:navigation-mechanisms-descriptive" => "2.4.6",
+      "wcag20:navigation-mechanisms-focus-visible" => "2.4.7",
+      "wcag20:navigation-mechanisms-location" => "2.4.8",
+      "wcag20:navigation-mechanisms-link" => "2.4.9",
+      "wcag20:navigation-mechanisms-headings" => "2.4.10",
+      "wcag20:meaning-doc-lang-id" => "3.1.1",
+      "wcag20:meaning-other-lang-id" => "3.1.2",
+      "wcag20:meaning-idioms" => "3.1.3",
+      "wcag20:meaning-located" => "3.1.4",
+      "wcag20:meaning-supplements" => "3.1.5",
+      "wcag20:meaning-pronunciation" => "3.1.6",
+      "wcag20:consistent-behavior-receive-focus" => "3.2.1",
+      "wcag20:consistent-behavior-unpredictable-change" => "3.2.2",
+      "wcag20:consistent-behavior-consistent-locations" => "3.2.3",
+      "wcag20:consistent-behavior-consistent-functionality" => "3.2.4",
+      "wcag20:consistent-behavior-no-extreme-changes-context" => "3.2.5",
+      "wcag20:minimize-error-identified" => "3.3.1",
+      "wcag20:minimize-error-cues" => "3.3.2",
+      "wcag20:minimize-error-suggestions" => "3.3.3",
+      "wcag20:minimize-error-reversible" => "3.3.4",
+      "wcag20:minimize-error-context-help" => "3.3.5",
+      "wcag20:minimize-error-reversible-all" => "3.3.6",
+      "wcag20:ensure-compat-parses" => "4.1.1",
+      "wcag20:ensure-compat-rsv" => "4.1.2"
+    ];
+
+    return $wcag20Mapping;
+  }
+
 
 }
