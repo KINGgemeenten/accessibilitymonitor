@@ -1,7 +1,7 @@
 parameters:
   log.recipients: ['bart@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
   log.sender: 'support@triquanta.nl'
-  log.file: '%root_directory%/../logs/application.log'
+  log.file: '/var/tam.log'
   solr.phantom:
     endpoint:
       localhost:
