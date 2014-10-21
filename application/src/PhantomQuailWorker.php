@@ -7,7 +7,6 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
-use Psr\Log\LoggerInterface;
 use Solarium\Core\Client\Client;
 use Solarium\QueryType\Update\Query\Query;
 
@@ -86,13 +85,6 @@ class PhantomQuailWorker extends \Thread {
    * @var \Triquanta\AccessibilityMonitor\GooglePagespeedInterface
    */
   protected $googlePagespeed;
-
-  /**
-   * The logger.
-   *
-   * @var \Psr\Log\LoggerInterface
-   */
-  protected $logger;
 
   /**
    * The Phantom JS manager.
@@ -183,7 +175,6 @@ class PhantomQuailWorker extends \Thread {
   /**
    * Constructs a new instance.
    *
-   * @param \Psr\Log\LoggerInterface $logger
    * @param \Triquanta\AccessibilityMonitor\GooglePagespeedInterface $google_pagespeed
    * @param \Solarium\Core\Client\Client $solr_client
    * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface $phantom_js
@@ -193,9 +184,8 @@ class PhantomQuailWorker extends \Thread {
    * @param $determineCms
    * @param $executeGooglePagespeed
    */
-  public function __construct(LoggerInterface $logger, GooglePagespeedInterface $google_pagespeed, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, Website $website, $queueId, $determineCms, $executeGooglePagespeed) {
+  public function __construct(GooglePagespeedInterface $google_pagespeed, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, Website $website, $queueId, $determineCms, $executeGooglePagespeed) {
     $this->googlePagespeed = $google_pagespeed;
-    $this->logger = $logger;
     $this->phantomJs = $phantom_js;
     $this->solrClient = $solr_client;
 
@@ -225,8 +215,6 @@ class PhantomQuailWorker extends \Thread {
     require( __DIR__ . '/../vendor/autoload.php');
     Application::bootstrap();
 
-    // @todo We likely need to reboot the application.
-//    Application::bootstrap();
     // If the website has not yet a cms detected, perform the detection here.
 //    if ($this->determineCms) {
 //      $this->detectCms();
@@ -311,9 +299,9 @@ class PhantomQuailWorker extends \Thread {
       }
 
       // Now send the case results to solr.
-      $this->logger->debug('Sending results to Solr.');
+//      $this->logger->debug('Sending results to Solr.');
 //      $this->sendCaseResultsToSolr();
-      $this->logger->debug('Results sended to Solr.');
+//      $this->logger->debug('Results sended to Solr.');
 
       // Update the result.
       $this->result = $this->url->getId();
@@ -322,7 +310,7 @@ class PhantomQuailWorker extends \Thread {
     } catch (\Exception $e) {
       // If there is an exception, probably phantomjs timed out.
       $this->status = Url::STATUS_ERROR;
-      $this->logger->debug($e->getMessage());
+//      $this->logger->debug($e->getMessage());
     }
   }
 

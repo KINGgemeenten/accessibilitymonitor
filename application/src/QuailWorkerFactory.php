@@ -34,7 +34,7 @@ class QuailWorkerFactory implements QuailWorkerFactoryInterface {
    * {@inheritdoc}
    */
   public function createWorker(Url $url, Website $website, $queue_id, $determine_cms, $execute_google_pagespeed) {
-    return new PhantomQuailWorker($this->container->get('logger'), $this->container->get('google_pagespeed'), $this->container->get('solr.client.phantom'), $this->container->get('phantomjs'), $url, $website, $queue_id, $determine_cms, $execute_google_pagespeed);
+    return new PhantomQuailWorker($this->container->get('google_pagespeed'), $this->container->get('solr.client.phantom'), $this->container->get('phantomjs'), $url, $website, $queue_id, $determine_cms, $execute_google_pagespeed);
   }
 
 } 

@@ -149,8 +149,8 @@ class Quail implements QuailInterface {
         // First delete all documents from solr.
         $worker->deleteCasesFromSolr();
         // Now start the thread.
-//        $worker->start();
-        $worker->run();
+        $worker->start();
+//        $worker->run();
         $this->workers[] = $worker;
       }
       // Add some debugging.

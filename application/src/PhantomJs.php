@@ -6,7 +6,6 @@
  */
 
 namespace Triquanta\AccessibilityMonitor;
-use Psr\Log\LoggerInterface;
 
 /**
  * Provides a Phantom JS manager.
@@ -19,13 +18,6 @@ class PhantomJs implements PhantomJsInterface {
    * @var string
    */
   protected $executable;
-
-  /**
-   * The logger.
-   *
-   * @var \Psr\Log\LoggerInterface
-   */
-  protected $logger;
 
   /**
    * The application's root directory.
@@ -45,14 +37,12 @@ class PhantomJs implements PhantomJsInterface {
   /**
    * Constructs a new instance.
    *
-   * @param \Psr\Log\LoggerInterface $logger
    * @param string $executable
    * @param int $timeout
    * @param string $root_directory
    */
-  public function __construct(LoggerInterface $logger, $executable, $timeout, $root_directory) {
+  public function __construct($executable, $timeout, $root_directory) {
     $this->executable = $executable;
-    $this->logger = $logger;
     $this->rootDirectory = $root_directory;
     $this->timeout = $timeout;
   }
@@ -95,9 +85,9 @@ class PhantomJs implements PhantomJsInterface {
   public function getQuailResults($url) {
     $command = $this->executable . ' --ignore-ssl-errors=yes ' . $this->rootDirectory . '/phantomquail.js ' . $url;
     // Print some debug info.
-    $this->logger->debug('Starting phantomjs');
+//    $this->logger->debug('Starting phantomjs');
     $output = $this->execTimeout($command, $this->timeout);
-    $this->logger->debug('Phantomjs executed succesfully.');
+//    $this->logger->debug('Phantomjs executed succesfully.');
 
     return $output;
   }
@@ -122,7 +112,7 @@ class PhantomJs implements PhantomJsInterface {
       2 => array('pipe', 'w')   // stderr
     );
 
-    $this->logger->debug('Openining processes');
+//    $this->logger->debug('Openining processes');
     // Start the process.
     $process = proc_open('exec ' . $cmd, $descriptors, $pipes);
 
@@ -146,7 +136,7 @@ class PhantomJs implements PhantomJsInterface {
       // Wait until we have output or the timer expired.
       $read  = array($pipes[1]);
       $other = array();
-      $this->logger->debug('Before stream_select');
+//      $this->logger->debug('Before stream_select');
       stream_select($read, $other, $other, 0, $timeout);
 
       // Get the status of the process.
@@ -154,11 +144,11 @@ class PhantomJs implements PhantomJsInterface {
       // this way we can't lose the last bit of output if the process dies between these functions.
       $status = proc_get_status($process);
 
-      $this->logger->debug('Getting stream content.');
+//      $this->logger->debug('Getting stream content.');
       // Read the contents from the buffer.
       // This function will always return immediately as the stream is none-blocking.
       $buffer .= stream_get_contents($pipes[1]);
-      $this->logger->debug('Buffer filled');
+//      $this->logger->debug('Buffer filled');
 
       if (!$status['running']) {
         $timedOut = false;
@@ -183,19 +173,19 @@ class PhantomJs implements PhantomJsInterface {
 
     // Kill the process in case the timeout expired and it's still running.
     // If the process already exited this won't do anything.
-    $this->logger->debug('Terminating process');
+//    $this->logger->debug('Terminating process');
     proc_terminate($process, 9);
-    $this->logger->debug('Process terminated');
+//    $this->logger->debug('Process terminated');
 
     // Close all streams.
     fclose($pipes[0]);
     fclose($pipes[1]);
     fclose($pipes[2]);
 
-    $this->logger->debug('Pipes closed');
+//    $this->logger->debug('Pipes closed');
     proc_close($process);
 
-    $this->logger->debug('Process closed');
+//    $this->logger->debug('Process closed');
 
     return $buffer;
   }

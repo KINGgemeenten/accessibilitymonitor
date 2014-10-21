@@ -47,7 +47,7 @@ services:
       - [setEventDispatcher, ['@event_dispatcher']]
   phantomjs:
     class: \Triquanta\AccessibilityMonitor\PhantomJs
-    arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%']
+    arguments: ['%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%']
   process:
     class: \Triquanta\AccessibilityMonitor\Process
   quail:
