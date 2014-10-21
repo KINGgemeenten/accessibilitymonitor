@@ -6,7 +6,6 @@
  */
 
 namespace Triquanta\AccessibilityMonitor;
-use Psr\Log\LoggerInterface;
 
 /**
  * Provides a Phantom JS manager.
@@ -19,13 +18,6 @@ class PhantomJs implements PhantomJsInterface {
    * @var string
    */
   protected $executable;
-
-  /**
-   * The logger.
-   *
-   * @var \Psr\Log\LoggerInterface
-   */
-  protected $logger;
 
   /**
    * The application's root directory.
@@ -45,14 +37,12 @@ class PhantomJs implements PhantomJsInterface {
   /**
    * Constructs a new instance.
    *
-   * @param \Psr\Log\LoggerInterface $logger
    * @param string $executable
    * @param int $timeout
    * @param string $root_directory
    */
-  public function __construct(LoggerInterface $logger, $executable, $timeout, $root_directory) {
+  public function __construct($executable, $timeout, $root_directory) {
     $this->executable = $executable;
-    $this->logger = $logger;
     $this->rootDirectory = $root_directory;
     $this->timeout = $timeout;
   }
@@ -206,13 +196,6 @@ class PhantomJs implements PhantomJsInterface {
   public static function killStalledProcesses() {
     // @todo This only seems to work on Debian-based systems.
     shell_exec('killall --older-than 2m phantomjs');
-  }
-
-  /**
-   * @param LoggerInterface $logger
-   */
-  public function setLogger(LoggerInterface $logger) {
-    $this->logger = $logger;
   }
 
 }

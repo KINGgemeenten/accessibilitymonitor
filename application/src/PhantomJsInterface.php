@@ -37,15 +37,6 @@ interface PhantomJsInterface {
   public function getQuailResults($url);
 
   /**
-   * Set the logger. Only needed in a thread situation.
-   *
-   * @param LoggerInterface $logger
-   *
-   * @return mixed
-   */
-  public function setLogger(LoggerInterface $logger);
-
-  /**
    * Kill all stalled phantomjs processes.
    */
   public static function killStalledProcesses();
