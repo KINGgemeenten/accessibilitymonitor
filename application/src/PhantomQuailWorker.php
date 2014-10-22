@@ -378,8 +378,11 @@ class PhantomQuailWorker extends \Thread {
       $updateQuery->addDocuments($docs);
 
       // this executes the query and returns the result.
-      // TODO: catch exceptions.
-      $result = $this->solrClient->update($updateQuery);
+      try {
+        $result = $this->solrClient->update($updateQuery);
+      } catch (\Exception $e) {
+        $this->log(LogLevel::ERROR, 'Error sending cases to solr. Solr responded with an exception: ' . $e->getMessage());
+      }
     }
   }
 
@@ -429,59 +432,6 @@ class PhantomQuailWorker extends \Thread {
     // Create a hash based om the url and uniqueKey of the case.
     $hash = md5($case->uniqueKey . $this->url->getUrl());
     return $hash;
-  }
-
-  /**
-   * Preprocess quail result for sending to solr.
-   *
-   * TODO: Solr should have a class, in which we can do all these things.
-   *
-   * @param $quailResult
-   * @param $count
-   *
-   * @return mixed
-   */
-  protected function preprocessQuailResultForSolr($quailResult, $count) {
-    if (isset($quailResult->url) && $quailResult->url != '' && isset($quailResult->cases) && count($quailResult->cases) > 0) {
-      $quailResult->url_main = "";
-      $quailResult->url_sub = "";
-      $urlarr = parse_url($quailResult->url);
-      $fqdArr = explode(".", $urlarr["host"]);
-      if (count($fqdArr) > 2) {
-        $partcount = count($fqdArr);
-        $quailResult->url_main = $fqdArr[$partcount - 2] . "." . $fqdArr[$partcount - 1];
-      }
-      else {
-        $quailResult->url_main = $urlarr["host"];
-      }
-      $quailResult->url_sub = $urlarr["host"];
-
-      // Add the escaped url in order to be able to delete.
-      $escaped_url = $this->escapeUrlForSolr($quailResult->url);
-      $quailResult->url_id = $escaped_url;
-
-      // Create a unique id.
-      $quailResult->id = time() . $count;
-      if (isset($quailResult->guidelines) && !empty($quailResult->guidelines)) {
-        $quailResult->applicationframework = array();
-        $quailResult->techniques = array();
-        if (isset($quailResult->guidelines->wcag)) {
-          foreach ($quailResult->guidelines->wcag as $wcagCode => $wcagItem) {
-            $quailResult->applicationframework[] = $wcagCode;
-            // Add the techniques.
-            if (isset($wcagItem->techniques) && count($wcagItem->techniques) > 0 && is_array($wcagItem->techniques)) {
-              foreach ($wcagItem->techniques as $technique) {
-                $quailResult->techniques[] = $technique;
-              }
-            }
-          }
-        }
-
-        $quailResult->techniques = array_unique($quailResult->techniques);
-      }
-      return $quailResult;
-    }
-    return FALSE;
   }
 
   /********************************
