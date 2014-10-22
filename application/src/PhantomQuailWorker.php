@@ -7,6 +7,7 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use Psr\Log\LogLevel;
 use Solarium\Core\Client\Client;
 use Solarium\QueryType\Update\Query\Query;
 
@@ -14,6 +15,27 @@ use Solarium\QueryType\Update\Query\Query;
  * Provides a Phantom Quail worker.
  */
 class PhantomQuailWorker extends \Thread {
+
+  /**
+   * Log messages.
+   *
+   * All messages are to be sent to the application's logger after self::join()
+   * has been called.
+   *
+   * @var array[]
+   *   Keys are \Psr\Log\LogLevel::* constants. Values are arrays with strings
+   *   (the messages).
+   */
+  protected $logMessages = array(
+    LogLevel::EMERGENCY => array(),
+    LogLevel::ALERT => array(),
+    LogLevel::CRITICAL => array(),
+    LogLevel::ERROR => array(),
+    LogLevel::WARNING => array(),
+    LogLevel::NOTICE => array(),
+    LogLevel::INFO => array(),
+    LogLevel::DEBUG => array(),
+  );
 
   /**
    * The Google Pagespeed tester.
@@ -139,6 +161,30 @@ class PhantomQuailWorker extends \Thread {
   }
 
   /**
+   * Gets the log messages.
+   *
+   * @return array[]
+   *   Keys are \Psr\Log\LogLevel::* constants. Values are arrays with strings
+   *   (the messages).
+   */
+  public function getLogMessages() {
+    return $this->logMessages;
+  }
+
+  /**
+   * Logs a message.
+   *
+   * @param string $level
+   *   One of the \Psr\Log\LogLevel::* constants.
+   * @param string $message
+   */
+  public function log($level, $message) {
+    $log_messages = $this->logMessages;
+    $log_messages[$level][] = $message;
+    $this->logMessages = $log_messages;
+  }
+
+  /**
    * Run function. This function is executed when the method start is executed.
    */
   public function run() {
@@ -235,9 +281,9 @@ class PhantomQuailWorker extends \Thread {
       }
 
       // Now send the case results to solr.
-//      $this->logger->debug('Sending results to Solr.');
+      $this->log(LogLevel::DEBUG, 'Sending results to Solr.');
 //      $this->sendCaseResultsToSolr();
-//      $this->logger->debug('Results sended to Solr.');
+      $this->log(LogLevel::DEBUG, 'Results sended to Solr.');
 
       // Update the result.
       $this->result = $this->url->getId();
@@ -246,7 +292,7 @@ class PhantomQuailWorker extends \Thread {
     } catch (\Exception $e) {
       // If there is an exception, probably phantomjs timed out.
       $this->status = Url::STATUS_ERROR;
-//      $this->logger->debug($e->getMessage());
+      $this->log(LogLevel::DEBUG, $e->getMessage());
     }
   }
 

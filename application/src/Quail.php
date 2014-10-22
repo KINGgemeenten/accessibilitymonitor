@@ -172,6 +172,11 @@ class Quail implements QuailInterface {
       $this->logger->debug('Workers activated, waiting.');
       // Join workers and put them in the finishedWorkers array.
       foreach ($this->workers as $worker) {
+        foreach ($worker->getLogMessages() as $level => $messages) {
+          foreach ($messages as $message) {
+            $this->logger->log($level, $message);
+          }
+        }
         $worker->join();
         $this->finishedWorkers[] = $worker;
       }
