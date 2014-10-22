@@ -149,8 +149,8 @@ class Quail implements QuailInterface {
         // First delete all documents from solr.
         $worker->deleteCasesFromSolr();
         // Now start the thread.
-        $worker->start();
-//        $worker->run();
+//        $worker->start();
+        $worker->run();
         $this->workers[] = $worker;
       }
       // Add some debugging.
@@ -270,8 +270,10 @@ class Quail implements QuailInterface {
     // Set the last_analysis date.
     $time = time();
     $this->logger->debug('time: ' . $time);
-    $finishedWorker->getWebsite()->setLastAnalysis($time);
-    $this->storage->saveWebsite($finishedWorker->getWebsite());
+    $website = $finishedWorker->getWebsite();
+    $website->setLastAnalysis($time);
+    $website->setTestingStatus(Website::STATUS_TESTING);
+    $this->storage->saveWebsite($website);
   }
 
   /**
