@@ -282,7 +282,7 @@ class PhantomQuailWorker extends \Thread {
 
       // Now send the case results to solr.
       $this->log(LogLevel::DEBUG, 'Sending results to Solr.');
-//      $this->sendCaseResultsToSolr();
+      $this->sendCaseResultsToSolr();
       $this->log(LogLevel::DEBUG, 'Results sended to Solr.');
 
       // Update the result.
@@ -300,10 +300,32 @@ class PhantomQuailWorker extends \Thread {
     // Create an array which will be written to the object property later.
     // We need this because of the thread nature of this class.
     $quailFinalResults = array();
+    // Store the quailCases in a temporary array.
+    $quailCases = array();
     $rawResult = $this->rawResult;
     $wcag20Mapping = $this->getWcag2Mapping();
     foreach ($rawResult as $criterium) {
       $criteriumNumber = $wcag20Mapping[$criterium->testRequirement];
+      // Extract the most important cases.
+      // First check if there is a pointer, because if there is none,
+      // the cases doesn't need to be stored.
+      if (property_exists($criterium, 'hasPart') && count($criterium->hasPart)) {
+        foreach ($criterium->hasPart as $case) {
+          // Check if there is a pointer in the outcome.
+          // The pointer contains the html snippet we need.
+          if (isset($case->outcome->pointer) && isset($case->outcome->pointer[0]->chars) && ($case->outcome->result == 'failed' || $case->outcome->result == 'cantTell')) {
+            // Create the unique key, to prevent that we store only one case per testCase per criterium.
+            $uniqueKey = str_replace('.', '_', $criteriumNumber) . '_' . $case->testCase;
+            if (! isset ($quailCases[$uniqueKey])) {
+              // Add the unique key to the case.
+              $case->uniqueKey = $uniqueKey;
+              // Add the criteriumName to the case.
+              $case->criteriumName = $criteriumNumber;
+              $quailCases[$uniqueKey] = $case;
+            }
+          }
+        }
+      }
       // Now unset the hasPart, on order to save space.
       unset($criterium->hasPart);
       // Add criterium.
@@ -312,6 +334,7 @@ class PhantomQuailWorker extends \Thread {
     }
     // Now fill the property.
     $this->quailFinalResults = $quailFinalResults;
+    $this->quailCases = $quailCases;
 
   }
 
@@ -371,35 +394,20 @@ class PhantomQuailWorker extends \Thread {
    */
   protected function caseToSolrDocument(Query $updateQuery, $case) {
     // Create a solr document.
-    if (property_exists($case, 'status')) {
+    if (property_exists($case, 'uniqueKey')) {
       $doc = $updateQuery->createDocument();
       $doc->id = $this->createCaseSolrId($case);
-      $doc->content = json_encode($case);
-      $doc->url = $case->url;
-      $doc->url_id = $case->url_id;
-      $doc->url_main = $case->url_main;
-      $doc->url_sub = $case->url_sub;
-      if (property_exists($case, 'html')) {
-        $doc->element = $case->html;
+      $doc->url = $this->url->getUrl();
+      $doc->url_id = $this->escapeUrlForSolr($doc->url);
+      $doc->url_main = $this->url->getMainDomain();
+      $doc->url_sub = $this->url->getHostName();
+      if (property_exists($case->outcome, 'pointer')) {
+        $doc->element = $case->outcome->pointer[0]->chars;
       }
-      if (property_exists($case, 'title')) {
-        $doc->name = $case->title->en;
-      }
-      if (property_exists($case, 'applicationframework')) {
-        $doc->applicationframework = $case->applicationframework;
-      }
-      if (property_exists($case, 'techniques')) {
-        $doc->techniques = $case->techniques;
-      }
-      if (property_exists($case, 'technologies')) {
-        $doc->technologies = $case->technologies;
-      }
-      $doc->tags = $case->tags;
-      $doc->testability = $case->testability;
-      $doc->test_result = $case->status;
-      $doc->testtype = $case->type;
-      $doc->severity = $case->testability;
-
+      $doc->name_en = $case->outcome->info->en;
+      $doc->name_nl = $case->outcome->info->nl;
+      $doc->succescriterium = $case->criteriumName;
+      $doc->test_result = $case->outcome->result;
       // Add document type.
       $doc->document_type = 'case';
 
@@ -417,7 +425,9 @@ class PhantomQuailWorker extends \Thread {
    *   Case id.
    */
   protected function createCaseSolrId($case) {
-    return 'case_' . $case->id . '_' . $case->url_id;
+    // Create a hash based om the url and uniqueKey of the case.
+    $hash = md5($case->uniqueKey . $this->url->getUrl());
+    return $hash;
   }
 
   /**

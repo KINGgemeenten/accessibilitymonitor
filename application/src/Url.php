@@ -135,6 +135,32 @@ class Url implements TestingStatusInterface {
   }
 
   /**
+   * Get the main domain for this url.
+   *
+   * @return string
+   */
+  public function getMainDomain() {
+    $urlarr = parse_url($this->url);
+    $fqdArr = explode('.', $urlarr['host']);
+    if (count($fqdArr) > 2) {
+      $partcount = count($fqdArr);
+      return $fqdArr[$partcount - 2] . '.' . $fqdArr[$partcount - 1];
+    }
+    // In the other case, it's just the host.
+    return $urlarr['host'];
+  }
+
+  /**
+   * Get the hostname of the url.
+   *
+   * @return mixed
+   */
+  public function getHostName() {
+    $urlarr = parse_url($this->url);
+    return $urlarr['host'];
+  }
+
+  /**
    * Sets the URL itself.
    *
    * @param string $url
