@@ -400,7 +400,7 @@ class PhantomQuailWorker extends \Thread {
       $doc->url = $this->url->getUrl();
       $doc->url_id = $this->escapeUrlForSolr($doc->url);
       $doc->url_main = $this->url->getMainDomain();
-      $doc->url_sub = $this->url->getHostName();
+      $doc->host = $this->url->getHostName();
       if (property_exists($case->outcome, 'pointer')) {
         $doc->element = $case->outcome->pointer[0]->chars;
       }
@@ -408,6 +408,7 @@ class PhantomQuailWorker extends \Thread {
       $doc->name_nl = $case->outcome->info->nl;
       $doc->succescriterium = $case->criteriumName;
       $doc->test_result = $case->outcome->result;
+      $doc->testtype = $case->testCase;
       // Add document type.
       $doc->document_type = 'case';
 

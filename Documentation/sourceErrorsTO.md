@@ -42,6 +42,7 @@ The schema will consist of the following fields:
     name_en: english description of the test case (for instance 'Adjacent links that point to the same location should be merged')
     name_nl: dutch description of the test case
     succescriterium: former applicationframework.
+    testtype: The test type: this will be used for grouping. 
     test_result: an earl compliant test result. Will now only contain failed.
     document_type: the document type (will always be case)
     
