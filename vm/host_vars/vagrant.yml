@@ -70,7 +70,7 @@ tomcat6_memory_xmx: 1096m
 solr_cores:
   - name: "nutch"
     solr_conf: "default/nutch/conf"
-  - name: "phatnomcore"
+  - name: "phantomcore"
     solr_conf: "default/phantomcore-v3.0/conf"
 
 

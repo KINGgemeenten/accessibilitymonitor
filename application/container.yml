@@ -1,13 +1,13 @@
 parameters:
   log.recipients: ['bart@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
   log.sender: 'support@triquanta.nl'
-  log.file: '/var/tam.log'
+  log.file: '/var/log/tam.log'
   solr.phantom:
     endpoint:
       localhost:
         host: 192.168.50.5
         port: 8080
-        path: /solr/phatnomcore
+        path: /solr/phantomcore
         timeout: 30
   solr.nutch:
     endpoint:
