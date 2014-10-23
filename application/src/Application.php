@@ -38,7 +38,7 @@ class Application {
     $service_loader = new YamlFileLoader($container, $file_locator);
     $service_loader->load('container.yml');
     $override_file = 'container_overrides.yml';
-    if (file_exists($override_file)) {
+    if (file_exists(__DIR__ . '/../' . $override_file)) {
       $service_loader->load($override_file);
     }
     $container->setParameter('root_directory', dirname(__DIR__));
