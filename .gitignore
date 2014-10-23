@@ -4,3 +4,4 @@ servercontrol
 .vagrant
 /logs/application.log
 /application/results.js
+/application/container_overrides.yml
