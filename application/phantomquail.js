@@ -205,30 +205,6 @@ page.onLoadFinished = function (status) {
           guideline: 'wcag2',
           accessibilityTests: tests,
           wcag2Structure: wcag2structure,
-          // Called when an individual Case in a test is resolved.
-          //caseResolve: function (eventName, test, _case) {
-          //  var name = test.get('name');
-          //  if (!output.tests[name]) {
-          //    output.tests[name] = {
-          //      id: name,
-          //      title: test.get('title'),
-          //      description: test.get('description'),
-          //      type: test.get('type'),
-          //      testability: test.get('testability'),
-          //      guidelines: test.get('guidelines') || {},
-          //      tags: test.get('tags'),
-          //      cases: []
-          //    };
-          //  }
-          //  // Push the case into the results for this test.
-          //  output.tests[name].cases.push({
-          //    status: _case.get('status'),
-          //    selector: _case.get('selector'),
-          //    html: _case.get('html')
-          //  });
-          //  // Increment the cases count.
-          //  output.stats.cases++;
-          //},
           // Called when all the Cases in a Test are resolved.
           testComplete: function (eventName, test) {
             console.log('Finished testing ' + test.get('name') + '.');
@@ -242,46 +218,6 @@ page.onLoadFinished = function (status) {
             console.log(JSON.stringify(testCollection));
             callPhantom('writeData', JSON.stringify(testCollection));
           }
-          //successCriteriaEvaluated : function (eventName, successCriteria, testCollection) {
-          //  var name = successCriteria.get('name');
-          //  var status = successCriteria.get('status');
-          //  var totals = successCriteria.get('totals');
-          //  var output = {
-          //    successCriteria: {}
-          //  };
-          //  var result;
-          //  // Get some stringifyable data from the results.
-          //  var looper = function (index, _case) {
-          //    output.successCriteria[name][result].push({
-          //      selector: _case.get('selector'),
-          //      html: _case.get('html')
-          //    });
-          //  };
-          //
-          //  // Push the results of the test out to the Phantom listener.
-          //  // If the SC was untested, report that as its status.
-          //  if (status === 'untested' || status === 'noResults' || status === 'noTestCoverage') {
-          //    output.successCriteria[name] = status;
-          //  }
-          //  // Otherwise get the cases and report them under their status.
-          //  else {
-          //    output.successCriteria[name] = {};
-          //    var results = successCriteria.get('results');
-          //    for (result in results) {
-          //      if (results.hasOwnProperty(result)) {
-          //        output.successCriteria[name][result] = [];
-          //        // Go through each case for this result and get its selector and HTML.
-          //        results[result].each(looper);
-          //      }
-          //    }
-          //    // List the totals for each type of result
-          //    output.successCriteria[name]['totals'] = successCriteria.get('totals');
-          //  }
-          //  // Echo
-          //  console.log('Evaluated: ' + name, 'conclusion: ' + status, 'totals: ' + JSON.stringify(totals));
-          //  // Attempt to write out the data.
-          //  callPhantom('writeData', JSON.stringify(output));
-          //}
         });
       }, tests, size, wcag2structure);
     }
