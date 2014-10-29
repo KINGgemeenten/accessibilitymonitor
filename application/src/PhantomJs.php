@@ -193,7 +193,7 @@ class PhantomJs implements PhantomJsInterface {
   /**
    * {@inheritdoc}
    */
-  public static function killStalledProcesses() {
+  public function killStalledProcesses() {
     // @todo This only seems to work on Debian-based systems.
     shell_exec('killall --older-than 2m phantomjs');
   }
