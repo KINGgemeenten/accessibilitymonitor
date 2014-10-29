@@ -1,6 +1,7 @@
 notifications:
   email:
     - bart@triquanta.nl
+    - jur@triquanta.nl
 
 language: php
 
