@@ -11,4 +11,5 @@ php:
 
 script:
   - cd $TRAVIS_BUILD_DIR/application
+  - composer install
   - vendor/bin/phpunit -c ./phpunit.xml.dist --bootstrap ./tests/bootstrap.php --verbose --debug || exit 1
