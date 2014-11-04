@@ -77,9 +77,6 @@ var absoluteScriptDir = absoluteScriptPath.substring(0, absoluteScriptPath.lastI
 
 dir = absoluteScriptDir;
 
-var guidelinedata = fs.read(dir + '/guideline.json');
-var guidelines = JSON.parse(guidelinedata);
-
 var testsdata = fs.read('/opt/quail/dist/tests.json');
 
 var wcag2data = fs.read('/opt/quail/dist/wcag2.json');
@@ -97,15 +94,6 @@ if (testFromCLI && allTests[testFromCLI]) {
   var singleTest = allTests[testFromCLI];
   tests = {};
   tests[testFromCLI] = singleTest;
-}
-else if (guidelines.length) {
-  // Only add the tests which are defined in the guidelines.
-  for ( var i = 0 ; i < guidelines.length; i++) {
-    var key = guidelines[i];
-    if (allTests[key]) {
-      tests[key] = allTests[key];
-    }
-  }
 }
 else {
   tests = allTests;
