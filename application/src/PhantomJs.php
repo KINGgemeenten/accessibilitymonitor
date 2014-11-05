@@ -55,7 +55,7 @@ class PhantomJs implements PhantomJsInterface {
     if (! preg_match('/^http/', $url)) {
       $url = 'http://' . $url;
     }
-    $command = $this->executable . ' --ignore-ssl-errors=yes ' . $this->rootDirectory . '/node_modules/phantalyzer/phantalyzer.js ' . $url;
+    $command = $this->executable . ' --ignore-ssl-errors=yes --ssl-protocol=any ' . $this->rootDirectory . '/node_modules/phantalyzer/phantalyzer.js ' . $url;
     $output = shell_exec($command);
     $preg_split = preg_split("/((\r?\n)|(\r\n?))/", $output);
     $detectedAppsArray = array();
@@ -83,7 +83,7 @@ class PhantomJs implements PhantomJsInterface {
    * {@inheritdoc}
    */
   public function getQuailResults($url) {
-    $command = $this->executable . ' --ignore-ssl-errors=yes ' . $this->rootDirectory . '/phantomquail.js ' . $url;
+    $command = $this->executable . ' --ignore-ssl-errors=yes --ssl-protocol=any ' . $this->rootDirectory . '/phantomquail.js ' . $url;
     // Print some debug info.
 //    $this->logger->debug('Starting phantomjs');
     $output = $this->execTimeout($command, $this->timeout);
