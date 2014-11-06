@@ -142,7 +142,8 @@ class Action {
    * @return $this
    */
   public function setUrl($url) {
-    if (!filter_var($url, FILTER_VALIDATE_URL)) {
+    $url = Validator::validateUrl($url);
+    if ($url === FALSE) {
       throw new \InvalidArgumentException(sprintf('%s is not a valid URL.', $url));
     }
     else {
