@@ -39,6 +39,6 @@ interface PhantomJsInterface {
   /**
    * Kill all stalled phantomjs processes.
    */
-  public static function killStalledProcesses();
+  public function killStalledProcesses();
 
 }

@@ -89,10 +89,11 @@ class Website implements TestingStatusInterface {
    * @return $this
    */
   public function setUrl($url) {
+    $url = Validator::validateUrl($url);
     if ($this->url) {
       throw new \BadMethodCallException('This website already has a URL.');
     }
-    elseif (!filter_var($url, FILTER_VALIDATE_URL)) {
+    elseif ($url === FALSE) {
       throw new \InvalidArgumentException(sprintf('%s is not a valid URL.', $url));
     }
     else {

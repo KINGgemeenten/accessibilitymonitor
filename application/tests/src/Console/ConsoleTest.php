@@ -50,17 +50,21 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase {
 
     $this->eventDispatcher = $this->getMock('\Symfony\Component\EventDispatcher\EventDispatcherInterface');
 
+    $logger = $this->getMock('\Psr\Log\LoggerInterface');
+
     $phantom_js = $this->getMock('\Triquanta\AccessibilityMonitor\PhantomJsInterface');
 
     $container = $this->getMock('\Symfony\Component\DependencyInjection\ContainerInterface');
     $map = array(
+      array('event_dispatcher', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->eventDispatcher),
+      array('logger', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $logger),
       array('service_container', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $container),
     );
     $container->expects($this->atLeastOnce())
       ->method('get')
       ->willReturnMap($map);
 
-    $this->command = new Console($container, $this->commandDiscovery, $this->eventDispatcher, $phantom_js);
+    $this->command = new Console($container, $this->commandDiscovery, $logger, $this->eventDispatcher, $phantom_js);
   }
 
   /**
