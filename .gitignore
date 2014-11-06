@@ -2,3 +2,6 @@ siteinspector/settings.ini
 siteinspector/settings.php
 servercontrol
 .vagrant
+/logs/application.log
+/application/results.js
+/application/container_overrides.yml

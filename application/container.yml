@@ -1,0 +1,85 @@
+parameters:
+  log.recipients: ['bart@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
+  log.sender: 'support@triquanta.nl'
+  log.file: '/var/log/tam.log'
+  solr.phantom:
+    endpoint:
+      localhost:
+        host: 192.168.50.5
+        port: 8080
+        path: /solr/phantomcore
+        timeout: 30
+  solr.nutch:
+    endpoint:
+      localhost:
+        host: 192.168.50.5
+        port: 8080
+        path: /solr/nutch
+        timeout: 30
+  database.host_name: 192.168.50.05
+  database.database_name: inspector
+  database.user_name: inspector
+  database.password: z31lb00t
+  phantomjs.executable: /usr/bin/phantomjs
+  phantomjs.timeout: 10
+  urls_per_sample: 10
+  cpu_count: 2
+  quail.worker_count: 2
+  quail.max_execution_time: 30
+  google_pagespeed.api_url: https://www.googleapis.com/pagespeedonline/v1/runPagespeed
+  google_pagespeed.api_key: AIzaSyA3Q_W9PO_ibkvSzVGxfncaMNNu3382lcw
+  google_pagespeed.api_strategy: mobile
+  google_pagespeed.api_fetch_limit: 10
+
+services:
+  storage:
+    class: \Triquanta\AccessibilityMonitor\DatabaseStorage
+    arguments: ['%database.host_name%', '%database.database_name%', '%database.user_name%', '%database.password%']
+  solr.client.phantom:
+    class: \Triquanta\AccessibilityMonitor\SolariumClient
+    arguments: ['%solr.phantom%']
+    calls:
+      - [setEventDispatcher, ['@event_dispatcher']]
+  solr.client.nutch:
+    class: \Triquanta\AccessibilityMonitor\SolariumClient
+    arguments: ['%solr.nutch%']
+    calls:
+      - [setEventDispatcher, ['@event_dispatcher']]
+  phantomjs:
+    class: \Triquanta\AccessibilityMonitor\PhantomJs
+    arguments: ['%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%']
+  process:
+    class: \Triquanta\AccessibilityMonitor\Process
+  quail:
+    class: \Triquanta\AccessibilityMonitor\Quail
+    arguments: ['@storage', '@solr.client.phantom', '@logger', '@quail_worker_factory', '%quail.max_execution_time%', '%quail.worker_count%', '%cpu_count%']
+  quail_worker_factory:
+    class: \Triquanta\AccessibilityMonitor\QuailWorkerFactory
+    arguments: ['@service_container']
+  logger:
+    class: \Monolog\Logger
+    arguments: ['global']
+    calls:
+      - [pushHandler, ['@monolog.handler.console']]
+      - [pushHandler, ['@monolog.handler.mail']]
+      - [pushHandler, ['@monolog.handler.file']]
+  monolog.handler.console:
+    class: \Symfony\Bridge\Monolog\Handler\ConsoleHandler
+  monolog.handler.mail:
+    class: \Monolog\Handler\NativeMailerHandler
+    arguments: ['%log.recipients%', 'Log messages for Gewoon Toegankelijk', '%log.sender%', 400]
+  monolog.handler.file:
+    class: \Monolog\Handler\StreamHandler
+    arguments: ['%log.file%', 100]
+  event_dispatcher:
+    class: \Symfony\Component\EventDispatcher\EventDispatcher
+    calls:
+      - [addSubscriber, ['@monolog.handler.console']]
+  http_client:
+    class: GuzzleHttp\Client
+  google_pagespeed:
+    class: \Triquanta\AccessibilityMonitor\GooglePagespeed
+    arguments: ['@http_client', '%google_pagespeed.api_url%', '%google_pagespeed.api_key%', '%google_pagespeed.api_strategy%']
+  actions:
+    class: \Triquanta\AccessibilityMonitor\Actions
+    arguments: ['@storage', '@solr.client.phantom', '@logger']
