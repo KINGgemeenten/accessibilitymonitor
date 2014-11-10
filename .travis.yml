@@ -1,16 +1,17 @@
 notifications:
   email:
-    - bart@triquanta.nl
-    - jur@triquanta.nl
-
+  - bart@triquanta.nl
+  - jur@triquanta.nl
+  hipchat:
+    rooms:
+      secure: RFZG6Zt+TySVmAzsvZ3DqPCekogBafCveX40kjqwTl/WNuTpH3AP281DmXJzXaBigsddMZ5vwbzHsNpYcuskl09yervsNQ7MyJIwyaT+ZmnpAErT+ZNr95lJ3rNiq44jVificNY2Gt+ye3Kxao65jHesEewCANuC4FkoNNVsGu4=
 language: php
-
 php:
-  - 5.4
-  - 5.5
-  - 5.6
-
+- 5.4
+- 5.5
+- 5.6
 script:
-  - cd $TRAVIS_BUILD_DIR/application
-  - composer install
-  - vendor/bin/phpunit -c ./phpunit.xml.dist --bootstrap ./tests/bootstrap.php --verbose --debug || exit 1
+- cd $TRAVIS_BUILD_DIR/application
+- composer install
+- vendor/bin/phpunit -c ./phpunit.xml.dist --bootstrap ./tests/bootstrap.php --verbose
+  --debug || exit 1
