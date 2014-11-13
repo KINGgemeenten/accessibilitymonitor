@@ -94,9 +94,6 @@ class ActionsTest extends \PHPUnit_Framework_TestCase {
       ->method('getId')
       ->willReturn($website_id);
     $website->expects($this->atLeastOnce())
-      ->method('getUrl')
-      ->willReturn($url);
-    $website->expects($this->atLeastOnce())
       ->method('setTestingStatus')
       ->with(TestingStatusInterface::STATUS_SCHEDULED);
 
@@ -132,10 +129,6 @@ class ActionsTest extends \PHPUnit_Framework_TestCase {
     $update_query = $this->getMockBuilder('\Solarium\QueryType\Update\Query\Query')
       ->disableOriginalConstructor()
       ->getMock();
-
-    $this->solrClient->expects($this->atLeastOnce())
-      ->method('createUpdate')
-      ->willReturn($update_query);
 
     $this->actions->rescanWebsite($website);
   }

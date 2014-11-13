@@ -68,7 +68,6 @@ class Actions implements ActionsInterface {
    * {@inheritdoc}
    */
   public function rescanWebsite(Website $website) {
-    $this->deleteWebsiteResults($website);
     foreach ($this->storage->getUrlsByWebsiteId($website->getId()) as $url) {
       $url->setTestingStatus($url::STATUS_SCHEDULED);
       $this->storage->saveUrl($url);
