@@ -125,10 +125,6 @@ class ActionsTest extends \PHPUnit_Framework_TestCase {
       ->method('saveUrl');
     call_user_func_array(array($invocation_mocker, 'withConsecutive'), $with);
 
-    $update_query = $this->getMockBuilder('\Solarium\QueryType\Update\Query\Query')
-      ->disableOriginalConstructor()
-      ->getMock();
-
     $this->actions->rescanWebsite($website);
   }
 
