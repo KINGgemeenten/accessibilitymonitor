@@ -85,7 +85,6 @@ class ActionsTest extends \PHPUnit_Framework_TestCase {
    */
   public function testRescanWebsite() {
     $website_id = mt_rand();
-    $url = 'http://example.com/foo/' . mt_rand();
 
     $website = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Website')
       ->disableOriginalConstructor()
