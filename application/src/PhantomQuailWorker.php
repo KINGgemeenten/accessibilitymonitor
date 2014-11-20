@@ -315,7 +315,7 @@ class PhantomQuailWorker extends \Thread {
           // The pointer contains the html snippet we need.
           if (isset($case->outcome->pointer) && isset($case->outcome->pointer[0]->chars) && ($case->outcome->result == 'failed' || $case->outcome->result == 'cantTell')) {
             // Create the unique key, to prevent that we store only one case per testCase per criterium.
-            $uniqueKey = str_replace('.', '_', $criteriumNumber) . '_' . $case->testCase;
+            $uniqueKey = str_replace('.', '_', $criteriumNumber) . '_' . $case->testCase . '_' . $case->outcome->result;
             if (! isset ($quailCases[$uniqueKey])) {
               // Add the unique key to the case.
               $case->uniqueKey = $uniqueKey;
