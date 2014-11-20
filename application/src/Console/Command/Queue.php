@@ -93,6 +93,10 @@ class Queue extends Command implements ContainerFactoryInterface {
       }
       elseif ($action->getAction() == $action::ACTION_EXCLUDE_URL) {
         $url = $this->storage->getUrlByUrl($action->getUrl());
+        if (!$url) {
+          $this->logger->info(sprintf('Skipped excluding URL %s, because it could not be found in storage.', $action->getUrl()));
+          continue;
+        }
         $this->actions->excludeUrl($url);
       }
       elseif ($action->getAction() == $action::ACTION_ADD_WEBSITE) {
@@ -102,10 +106,18 @@ class Queue extends Command implements ContainerFactoryInterface {
       }
       elseif ($action->getAction() == $action::ACTION_EXCLUDE_WEBSITE) {
         $website = $this->storage->getWebsiteByUrl($action->getUrl());
+        if (!$website) {
+          $this->logger->info(sprintf('Skipped excluding website %s, because it could not be found in storage.', $action->getUrl()));
+          continue;
+        }
         $this->actions->excludeWebsite($website);
       }
       elseif ($action->getAction() == $action::ACTION_RESCAN_WEBSITE) {
         $website = $this->storage->getWebsiteByUrl($action->getUrl());
+        if (!$website) {
+          $this->logger->info(sprintf('Skipped re-scanning website %s, because it could not be found in storage.', $action->getUrl()));
+          continue;
+        }
         $this->actions->rescanWebsite($website);
       }
       $action->setTimestamp(time());
