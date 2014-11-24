@@ -140,7 +140,11 @@ class DatabaseStorage implements StorageInterface {
    * {@inheritdoc}
    */
   public function getUrlsByStatus($status, $limit = NULL) {
-    $query = $this->getConnection()->prepare("SELECT * FROM url WHERE status = :status ORDER BY priority ASC LIMIT " . $limit);
+    $query_string = "SELECT * FROM url WHERE status = :status ORDER BY priority ASC";
+    if ($limit) {
+      $query_string .= " LIMIT " . $limit;
+    }
+    $query = $this->getConnection()->prepare($query_string);
     $query->execute(array(
       'status' => $status,
     ));
