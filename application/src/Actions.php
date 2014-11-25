@@ -69,7 +69,7 @@ class Actions implements ActionsInterface {
    */
   public function rescanWebsite(Website $website) {
     foreach ($this->storage->getUrlsByWebsiteId($website->getId()) as $url) {
-      if ($url->getTestingStatus() != $url::STATUS_SCHEDULED) {
+      if (!in_array($url->getTestingStatus(), array($url::STATUS_SCHEDULED, $url::STATUS_TESTING, $url::STATUS_EXCLUDED))) {
         $url->setTestingStatus($url::STATUS_SCHEDULED);
         $url->setPriority($url->getPriority() + 1);
         $this->storage->saveUrl($url);

@@ -96,19 +96,25 @@ class ActionsTest extends \PHPUnit_Framework_TestCase {
       ->method('setTestingStatus')
       ->with(TestingStatusInterface::STATUS_SCHEDULED);
 
+    $url_testing_status_a = Url::STATUS_SCHEDULED;
     $url_entity_a = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Url')
       ->disableOriginalConstructor()
       ->getMock();
+    $url_entity_a->expects($this->atLeastOnce())
+      ->method('getTestingStatus')
+      ->willReturn($url_testing_status_a);
+    $url_testing_status_b = Url::STATUS_TESTED;
     $url_entity_b = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Url')
       ->disableOriginalConstructor()
       ->getMock();
+    $url_entity_b->expects($this->atLeastOnce())
+      ->method('getTestingStatus')
+      ->willReturn($url_testing_status_b);
+    $url_entity_b->expects($this->atLeastOnce())
+      ->method('setTestingStatus')
+      ->with(TestingStatusInterface::STATUS_SCHEDULED);
     /** @var \Triquanta\AccessibilityMonitor\Url[]|\PHPUnit_Framework_MockObject_MockObject[] $url_entities */
     $url_entities = array($url_entity_a, $url_entity_b);
-    foreach ($url_entities as $url_entity) {
-      $url_entity->expects($this->atLeastOnce())
-        ->method('setTestingStatus')
-        ->with(TestingStatusInterface::STATUS_SCHEDULED);
-    }
 
     $this->storage->expects($this->atLeastOnce())
       ->method('getUrlsByWebsiteId')
@@ -121,7 +127,7 @@ class ActionsTest extends \PHPUnit_Framework_TestCase {
     foreach ($url_entities as $url_entity) {
       $with[] = array($url_entity);
     }
-    $invocation_mocker = $this->storage->expects($this->exactly(count($url_entities)))
+    $invocation_mocker = $this->storage->expects($this->once())
       ->method('saveUrl');
     call_user_func_array(array($invocation_mocker, 'withConsecutive'), $with);
 
