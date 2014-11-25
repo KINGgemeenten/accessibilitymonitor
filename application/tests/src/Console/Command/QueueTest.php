@@ -19,13 +19,6 @@ use Triquanta\AccessibilityMonitor\Website;
 class QueueTest extends \PHPUnit_Framework_TestCase {
 
   /**
-   * The command under test.
-   *
-   * @var \Triquanta\AccessibilityMonitor\Console\Command\Queue
-   */
-  protected $command;
-
-  /**
    * The actions manager.
    *
    * @var \Triquanta\AccessibilityMonitor\ActionsInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -33,11 +26,39 @@ class QueueTest extends \PHPUnit_Framework_TestCase {
   protected $actions;
 
   /**
+   * The number of items in the queue that should trigger an alert log item.
+   *
+   * @var int
+   */
+  protected $alertThreshold;
+
+  /**
+   * The number of items in the queue that should trigger an error log item.
+   *
+   * @var int
+   */
+  protected $errorThreshold;
+
+  /**
+   * The command under test.
+   *
+   * @var \Triquanta\AccessibilityMonitor\Console\Command\Queue
+   */
+  protected $command;
+
+  /**
    * The logger.
    *
    * @var \Psr\Log\LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
    */
   protected $logger;
+
+  /**
+   * The number of items in the queue that should trigger a notice log item.
+   *
+   * @var int
+   */
+  protected $noticeThreshold;
 
   /**
    * The storage manager.
@@ -52,11 +73,17 @@ class QueueTest extends \PHPUnit_Framework_TestCase {
   public function setUp() {
     $this->actions = $this->getMock('\Triquanta\AccessibilityMonitor\ActionsInterface');
 
+    $this->alertThreshold = mt_rand();
+
+    $this->errorThreshold = mt_rand();
+
     $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
+
+    $this->noticeThreshold = mt_rand();
 
     $this->storage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
-    $this->command = new Queue($this->actions, $this->storage, $this->logger);
+    $this->command = new Queue($this->actions, $this->storage, $this->logger, $this->noticeThreshold, $this->errorThreshold, $this->alertThreshold);
   }
 
   /**
