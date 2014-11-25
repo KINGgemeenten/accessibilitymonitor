@@ -47,7 +47,7 @@ class Url implements TestingStatusInterface {
    * @var int
    *   A lower value means a higher priority.
    */
-  protected $priority;
+  protected $priority = 0;
 
   /**
    * The Quail test results.
