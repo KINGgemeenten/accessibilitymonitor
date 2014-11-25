@@ -93,6 +93,16 @@ interface StorageInterface extends TestingStatusInterface {
   public function countUrlsByWebsiteIdAndFullUrl($website_id, $full_url);
 
   /**
+   * Counts URLs by status.
+   *
+   * @param int $status
+   *   One of the self::STATUS_* constants.
+   *
+   * @return int
+   */
+  public function countUrlsByStatus($status);
+
+  /**
    * Gets the number of URLs by status and website ID.
    *
    * @param int $status

@@ -248,6 +248,24 @@ class DatabaseStorage implements StorageInterface {
   }
 
   /**
+   * Counts URLs by status.
+   *
+   * @param int $status
+   *   One of the self::STATUS_* constants.
+   *
+   * @return int
+   */
+  public function countUrlsByStatus($status) {
+    $query_string = "SELECT count(*) FROM url WHERE status = :status";
+    $query = $this->getConnection()->prepare($query_string);
+    $query->execute(array(
+      'status' => $status,
+    ));
+
+    return $query->fetchColumn();
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function countUrlsByStatusAndWebsiteId($status, $website_id) {

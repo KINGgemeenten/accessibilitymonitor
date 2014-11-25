@@ -8,6 +8,7 @@
 namespace Triquanta\AccessibilityMonitor\Console\Command;
 
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,11 +32,32 @@ class Queue extends Command implements ContainerFactoryInterface {
   protected $actions;
 
   /**
+   * The number of items in the queue that should trigger an alert log item.
+   *
+   * @var int
+   */
+  protected $alertThreshold;
+
+  /**
+   * The number of items in the queue that should trigger an error log item.
+   *
+   * @var int
+   */
+  protected $errorThreshold;
+
+  /**
    * The logger.
    *
    * @var \Psr\Log\LoggerInterface
    */
   protected $logger;
+
+  /**
+   * The number of items in the queue that should trigger a notice log item.
+   *
+   * @var int
+   */
+  protected $noticeThreshold;
 
   /**
    * The storage manager.
@@ -50,11 +72,20 @@ class Queue extends Command implements ContainerFactoryInterface {
    * @param \Triquanta\AccessibilityMonitor\ActionsInterface $actions
    * @param \Triquanta\AccessibilityMonitor\StorageInterface $storage
    * @param \Psr\Log\LoggerInterface
+   * @param int $notice_threshold
+   *   The number of items in the queue that should trigger a notice log item.
+   * @param int $error_threshold
+   *   The number of items in the queue that should trigger an error log item.
+   * @param int $alert_threshold
+   *   The number of items in the queue that should trigger an alert log item.
    */
-  public function __construct(ActionsInterface $actions, StorageInterface $storage, LoggerInterface $logger) {
+  public function __construct(ActionsInterface $actions, StorageInterface $storage, LoggerInterface $logger, $notice_threshold, $error_threshold, $alert_threshold) {
     parent::__construct();
     $this->actions = $actions;
+    $this->alertThreshold = $alert_threshold;
+    $this->errorThreshold = $error_threshold;
     $this->logger = $logger;
+    $this->noticeThreshold = $notice_threshold;
     $this->storage = $storage;
   }
 
@@ -62,7 +93,7 @@ class Queue extends Command implements ContainerFactoryInterface {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static($container->get('actions'), $container->get('storage'), $container->get('logger'));
+    return new static($container->get('actions'), $container->get('storage'), $container->get('logger'), $container->getParameter('queue.threshold.notice'), $container->getParameter('queue.threshold.error'), $container->getParameter('queue.threshold.alert'));
   }
 
   /**
@@ -76,6 +107,12 @@ class Queue extends Command implements ContainerFactoryInterface {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output) {
+    // Check the queue health.
+    $count = $this->storage->countUrlsByStatus(Url::STATUS_SCHEDULED);
+    $level = $count > $this->alertThreshold ? LogLevel::ALERT : ($count > $this->errorThreshold ? LogLevel::ERROR : ($count > $this->noticeThreshold ? LogLevel::NOTICE : LogLevel::INFO));
+    $this->logger->log($level, sprintf('%d URLs are currently scheduled for testing.', $count));
+
+    // Queue new items.
     foreach ($this->storage->getPendingActions() as $action) {
       if ($action->getAction() == $action::ACTION_ADD_URL) {
         // If no website exists for this URL, skip it.
