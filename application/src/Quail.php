@@ -284,8 +284,9 @@ class Quail implements QuailInterface {
   protected function processWappalyzerResults(PhantomQuailWorker $finishedWorker) {
     $websiteCms = $finishedWorker->getWebsiteCms();
     if ($websiteCms) {
-      $finishedWorker->getUrl()->setCms($websiteCms);
-      $this->storage->saveUrl($finishedWorker->getUrl());
+      $url = $finishedWorker->getUrl();
+      $url->setCms($websiteCms);
+      $this->storage->saveUrl($url);
     }
   }
 

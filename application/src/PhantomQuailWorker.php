@@ -198,9 +198,9 @@ class PhantomQuailWorker extends \Thread {
     Application::bootstrap();
 
     // If the website has not yet a cms detected, perform the detection here.
-//    if ($this->determineCms) {
-//      $this->detectCms();
-//    }
+    if ($this->determineCms) {
+      $this->detectCms();
+    }
 //    if ($this->performGooglePagespeed) {
 //      $this->executeGooglePagespeed();
 //    }
