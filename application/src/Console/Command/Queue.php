@@ -149,8 +149,10 @@ class Queue extends Command implements ContainerFactoryInterface {
       elseif ($action->getAction() == $action::ACTION_RESCAN_WEBSITE) {
         $website = $this->storage->getWebsiteByUrl($action->getUrl());
         if (!$website) {
-          $this->logger->info(sprintf('Skipped re-scanning website %s, because it could not be found in storage.', $action->getUrl()));
-          continue;
+          $this->logger->info(sprintf('Skipped re-scanning website %s, because it could not be found in storage. Adding a new website instead.', $action->getUrl()));
+          $website = new Website();
+          $website->setUrl($action->getUrl());
+          $this->actions->addWebsite($website);
         }
         $this->actions->rescanWebsite($website);
       }
