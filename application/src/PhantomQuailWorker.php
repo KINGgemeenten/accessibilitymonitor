@@ -407,8 +407,10 @@ class PhantomQuailWorker extends \Thread {
       if (property_exists($case->outcome, 'pointer')) {
         $doc->element = $case->outcome->pointer[0]->chars;
       }
-      $doc->name_en = $case->outcome->info->en;
-      $doc->name_nl = $case->outcome->info->nl;
+      if (property_exists($case->outcome, 'info')) {
+        $doc->name_en = $case->outcome->info->en;
+        $doc->name_nl = $case->outcome->info->nl;
+      }
       $doc->succescriterium = $case->criteriumName;
       $doc->test_result = $case->outcome->result;
       $doc->testtype = $case->testCase;
