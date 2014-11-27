@@ -56,7 +56,7 @@ class PhantomJs implements PhantomJsInterface {
       $url = 'http://' . $url;
     }
     $command = $this->executable . ' --ignore-ssl-errors=yes --ssl-protocol=any ' . $this->rootDirectory . '/node_modules/phantalyzer/phantalyzer.js ' . $url;
-    $output = shell_exec($command);
+    $output = shell_exec(escapeshellcmd($command));
     $preg_split = preg_split("/((\r?\n)|(\r\n?))/", $output);
     $detectedAppsArray = array();
     foreach ($preg_split as $line) {
@@ -114,7 +114,7 @@ class PhantomJs implements PhantomJsInterface {
 
 //    $this->logger->debug('Openining processes');
     // Start the process.
-    $process = proc_open('exec ' . $cmd, $descriptors, $pipes);
+    $process = proc_open(escapeshellcmd('exec ' . $cmd), $descriptors, $pipes);
 
     if (!is_resource($process)) {
       throw new \Exception('Could not execute process');
