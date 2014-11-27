@@ -94,7 +94,7 @@ class DatabaseStorage implements StorageInterface {
       ->setTestingStatus($record->status)
       ->setPriority($record->priority)
       ->setCms($record->cms)
-      ->setQuailResult($record->quail_result)
+      ->setQuailResult(json_decode($record->quail_result))
       ->setGooglePagespeedResult($record->pagespeed_result);
 
     return $url;
