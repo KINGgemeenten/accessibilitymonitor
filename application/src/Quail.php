@@ -262,7 +262,6 @@ class Quail implements QuailInterface {
   protected function processQuailResult(PhantomQuailWorker $finishedWorker) {
     $url = $finishedWorker->getUrl();
     // Now set the data.
-    $url->setCms($finishedWorker->getWebsiteCms());
     $url->setTestingStatus($finishedWorker->getStatus());
     $quailFinalResult = $finishedWorker->getQuailFinalResults();
     $url->setQuailResult($quailFinalResult);
