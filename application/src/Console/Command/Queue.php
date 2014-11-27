@@ -107,10 +107,7 @@ class Queue extends Command implements ContainerFactoryInterface {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output) {
-    // Check the queue health.
-    $count = $this->storage->countUrlsByStatus(Url::STATUS_SCHEDULED);
-    $level = $count > $this->alertThreshold ? LogLevel::ALERT : ($count > $this->errorThreshold ? LogLevel::ERROR : ($count > $this->noticeThreshold ? LogLevel::NOTICE : LogLevel::INFO));
-    $this->logger->log($level, sprintf('%d URLs are currently scheduled for testing.', $count));
+    $count_before = $this->storage->countUrlsByStatus(Url::STATUS_SCHEDULED);
 
     // Queue new items.
     foreach ($this->storage->getPendingActions() as $action) {
@@ -160,6 +157,11 @@ class Queue extends Command implements ContainerFactoryInterface {
       $action->setTimestamp(time());
       $this->storage->saveAction($action);
     }
+
+    // Check the queue health.
+    $count_after = $this->storage->countUrlsByStatus(Url::STATUS_SCHEDULED);
+    $level = $count_after > $this->alertThreshold ? LogLevel::ALERT : ($count_after > $this->errorThreshold ? LogLevel::ERROR : ($count_after > $this->noticeThreshold ? LogLevel::NOTICE : LogLevel::INFO));
+    $this->logger->log($level, sprintf('%d URLs, of which %d newly added, are currently scheduled for testing.', $count_after, $count_after - $count_before));
   }
 
 }
