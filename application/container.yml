@@ -30,9 +30,9 @@ parameters:
   google_pagespeed.api_key: AIzaSyA3Q_W9PO_ibkvSzVGxfncaMNNu3382lcw
   google_pagespeed.api_strategy: mobile
   google_pagespeed.api_fetch_limit: 10
-  queue.threshold.notice: 500
-  queue.threshold.error: 1500
-  queue.threshold.alert: 2500
+  queue.threshold.notice: 2500
+  queue.threshold.error: 4000
+  queue.threshold.alert: 5000
 
 services:
   storage:
