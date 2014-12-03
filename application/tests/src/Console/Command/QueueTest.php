@@ -154,7 +154,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase {
       ->method('getPendingActions')
       ->willReturn(array($action));
     $this->storage->expects($this->once())
-      ->method('getWebsiteIdForNestedUrl')
+      ->method('getWebsiteById')
       ->willReturn(NULL);
 
     $this->actions->expects($this->never())
@@ -186,7 +186,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase {
       ->method('getPendingActions')
       ->willReturn(array($action));
     $this->storage->expects($this->once())
-      ->method('getWebsiteIdForNestedUrl')
+      ->method('getWebsiteById')
       ->willReturn($website_id);
 
     $this->actions->expects($this->once())

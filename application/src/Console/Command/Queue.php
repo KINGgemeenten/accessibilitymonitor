@@ -113,7 +113,7 @@ class Queue extends Command implements ContainerFactoryInterface {
     foreach ($this->storage->getPendingActions() as $action) {
       if ($action->getAction() == $action::ACTION_ADD_URL) {
         // If no website exists for this URL, skip it.
-        $website_id = $this->storage->getWebsiteIdForNestedUrl($action->getUrl());
+        $website_id = $this->storage->getWebsiteById($action->getWebsiteId());
         if (!$website_id) {
           $this->logger->info(sprintf('Skipped adding URL %s, because the website for it was not added yet.', $action->getUrl()));
           continue;

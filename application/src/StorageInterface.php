@@ -187,16 +187,6 @@ interface StorageInterface extends TestingStatusInterface {
   public function countGooglePagespeedResultsByWebsiteId($website_id);
 
   /**
-   * Gets a website's ID based on a URL that belongs to it.
-   *
-   * @param string $url
-   *   The URL may be anything, but must lie within a website's root URL.
-   *
-   * @return int
-   */
-  public function getWebsiteIdForNestedUrl($url);
-
-  /**
    * Gets all pending actions.
    *
    * @return \Triquanta\AccessibilityMonitor\Action[]

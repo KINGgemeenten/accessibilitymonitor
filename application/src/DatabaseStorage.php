@@ -130,7 +130,7 @@ class DatabaseStorage implements StorageInterface {
     $website = new Action();
     $website->setId($record->aid)
       ->setAction($record->action)
-      ->setUrl($record->item_uid)
+      ->setUrl($record->url)
       ->setTimestamp($record->timestamp);
 
     return $website;
@@ -411,18 +411,6 @@ class DatabaseStorage implements StorageInterface {
     $query = $this->getConnection()->prepare("SELECT COUNT(*) FROM url WHERE website_id = :website_id AND pagespeed_result <> ''");
     $query->execute(array(
       'website_id' => $website_id,
-    ));
-
-    return $query->fetchColumn();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getWebsiteIdForNestedUrl($nested_url) {
-    $query = $this->getConnection()->prepare("SELECT website_id FROM website WHERE :url LIKE CONCAT('%', url, '%')");
-    $query->execute(array(
-      'url' => $nested_url,
     ));
 
     return $query->fetchColumn();

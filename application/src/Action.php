@@ -55,6 +55,13 @@ class Action {
   protected $timestamp;
 
   /**
+   * The website ID.
+   *
+   * @var int
+   */
+  protected $websiteId;
+
+  /**
    * Returns all actions for URLs.
    *
    * @return string[]
@@ -97,6 +104,28 @@ class Action {
     else {
       $this->id = $id;
     }
+
+    return $this;
+  }
+
+  /**
+   * Returns the website ID.
+   *
+   * @return int
+   */
+  public function getWebsiteId() {
+    return $this->websiteId;
+  }
+
+  /**
+   * Sets the website ID.
+   *
+   * @param int $website_id
+   *
+   * @return $this
+   */
+  public function setWebsiteId($website_id) {
+    $this->websiteId = $website_id;
 
     return $this;
   }
