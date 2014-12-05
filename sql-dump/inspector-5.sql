@@ -30,7 +30,7 @@ CREATE TABLE `actions` (
   `action` varchar(255) NOT NULL,
   `url` varchar(512) DEFAULT NULL,
   `timestamp` int(11) DEFAULT '0',
-  `website_id` int(10) unsigned NOT NULL,
+  `website_test_results_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`aid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -43,7 +43,7 @@ DROP TABLE IF EXISTS `url`;
 
 CREATE TABLE `url` (
   `url_id` int(11) NOT NULL AUTO_INCREMENT,
-  `website_id` int(10) unsigned NOT NULL,
+  `website_test_results_id` int(10) unsigned NOT NULL,
   `full_url` varchar(1024) NOT NULL,
   `status` int(11) NOT NULL,
   `priority` int(11) DEFAULT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE `url` (
   `quail_result` text,
   `pagespeed_result` text,
   PRIMARY KEY (`url_id`),
-  KEY `website_id` (`website_id`)
+  KEY `website_test_results_id` (`website_test_results_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
@@ -62,11 +62,11 @@ CREATE TABLE `url` (
 DROP TABLE IF EXISTS `website`;
 
 CREATE TABLE `website` (
-  `website_id` int(10) unsigned NOT NULL,
+  `website_test_results_id` int(10) unsigned NOT NULL,
   `url` varchar(1024) NOT NULL,
   `status` int(10) unsigned NOT NULL,
   `last_analysis` int(11) DEFAULT NULL,
-  PRIMARY KEY (`website_id`)
+  PRIMARY KEY (`website_test_results_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
