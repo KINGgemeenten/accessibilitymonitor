@@ -44,7 +44,7 @@ DROP TABLE IF EXISTS `url`;
 CREATE TABLE `url` (
   `url_id` int(11) NOT NULL AUTO_INCREMENT,
   `website_test_results_id` int(10) unsigned NOT NULL,
-  `full_url` varchar(1024) NOT NULL,
+  `url` varchar(1024) NOT NULL,
   `status` int(11) NOT NULL,
   `priority` int(11) DEFAULT NULL,
   `cms` varchar(1024) DEFAULT NULL,

@@ -86,11 +86,11 @@ interface StorageInterface extends TestingStatusInterface {
    *
    * @param int $website_id
    *   The website status.
-   * @param string $full_url
+   * @param string $url
    *
    * @return int
    */
-  public function countUrlsByWebsiteIdAndFullUrl($website_id, $full_url);
+  public function countUrlsByWebsiteIdAndUrl($website_id, $url);
 
   /**
    * Counts URLs by status.

@@ -90,7 +90,7 @@ class DatabaseStorage implements StorageInterface {
     $url = new Url();
     $url->setId($record->url_id)
       ->setWebsiteId($record->website_id)
-      ->setUrl($record->full_url)
+      ->setUrl($record->url)
       ->setTestingStatus($record->status)
       ->setPriority($record->priority)
       ->setCms($record->cms)
@@ -237,10 +237,10 @@ class DatabaseStorage implements StorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function countUrlsByWebsiteIdAndFullUrl($website_id, $full_url) {
-    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_id = :website_id AND full_url = :full_url");
+  public function countUrlsByWebsiteIdAndUrl($website_id, $url) {
+    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_id = :website_id AND url = :url");
     $query->execute(array(
-      'full_url' => $full_url,
+      'url' => $url,
       'website_id' => $website_id,
     ));
 
@@ -339,9 +339,9 @@ class DatabaseStorage implements StorageInterface {
       $query->execute($values);
     }
     else {
-      $values['full_url'] = $url->getUrl();
+      $values['url'] = $url->getUrl();
       $values['website_id'] = $url->getWebsiteId();
-      $insert = $this->getConnection()->prepare("INSERT INTO url (website_id, full_url, status, priority, cms, quail_result, pagespeed_result) VALUES (:website_id, :full_url, :status, :priority, :cms, :quail_result, :pagespeed_result)");
+      $insert = $this->getConnection()->prepare("INSERT INTO url (website_id, url, status, priority, cms, quail_result, pagespeed_result) VALUES (:website_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result)");
       $insert->execute($values);
       $url->setId($this->getConnection()->lastInsertId());
     }
@@ -420,7 +420,7 @@ class DatabaseStorage implements StorageInterface {
    * {@inheritdoc}
    */
   public function getUrlByUrl($url) {
-    $query = $this->getConnection()->prepare("SELECT * FROM url WHERE full_url = :url");
+    $query = $this->getConnection()->prepare("SELECT * FROM url WHERE url = :url");
     $query->execute(array(
       'url' => $url,
     ));

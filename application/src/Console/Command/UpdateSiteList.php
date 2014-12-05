@@ -127,7 +127,7 @@ class UpdateSiteList extends Command implements ContainerFactoryInterface {
           $priority = 1;
           foreach ($solrResults as $doc) {
             // Check if entry already exists.
-            $present = $this->storage->countUrlsByWebsiteIdAndFullUrl($website->getId(), $doc->url);
+            $present = $this->storage->countUrlsByWebsiteIdAndUrl($website->getId(), $doc->url);
 
             if (!$present) {
               $url = new Url();

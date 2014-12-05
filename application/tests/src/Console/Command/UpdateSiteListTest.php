@@ -122,7 +122,7 @@ class UpdateSiteListTest extends \PHPUnit_Framework_TestCase {
       ->with($website->getId())
       ->willReturn($number_of_urls);
     $this->storage->expects($this->once())
-      ->method('countUrlsByWebsiteIdAndFullUrl')
+      ->method('countUrlsByWebsiteIdAndUrl')
       ->with($website->getId(), $document->url)
       ->willReturn((int) $document_exists);
     $this->storage->expects($this->once())
