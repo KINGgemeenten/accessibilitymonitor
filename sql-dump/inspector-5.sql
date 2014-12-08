@@ -7,7 +7,7 @@
 #
 # Host: 192.168.50.5 (MySQL 5.5.40-0ubuntu0.12.04.1)
 # Database: inspector
-# Generation Time: 2014-12-03 11:21:40 +0000
+# Generation Time: 2014-12-08 09:33:49 +0000
 # ************************************************************
 
 
@@ -23,8 +23,6 @@
 # Dump of table url
 # ------------------------------------------------------------
 
-DROP TABLE IF EXISTS `url`;
-
 CREATE TABLE `url` (
   `url_id` int(11) NOT NULL AUTO_INCREMENT,
   `website_test_results_id` int(10) unsigned NOT NULL,
@@ -34,6 +32,7 @@ CREATE TABLE `url` (
   `cms` varchar(1024) DEFAULT NULL,
   `quail_result` text,
   `pagespeed_result` text,
+  `analysis` int(11) DEFAULT NULL,
   PRIMARY KEY (`url_id`),
   KEY `website_test_results_id` (`website_test_results_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

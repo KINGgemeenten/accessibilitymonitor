@@ -126,26 +126,24 @@ class Quail implements QuailInterface {
       // Create the workers.
       $this->workers = array();
 
-      // Keys are website IDs, values are booleans that indicate whether there
-      // are results for the websites.
+      // Keys are website test result IDs, values are booleans that indicate
+      // whether there are results.
       $cms_results = array();
-      // Keys are website IDs, values are booleans that indicate whether there
-      // are results for the websites.
+      // Keys are website test result IDs, values are booleans that indicate
+      // whether there are results.
       $google_pagespeed_results = array();
 
       foreach ($urls as $url) {
-        // Get the website record from the database.
-        $website = $this->storage->getWebsiteTestResultsById($url->getWebsiteTestResultsId());
         // Determine which tests should be done.
         if (!array_key_exists($url->getWebsiteTestResultsId(), $cms_results)) {
           $cms_results[$url->getWebsiteTestResultsId()] = $this->storage->countCmsTestResultsByWebsiteTestResultsId($url->getWebsiteTestResultsId());
         }
         if (!array_key_exists($url->getWebsiteTestResultsId(), $google_pagespeed_results)) {
-          $google_pagespeed_results[$url->getWebsiteTestResultsId()] = $this->storage->countGooglePagespeedResultsByWebsiteId($url->getWebsiteTestResultsId());
+          $google_pagespeed_results[$url->getWebsiteTestResultsId()] = $this->storage->countGooglePagespeedResultsByWebsiteTestResultsId($url->getWebsiteTestResultsId());
         }
 
         // Create a PhantomQuailWorker for each url.
-        $worker = $this->workerFactory->createWorker($url, $website, $url->getId(), !$cms_results[$url->getWebsiteTestResultsId()], !$google_pagespeed_results[$url->getWebsiteTestResultsId()]);
+        $worker = $this->workerFactory->createWorker($url, $url->getId(), !$cms_results[$url->getWebsiteTestResultsId()], !$google_pagespeed_results[$url->getWebsiteTestResultsId()]);
         // First delete all documents from solr.
         $worker->deleteCasesFromSolr();
         // Now start the thread.
@@ -263,7 +261,7 @@ class Quail implements QuailInterface {
     $time = time();
     $url = $finishedWorker->getUrl();
     $url->setTestingStatus($finishedWorker->getStatus());
-    $url->setLastAnalysis($time);
+    $url->setAnalysis($time);
     $quailFinalResult = $finishedWorker->getQuailFinalResults();
     $url->setQuailResult($quailFinalResult);
     $this->storage->saveUrl($url);

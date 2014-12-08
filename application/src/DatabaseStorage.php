@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Triquanta\AccessibilityMonitor\Database.
+ * Contains \Triquanta\AccessibilityMonitor\DatabaseStorage.
  */
 
 namespace Triquanta\AccessibilityMonitor;
@@ -95,7 +95,8 @@ class DatabaseStorage implements StorageInterface {
       ->setPriority($record->priority)
       ->setCms($record->cms)
       ->setQuailResult(json_decode($record->quail_result))
-      ->setGooglePagespeedResult($record->pagespeed_result);
+      ->setGooglePagespeedResult($record->pagespeed_result)
+      ->setAnalysis($record->analysis);
 
     return $url;
   }
@@ -252,6 +253,7 @@ class DatabaseStorage implements StorageInterface {
       'cms' => $url->getCms(),
       'quail_result' => json_encode($url->getQuailResult()),
       'pagespeed_result' => $url->getGooglePagespeedResult(),
+      'analysis' => $url->getAnalysis(),
     );
     if ($url->getId()) {
       $values['url_id'] = $url->getId();

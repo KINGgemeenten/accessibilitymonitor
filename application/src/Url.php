@@ -20,12 +20,12 @@ class Url implements TestingStatusInterface {
   protected $id;
 
   /**
-   * The time of the last analysis.
+   * The time of the analysis.
    *
    * @var int
    *   A Unix timestamp.
    */
-  protected $lastAnalysis;
+  protected $analysis;
 
   /**
    * The ID of the website test results the URL is for.
@@ -306,25 +306,25 @@ class Url implements TestingStatusInterface {
   }
 
   /**
-   * Returns the time of the last analysis.
+   * Returns the time of the analysis.
    *
    * @return int
    *   A Unix timestamp.
    */
-  public function getLastAnalysis() {
-    return $this->lastAnalysis;
+  public function getAnalysis() {
+    return $this->analysis;
   }
 
   /**
-   * Sets the time of the last analysis.
+   * Sets the time of the analysis.
    *
-   * @param int $last_analysis
+   * @param int $analysis
    *   A Unix timestamp.
    *
    * @return $this
    */
-  public function setLastAnalysis($last_analysis) {
-    $this->lastAnalysis = $last_analysis;
+  public function setAnalysis($analysis) {
+    $this->analysis = $analysis;
 
     return $this;
   }
