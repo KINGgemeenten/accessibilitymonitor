@@ -70,7 +70,7 @@ class AddUrlTest extends \PHPUnit_Framework_TestCase {
     $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
     $map = array(
       array('url', 'http://example.com'),
-      array('website-id', mt_rand()),
+      array('website-test-results-id', mt_rand()),
     );
     $input->expects($this->atLeastOnce())
       ->method('getArgument')

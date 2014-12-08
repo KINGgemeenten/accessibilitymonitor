@@ -20,11 +20,19 @@ class Url implements TestingStatusInterface {
   protected $id;
 
   /**
-   * The ID of the website the URL is for.
+   * The time of the last analysis.
+   *
+   * @var int
+   *   A Unix timestamp.
+   */
+  protected $lastAnalysis;
+
+  /**
+   * The ID of the website test results the URL is for.
    *
    * @var int
    */
-  protected $websiteId;
+  protected $websiteTestResultsId;
 
   /**
    * The URL itself.
@@ -99,27 +107,27 @@ class Url implements TestingStatusInterface {
   }
 
   /**
-   * Returns the ID of the website this URL is for.
+   * Returns the ID of the website test results this URL is for.
    *
    * @return int
    */
-  public function getWebsiteId() {
-    return $this->websiteId;
+  public function getWebsiteTestResultsId() {
+    return $this->websiteTestResultsId;
   }
 
   /**
-   * Sets the URL's website ID.
+   * Sets the URL's website test results ID.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return $this
    */
-  public function setWebsiteId($website_id) {
-    if ($this->websiteId) {
-      throw new \BadMethodCallException('This URL already has a website ID.');
+  public function setWebsiteTestResultsId($website_test_results_id) {
+    if ($this->websiteTestResultsId) {
+      throw new \BadMethodCallException('This URL already has a website test results ID.');
     }
     else {
-      $this->websiteId = $website_id;
+      $this->websiteTestResultsId = $website_test_results_id;
     }
 
     return $this;
@@ -293,6 +301,30 @@ class Url implements TestingStatusInterface {
    */
   public function setGooglePagespeedResult($result) {
     $this->googlePagespeedResult = $result;
+
+    return $this;
+  }
+
+  /**
+   * Returns the time of the last analysis.
+   *
+   * @return int
+   *   A Unix timestamp.
+   */
+  public function getLastAnalysis() {
+    return $this->lastAnalysis;
+  }
+
+  /**
+   * Sets the time of the last analysis.
+   *
+   * @param int $last_analysis
+   *   A Unix timestamp.
+   *
+   * @return $this
+   */
+  public function setLastAnalysis($last_analysis) {
+    $this->lastAnalysis = $last_analysis;
 
     return $this;
   }

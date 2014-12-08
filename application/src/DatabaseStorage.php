@@ -89,7 +89,7 @@ class DatabaseStorage implements StorageInterface {
   protected function createUrlFromStorageRecord($record) {
     $url = new Url();
     $url->setId($record->url_id)
-      ->setWebsiteId($record->website_id)
+      ->setWebsiteTestResultsId($record->website_test_results_id)
       ->setUrl($record->url)
       ->setTestingStatus($record->status)
       ->setPriority($record->priority)
@@ -98,24 +98,6 @@ class DatabaseStorage implements StorageInterface {
       ->setGooglePagespeedResult($record->pagespeed_result);
 
     return $url;
-  }
-
-  /**
-   * Creates a website from a storage record.
-   *
-   * @param \stdClass $record
-   *   A record from the website table.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website
-   */
-  protected function createWebsiteFromStorageRecord($record) {
-    $website = new Website();
-    $website->setId($record->website_id)
-      ->setUrl($record->url)
-      ->setTestingStatus($record->status)
-      ->setLastAnalysis($record->last_analysis);
-
-    return $website;
   }
 
   /**
@@ -175,10 +157,10 @@ class DatabaseStorage implements StorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function getUrlsByWebsiteId($website_id) {
-    $query = $this->getConnection()->prepare("SELECT * FROM url WHERE website_id = :website_id");
+  public function getUrlsByWebsiteTestResultsId($website_test_results_id) {
+    $query = $this->getConnection()->prepare("SELECT * FROM url WHERE website_test_results_id = :website_test_results_id");
     $query->execute(array(
-      'website_id' => $website_id,
+      'website_test_results_id' => $website_test_results_id,
     ));
     $urls = array();
     while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
@@ -225,10 +207,10 @@ class DatabaseStorage implements StorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function countUrlsByWebsiteId($website_id) {
-    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_id = :website_id");
+  public function countUrlsByWebsiteTestResultsId($website_test_results_id) {
+    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_test_results_id = :website_test_results_id");
     $query->execute(array(
-      'website_id' => $website_id,
+      'website_test_results_id' => $website_test_results_id,
     ));
 
     return $query->fetchColumn();
@@ -237,11 +219,11 @@ class DatabaseStorage implements StorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function countUrlsByWebsiteIdAndUrl($website_id, $url) {
-    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_id = :website_id AND url = :url");
+  public function countUrlsByWebsiteTestResultsIdAndUrl($website_test_results_id, $url) {
+    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_test_results_id = :website_test_results_id AND url = :url");
     $query->execute(array(
       'url' => $url,
-      'website_id' => $website_id,
+      'website_test_results_id' => $website_test_results_id,
     ));
 
     return $query->fetchColumn();
@@ -268,58 +250,14 @@ class DatabaseStorage implements StorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function countUrlsByStatusAndWebsiteId($status, $website_id) {
-    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_id = :website_id AND status = :status");
+  public function countUrlsByStatusAndWebsiteId($status, $website_test_results_id) {
+    $query = $this->getConnection()->prepare("SELECT count(*) FROM url WHERE website_test_results_id = :website_test_results_id AND status = :status");
     $query->execute(array(
-      'website_id' => $website_id,
+      'website_test_results_id' => $website_test_results_id,
       'status' => $status,
     ));
 
     return $query->fetchColumn();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getWebsitesByStatuses(array $statuses) {
-    $fields = array();
-    foreach ($statuses as $i => $status) {
-      $fields[':status' . $i] = $status;
-    }
-    $query = $this->getConnection()->prepare(sprintf("SELECT * FROM website WHERE status IN (%s)", implode(', ', array_keys($fields))));
-    $query->execute($fields);
-    $websites = array();
-    while ($record = $query->fetchObject()) {
-      $websites[] = $this->createWebsiteFromStorageRecord($record);
-    }
-
-    return $websites;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getWebsiteById($website_id) {
-    $query = $this->getConnection()->prepare("SELECT * FROM website WHERE website_id = :website_id");
-    $query->execute(array(
-      'website_id' => $website_id,
-    ));
-    $record = $query->fetchObject();
-
-    return $record ? $this->createWebsiteFromStorageRecord($record) : NULL;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getWebsiteByUrl($url) {
-    $query = $this->getConnection()->prepare("SELECT * FROM website WHERE url = :url");
-    $query->execute(array(
-      'url' => $url,
-    ));
-    $record = $query->fetchObject();
-
-    return $record ? $this->createWebsiteFromStorageRecord($record) : NULL;
   }
 
   /**
@@ -340,8 +278,8 @@ class DatabaseStorage implements StorageInterface {
     }
     else {
       $values['url'] = $url->getUrl();
-      $values['website_id'] = $url->getWebsiteId();
-      $insert = $this->getConnection()->prepare("INSERT INTO url (website_id, url, status, priority, cms, quail_result, pagespeed_result) VALUES (:website_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result)");
+      $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
+      $insert = $this->getConnection()->prepare("INSERT INTO url (website_test_results_id, url, status, priority, cms, quail_result, pagespeed_result) VALUES (:website_test_results_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result)");
       $insert->execute($values);
       $url->setId($this->getConnection()->lastInsertId());
     }
@@ -350,51 +288,16 @@ class DatabaseStorage implements StorageInterface {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public function saveWebsite(Website $website) {
-    $values = array(
-      'status' => $website->getTestingStatus(),
-      'last_analysis' => $website->getLastAnalysis(),
-    );
-    if ($website->getId()) {
-      $values['website_id'] = $website->getId();
-      $query = $this->getConnection()->prepare("UPDATE website SET last_analysis = :last_analysis, status = :status WHERE website_id = :website_id");
-      $query->execute($values);
-    }
-    else {
-      $values['url'] = $website->getUrl();
-      $sql = "INSERT INTO website (url, status, last_analysis) VALUES (:url, :status, :last_analysis)";
-      $insert = $this->getConnection()->prepare($sql);
-      $insert->execute($values);
-      $website->setId($this->getConnection()->lastInsertId());
-    }
-
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getWebsiteLastAnalysisDateTime() {
-    // Get the total amount url's so we can define a start for Solr.
-    $query = $this->getConnection()->prepare("SELECT last_analysis FROM website ORDER BY last_analysis DESC LIMIT 1");
-    $query->execute();
-
-    return $query->fetchColumn();
-  }
-
-  /**
    * Counts the number of CMS test results for a website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return int
    */
-  public function countCmsTestResultsByWebsiteId($website_id) {
-    $query = $this->getConnection()->prepare("SELECT COUNT(*) FROM url WHERE website_id = :website_id AND cms IS NOT NULL");
+  public function countCmsTestResultsByWebsiteTestResultsId($website_test_results_id) {
+    $query = $this->getConnection()->prepare("SELECT COUNT(*) FROM url WHERE website_test_results_id = :website_test_results_id AND cms IS NOT NULL");
     $query->execute(array(
-      'website_id' => $website_id,
+      'website_test_results_id' => $website_test_results_id,
     ));
 
     return $query->fetchColumn();
@@ -403,30 +306,17 @@ class DatabaseStorage implements StorageInterface {
   /**
    * Counts the number of Google PageSpeed results for a website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return int
    */
-  public function countGooglePagespeedResultsByWebsiteId($website_id) {
-    $query = $this->getConnection()->prepare("SELECT COUNT(*) FROM url WHERE website_id = :website_id AND pagespeed_result <> ''");
+  public function countGooglePagespeedResultsByWebsiteTestResultsId($website_test_results_id) {
+    $query = $this->getConnection()->prepare("SELECT COUNT(*) FROM url WHERE website_test_results_id = :website_test_results_id AND pagespeed_result <> ''");
     $query->execute(array(
-      'website_id' => $website_id,
+      'website_test_results_id' => $website_test_results_id,
     ));
 
     return $query->fetchColumn();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getUrlByUrl($url) {
-    $query = $this->getConnection()->prepare("SELECT * FROM url WHERE url = :url");
-    $query->execute(array(
-      'url' => $url,
-    ));
-    $record = $query->fetchObject();
-
-    return $record ? $this->createUrlFromStorageRecord($record) : NULL;
   }
 
   /**

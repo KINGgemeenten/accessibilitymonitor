@@ -50,7 +50,7 @@ class AddUrl extends Command implements ContainerFactoryInterface {
    */
   protected function configure() {
     $this->setName('url-add')
-      ->addArgument('website-id', InputArgument::REQUIRED)
+      ->addArgument('website-test-results-id', InputArgument::REQUIRED)
       ->addArgument('url', InputArgument::REQUIRED);
   }
 
@@ -60,7 +60,7 @@ class AddUrl extends Command implements ContainerFactoryInterface {
   protected function execute(InputInterface $input, OutputInterface $output) {
     $url = new Url();
     $url->setUrl($input->getArgument('url'))
-      ->setWebsiteId($input->getArgument('website-id'));
+      ->setWebsiteTestResultsId($input->getArgument('website-test-results-id'));
     $this->actions->addUrl($url);
   }
 

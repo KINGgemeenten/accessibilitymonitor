@@ -93,7 +93,7 @@ class CheckTest extends \PHPUnit_Framework_TestCase {
       ->willReturn($kill_other_process);
 
     $this->storage->expects($is_another_process_registered ? $this->once() : $this->never())
-      ->method('getWebsiteLastAnalysisDateTime')
+      ->method('getUrlLastAnalysisDateTime')
       ->willReturn($last_analysis_timestamp);
 
     $this->quail->expects($test ? $this->once() : $this->never())

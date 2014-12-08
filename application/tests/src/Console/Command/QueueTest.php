@@ -10,8 +10,6 @@ namespace Triquanta\Tests\AccessibilityMonitor\Console\Command;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Triquanta\AccessibilityMonitor\Action;
 use Triquanta\AccessibilityMonitor\Console\Command\Queue;
-use Triquanta\AccessibilityMonitor\Url;
-use Triquanta\AccessibilityMonitor\Website;
 
 /**
  * @coversDefaultClass \Triquanta\AccessibilityMonitor\Console\Command\Queue
@@ -121,14 +119,6 @@ class QueueTest extends \PHPUnit_Framework_TestCase {
 
     $this->actions->expects($this->never())
       ->method('addUrl');
-    $this->actions->expects($this->never())
-      ->method('addWebsite');
-    $this->actions->expects($this->never())
-      ->method('excludeUrl');
-    $this->actions->expects($this->never())
-      ->method('excludeWebsite');
-    $this->actions->expects($this->never())
-      ->method('rescanWebsite');
 
     $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
 
@@ -140,7 +130,7 @@ class QueueTest extends \PHPUnit_Framework_TestCase {
   /**
    * @covers ::execute
    */
-  public function testExecuteAddUrlWithoutWebsite() {
+  public function testExecuteAddUrl() {
     $method = new \ReflectionMethod($this->command, 'execute');
     $method->setAccessible(TRUE);
 
@@ -153,172 +143,10 @@ class QueueTest extends \PHPUnit_Framework_TestCase {
     $this->storage->expects($this->once())
       ->method('getPendingActions')
       ->willReturn(array($action));
-    $this->storage->expects($this->once())
-      ->method('getWebsiteById')
-      ->willReturn(NULL);
-
-    $this->actions->expects($this->never())
-      ->method('addUrl');
-
-    $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
-
-    $output = $this->getMock('\Symfony\Component\Console\Output\OutputInterface');
-
-    $method->invoke($this->command, $input, $output);
-  }
-
-  /**
-   * @covers ::execute
-   */
-  public function testExecuteAddUrlWithWebsite() {
-    $method = new \ReflectionMethod($this->command, 'execute');
-    $method->setAccessible(TRUE);
-
-    $url = 'http://example.com/' . mt_rand();
-
-    $action = new Action();
-    $action->setAction($action::ACTION_ADD_URL)
-      ->setUrl($url);
-
-    $website_id = mt_rand();
-
-    $this->storage->expects($this->once())
-      ->method('getPendingActions')
-      ->willReturn(array($action));
-    $this->storage->expects($this->once())
-      ->method('getWebsiteById')
-      ->willReturn($website_id);
 
     $this->actions->expects($this->once())
       ->method('addUrl')
       ->with($this->isInstanceOf('\Triquanta\AccessibilityMonitor\Url'));
-
-    $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
-
-    $output = $this->getMock('\Symfony\Component\Console\Output\OutputInterface');
-
-    $method->invoke($this->command, $input, $output);
-  }
-
-  /**
-   * @covers ::execute
-   */
-  public function testExecuteExcludeUrl() {
-    $method = new \ReflectionMethod($this->command, 'execute');
-    $method->setAccessible(TRUE);
-
-    $url = 'http://example.com/' . mt_rand();
-
-    $url_entity = new Url();
-
-    $action = new Action();
-    $action->setAction($action::ACTION_EXCLUDE_URL)
-      ->setUrl($url);
-
-    $this->storage->expects($this->once())
-      ->method('getPendingActions')
-      ->willReturn(array($action));
-    $this->storage->expects($this->once())
-      ->method('getUrlByUrl')
-      ->willReturn($url_entity);
-
-    $this->actions->expects($this->once())
-      ->method('excludeUrl')
-      ->with($url_entity);
-
-    $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
-
-    $output = $this->getMock('\Symfony\Component\Console\Output\OutputInterface');
-
-    $method->invoke($this->command, $input, $output);
-  }
-
-  /**
-   * @covers ::execute
-   */
-  public function testExecuteAddWebsite() {
-    $method = new \ReflectionMethod($this->command, 'execute');
-    $method->setAccessible(TRUE);
-
-    $url = 'http://example.com/' . mt_rand();
-
-    $action = new Action();
-    $action->setAction($action::ACTION_ADD_WEBSITE)
-      ->setUrl($url);
-
-    $this->storage->expects($this->once())
-      ->method('getPendingActions')
-      ->willReturn(array($action));
-
-    $this->actions->expects($this->once())
-      ->method('addWebsite')
-      ->with($this->isInstanceOf('\Triquanta\AccessibilityMonitor\Website'));
-
-    $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
-
-    $output = $this->getMock('\Symfony\Component\Console\Output\OutputInterface');
-
-    $method->invoke($this->command, $input, $output);
-  }
-
-  /**
-   * @covers ::execute
-   */
-  public function testExecuteExcludeWebsite() {
-    $method = new \ReflectionMethod($this->command, 'execute');
-    $method->setAccessible(TRUE);
-
-    $url = 'http://example.com/' . mt_rand();
-
-    $website = new Website();
-
-    $action = new Action();
-    $action->setAction($action::ACTION_EXCLUDE_WEBSITE)
-      ->setUrl($url);
-
-    $this->storage->expects($this->once())
-      ->method('getPendingActions')
-      ->willReturn(array($action));
-    $this->storage->expects($this->once())
-      ->method('getWebsiteByUrl')
-      ->willReturn($website);
-
-    $this->actions->expects($this->once())
-      ->method('excludeWebsite')
-      ->with($website);
-
-    $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
-
-    $output = $this->getMock('\Symfony\Component\Console\Output\OutputInterface');
-
-    $method->invoke($this->command, $input, $output);
-  }
-
-  /**
-   * @covers ::execute
-   */
-  public function testExecuteRescanWebsite() {
-    $method = new \ReflectionMethod($this->command, 'execute');
-    $method->setAccessible(TRUE);
-
-    $url = 'http://example.com/' . mt_rand();
-
-    $website = new Website();
-
-    $action = new Action();
-    $action->setAction($action::ACTION_RESCAN_WEBSITE)
-      ->setUrl($url);
-
-    $this->storage->expects($this->once())
-      ->method('getPendingActions')
-      ->willReturn(array($action));
-    $this->storage->expects($this->once())
-      ->method('getWebsiteByUrl')
-      ->willReturn($website);
-
-    $this->actions->expects($this->once())
-      ->method('rescanWebsite')
-      ->with($website);
 
     $input = $this->getMock('\Symfony\Component\Console\Input\InputInterface');
 

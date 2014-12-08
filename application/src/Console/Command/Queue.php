@@ -17,7 +17,6 @@ use Triquanta\AccessibilityMonitor\ActionsInterface;
 use Triquanta\AccessibilityMonitor\ContainerFactoryInterface;
 use Triquanta\AccessibilityMonitor\StorageInterface;
 use Triquanta\AccessibilityMonitor\Url;
-use Triquanta\AccessibilityMonitor\Website;
 
 /**
  * Provides a command to queue scheduled websites and URLs.
@@ -112,49 +111,10 @@ class Queue extends Command implements ContainerFactoryInterface {
     // Queue new items.
     foreach ($this->storage->getPendingActions() as $action) {
       if ($action->getAction() == $action::ACTION_ADD_URL) {
-        // If no website exists for this URL, skip it.
-        $website_id = $this->storage->getWebsiteById($action->getWebsiteId());
-        if (!$website_id) {
-          $this->logger->info(sprintf('Skipped adding URL %s, because the website for it was not added yet.', $action->getUrl()));
-          continue;
-        }
-        else {
-          $url = new Url();
-          $url->setUrl($action->getUrl())
-            ->setWebsiteId($website_id);
-          $this->actions->addUrl($url);
-        }
-      }
-      elseif ($action->getAction() == $action::ACTION_EXCLUDE_URL) {
-        $url = $this->storage->getUrlByUrl($action->getUrl());
-        if (!$url) {
-          $this->logger->info(sprintf('Skipped excluding URL %s, because it could not be found in storage.', $action->getUrl()));
-          continue;
-        }
-        $this->actions->excludeUrl($url);
-      }
-      elseif ($action->getAction() == $action::ACTION_ADD_WEBSITE) {
-        $website = new Website();
-        $website->setUrl($action->getUrl());
-        $this->actions->addWebsite($website);
-      }
-      elseif ($action->getAction() == $action::ACTION_EXCLUDE_WEBSITE) {
-        $website = $this->storage->getWebsiteByUrl($action->getUrl());
-        if (!$website) {
-          $this->logger->info(sprintf('Skipped excluding website %s, because it could not be found in storage.', $action->getUrl()));
-          continue;
-        }
-        $this->actions->excludeWebsite($website);
-      }
-      elseif ($action->getAction() == $action::ACTION_RESCAN_WEBSITE) {
-        $website = $this->storage->getWebsiteByUrl($action->getUrl());
-        if (!$website) {
-          $this->logger->info(sprintf('Skipped re-scanning website %s, because it could not be found in storage. Adding a new website instead.', $action->getUrl()));
-          $website = new Website();
-          $website->setUrl($action->getUrl());
-          $this->actions->addWebsite($website);
-        }
-        $this->actions->rescanWebsite($website);
+        $url = new Url();
+        $url->setUrl($action->getUrl())
+          ->setWebsiteTestResultsId($action->getWebsiteTestResultsId());
+        $this->actions->addUrl($url);
       }
       $action->setTimestamp(time());
       $this->storage->saveAction($action);

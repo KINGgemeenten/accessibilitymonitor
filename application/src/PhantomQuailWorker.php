@@ -66,13 +66,6 @@ class PhantomQuailWorker extends \Thread {
   protected $url;
 
   /**
-   * The website of which a URL is being tested.
-   *
-   * @var \Triquanta\AccessibilityMonitor\Website
-   */
-  protected $website;
-
-  /**
    * @todo
    */
   protected $result;
@@ -137,26 +130,22 @@ class PhantomQuailWorker extends \Thread {
    * @param \Solarium\Core\Client\Client $solr_client
    * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface $phantom_js
    * @param \Triquanta\AccessibilityMonitor\Url $url
-   * @param \Triquanta\AccessibilityMonitor\Website $website
    * @param $queueId
    * @param $determineCms
    * @param $executeGooglePagespeed
    */
-  public function __construct(GooglePagespeedInterface $google_pagespeed, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, Website $website, $queueId, $determineCms, $executeGooglePagespeed) {
+  public function __construct(GooglePagespeedInterface $google_pagespeed, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, $queueId, $determineCms, $executeGooglePagespeed) {
     $this->googlePagespeed = $google_pagespeed;
     $this->phantomJs = $phantom_js;
     $this->solrClient = $solr_client;
 
     $this->url = $url;
-    $this->website = $website;
     $this->performGooglePagespeed = $executeGooglePagespeed;
     $this->determineCms = $determineCms;
     // Fill the websiteCms if present.
     if ($url->getCms() != '') {
       $this->websiteCms = $url->getCms();
     }
-    // Fill the wid property.
-    $this->wid = $this->website->getId();
     $this->queueId = $queueId;
   }
 
@@ -211,7 +200,7 @@ class PhantomQuailWorker extends \Thread {
    * Detect the cms of the main website.
    */
   protected function detectCms() {
-    $testUrl = $this->website->getUrl();
+    $testUrl = $this->url->getUrl();
     $this->websiteCms = implode('|', $this->phantomJs->getDetectedApps($testUrl));
   }
 
@@ -219,21 +208,9 @@ class PhantomQuailWorker extends \Thread {
    * Perform a google Pagespeed test.
    */
   protected function executeGooglePagespeed() {
-    $url = $this->website->getUrl();
+    $url = $this->url->getUrl();
     $pageSpeedResult = $this->googlePagespeed->test($url);
     $this->pageSpeedResult = json_encode($pageSpeedResult);
-  }
-
-
-  /**
-   * Get the website id.
-   *
-   * This property only returns result, if a successful cms detection has been performed.
-   *
-   * @return mixed
-   */
-  public function getWid() {
-    return $this->wid;
   }
 
   /**
@@ -432,7 +409,7 @@ class PhantomQuailWorker extends \Thread {
    */
   protected function createCaseSolrId($case) {
     // Create a hash based om the url and uniqueKey of the case.
-    $hash = md5($case->uniqueKey . $this->url->getUrl());
+    $hash = md5($case->uniqueKey . '_' . $this->url->getWebsiteTestResultsId() . '_' . $this->url->getUrl());
     return $hash;
   }
 
@@ -492,12 +469,12 @@ class PhantomQuailWorker extends \Thread {
   }
 
   /**
-   * Get the website id of the url.
+   * Gets the URL's website test results ID.
    *
-   * @return mixed
+   * @return int
    */
-  public function getWebsiteId() {
-    return $this->url->getWebsiteId();
+  public function getWebsiteTestResultsId() {
+    return $this->url->getWebsiteTestResultsId();
   }
 
   /**
@@ -507,15 +484,6 @@ class PhantomQuailWorker extends \Thread {
    */
   public function getUrl() {
     return $this->url;
-  }
-
-  /**
-   * Gets the website of which this worker tests a URL.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website
-   */
-  public function getWebsite() {
-    return $this->website;
   }
 
   /**

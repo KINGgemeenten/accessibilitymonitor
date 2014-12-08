@@ -81,7 +81,7 @@ class Check extends Command implements ContainerFactoryInterface {
   protected function execute(InputInterface $input, OutputInterface $output) {
     if ($this->processManager->isAnotherProcessRegistered()) {
       $output->writeln('<info>Another process is already running.</info>');
-      $last_analysis_timestamp = $this->storage->getWebsiteLastAnalysisDateTime();
+      $last_analysis_timestamp = $this->storage->getUrlLastAnalysisDateTime();
       if ((time() - $last_analysis_timestamp) > self::MAX_RUN_TIME) {
         $this->processManager->killOtherProcess();
         $output->writeln(sprintf('<info>Killed the other process because it has not done anything for more than %d seconds.</info>', self::MAX_RUN_TIME));
@@ -90,16 +90,6 @@ class Check extends Command implements ContainerFactoryInterface {
         return;
       }
     }
-
-    // @todo This was the only occurrence of "is_master" in the original code, which would always have evaluated to FALSE. As such, do we still need this code?
-//    if (get_setting('is_master', FALSE)) {
-//      // First update the status.
-//      echo "Starting status update...\n";
-//      updateStatus();
-//      // Then perform all actions.
-//      echo "Performing actions...\n";
-//      performActions();
-//    }
 
     $this->quail->test();
     $output->writeln('<info>Done.</info>');

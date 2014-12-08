@@ -56,21 +56,6 @@ CREATE TABLE `url` (
 
 
 
-# Dump of table website
-# ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `website`;
-
-CREATE TABLE `website` (
-  `website_test_results_id` int(10) unsigned NOT NULL,
-  `url` varchar(1024) NOT NULL,
-  `status` int(10) unsigned NOT NULL,
-  `last_analysis` int(11) DEFAULT NULL,
-  PRIMARY KEY (`website_test_results_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
 
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

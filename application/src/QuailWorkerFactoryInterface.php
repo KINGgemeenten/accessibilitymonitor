@@ -16,13 +16,12 @@ interface QuailWorkerFactoryInterface {
    * Creates a new worker.
    *
    * @param \Triquanta\AccessibilityMonitor\Url $url
-   * @param \Triquanta\AccessibilityMonitor\Website $website
    * @param int $queue_id
    * @param bool $determine_cms
    * @param bool $execute_google_pagespeed
    *
    * @return \Triquanta\AccessibilityMonitor\PhantomQuailWorker
    */
-  public function createWorker(Url $url, Website $website, $queue_id, $determine_cms, $execute_google_pagespeed);
+  public function createWorker(Url $url, $queue_id, $determine_cms, $execute_google_pagespeed);
 
 } 

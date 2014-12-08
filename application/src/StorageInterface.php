@@ -17,18 +17,19 @@ interface StorageInterface extends TestingStatusInterface {
    *
    * @param int $id
    *
-   * @return \Triquanta\AccessibilityMonitor\Url
+   * @return \Triquanta\AccessibilityMonitor\Url|null
    */
   public function getUrlById($id);
 
   /**
-   * Gets a URL by URL.
+   * Gets a URL by URL and website test results ID.
    *
    * @param string $url
+   * @param int $website_test_results_id
    *
-   * @return \Triquanta\AccessibilityMonitor\Url
+   * @return \Triquanta\AccessibilityMonitor\Url|null
    */
-  public function getUrlByUrl($url);
+  public function getUrlByUrlAndWebsiteTestResultsId($url, $website_test_results_id);
 
   /**
    * Gets URLs by status.
@@ -55,11 +56,11 @@ interface StorageInterface extends TestingStatusInterface {
   /**
    * Gets URLs for a specific website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return \Triquanta\AccessibilityMonitor\Url[]
    */
-  public function getUrlsByWebsiteId($website_id);
+  public function getUrlsByWebsiteTestResultsId($website_test_results_id);
 
   /**
    * Gets URLs without a Google Pagespeed score.
@@ -74,23 +75,23 @@ interface StorageInterface extends TestingStatusInterface {
   /**
    * Gets the number of URLs by website ID.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *   The website status.
    *
    * @return int
    */
-  public function countUrlsByWebsiteId($website_id);
+  public function countUrlsByWebsiteTestResultsId($website_test_results_id);
 
   /**
    * Gets the number of URLs by website ID.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *   The website status.
    * @param string $url
    *
    * @return int
    */
-  public function countUrlsByWebsiteIdAndUrl($website_id, $url);
+  public function countUrlsByWebsiteTestResultsIdIdAndUrl($website_test_results_id, $url);
 
   /**
    * Counts URLs by status.
@@ -107,40 +108,12 @@ interface StorageInterface extends TestingStatusInterface {
    *
    * @param int $status
    *   One of the self::STATUS_* constants.
-   * @param int $website_id
+   * @param int $website_test_results_id
    *   The website status.
    *
    * @return int
    */
-  public function countUrlsByStatusAndWebsiteId($status, $website_id);
-
-  /**
-   * Gets websites by status.
-   *
-   * @param int[] $statuses
-   *   One of the self::STATUS_* constants.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website[]
-   */
-  public function getWebsitesByStatuses(array $statuses);
-
-  /**
-   * Gets a website by website ID.
-   *
-   * @param int $website_id
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website
-   */
-  public function getWebsiteById($website_id);
-
-  /**
-   * Gets a website by URL.
-   *
-   * @param string $url
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website
-   */
-  public function getWebsiteByUrl($url);
+  public function countUrlsByStatusAndWebsiteId($status, $website_test_results_id);
 
   /**
    * Saves a URL.
@@ -152,39 +125,30 @@ interface StorageInterface extends TestingStatusInterface {
   public function saveUrl(Url $url);
 
   /**
-   * Gets the datetime of any website's last analysis.
+   * Gets the datetime of any URL's last analysis.
    *
    * @return int
    *   A Unix timestamp.
    */
-  public function getWebsiteLastAnalysisDateTime();
-
-  /**
-   * Saves a website.
-   *
-   * @param \Triquanta\AccessibilityMonitor\Website $website
-   *
-   * @return $this
-   */
-  public function saveWebsite(Website $website);
+  public function getUrlLastAnalysisDateTime();
 
   /**
    * Counts the number of CMS test results for a website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return int
    */
-  public function countCmsTestResultsByWebsiteId($website_id);
+  public function countCmsTestResultsByWebsiteTestResultsId($website_test_results_id);
 
   /**
    * Counts the number of Google PageSpeed results for a website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return int
    */
-  public function countGooglePagespeedResultsByWebsiteId($website_id);
+  public function countGooglePagespeedResultsByWebsiteId($website_test_results_id);
 
   /**
    * Gets all pending actions.

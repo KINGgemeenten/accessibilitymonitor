@@ -135,17 +135,17 @@ class Quail implements QuailInterface {
 
       foreach ($urls as $url) {
         // Get the website record from the database.
-        $website = $this->storage->getWebsiteById($url->getWebsiteId());
+        $website = $this->storage->getWebsiteTestResultsById($url->getWebsiteTestResultsId());
         // Determine which tests should be done.
-        if (!array_key_exists($url->getWebsiteId(), $cms_results)) {
-          $cms_results[$url->getWebsiteId()] = $this->storage->countCmsTestResultsByWebsiteId($url->getWebsiteId());
+        if (!array_key_exists($url->getWebsiteTestResultsId(), $cms_results)) {
+          $cms_results[$url->getWebsiteTestResultsId()] = $this->storage->countCmsTestResultsByWebsiteTestResultsId($url->getWebsiteTestResultsId());
         }
-        if (!array_key_exists($url->getWebsiteId(), $google_pagespeed_results)) {
-          $google_pagespeed_results[$url->getWebsiteId()] = $this->storage->countGooglePagespeedResultsByWebsiteId($url->getWebsiteId());
+        if (!array_key_exists($url->getWebsiteTestResultsId(), $google_pagespeed_results)) {
+          $google_pagespeed_results[$url->getWebsiteTestResultsId()] = $this->storage->countGooglePagespeedResultsByWebsiteId($url->getWebsiteTestResultsId());
         }
 
         // Create a PhantomQuailWorker for each url.
-        $worker = $this->workerFactory->createWorker($url, $website, $url->getId(), !$cms_results[$url->getWebsiteId()], !$google_pagespeed_results[$url->getWebsiteId()]);
+        $worker = $this->workerFactory->createWorker($url, $website, $url->getId(), !$cms_results[$url->getWebsiteTestResultsId()], !$google_pagespeed_results[$url->getWebsiteTestResultsId()]);
         // First delete all documents from solr.
         $worker->deleteCasesFromSolr();
         // Now start the thread.
@@ -260,19 +260,14 @@ class Quail implements QuailInterface {
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
   protected function processQuailResult(PhantomQuailWorker $finishedWorker) {
+    $time = time();
     $url = $finishedWorker->getUrl();
-    // Now set the data.
     $url->setTestingStatus($finishedWorker->getStatus());
+    $url->setLastAnalysis($time);
     $quailFinalResult = $finishedWorker->getQuailFinalResults();
     $url->setQuailResult($quailFinalResult);
     $this->storage->saveUrl($url);
-    // Set the last_analysis date.
-    $time = time();
     $this->logger->debug('time: ' . $time);
-    $website = $finishedWorker->getWebsite();
-    $website->setLastAnalysis($time);
-    $website->setTestingStatus(Website::STATUS_TESTING);
-    $this->storage->saveWebsite($website);
   }
 
   /**
@@ -295,7 +290,6 @@ class Quail implements QuailInterface {
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
   protected function processGooglePagespeed(PhantomQuailWorker $finishedWorker) {
-    $wid = $finishedWorker->getWid();
     // If there is a result, insert it.
     $pagespeedResult = $finishedWorker->getPageSpeedResult();
     if ($pagespeedResult) {

@@ -85,4 +85,4 @@ services:
     arguments: ['@http_client', '%google_pagespeed.api_url%', '%google_pagespeed.api_key%', '%google_pagespeed.api_strategy%']
   actions:
     class: \Triquanta\AccessibilityMonitor\Actions
-    arguments: ['@storage', '@solr.client.phantom', '@logger']
+    arguments: ['@storage', '@logger']

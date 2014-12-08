@@ -14,14 +14,6 @@ class Action {
 
   const ACTION_ADD_URL = 'addUrl';
 
-  const ACTION_EXCLUDE_WEBSITE = 'excludeWebsite';
-
-  const ACTION_ADD_WEBSITE = 'addWebsite';
-
-  const ACTION_RESCAN_WEBSITE = 'rescanWebsite';
-
-  const ACTION_EXCLUDE_URL = 'excludeUrl';
-
   /**
    * The URL ID.
    *
@@ -55,31 +47,11 @@ class Action {
   protected $timestamp;
 
   /**
-   * The website ID.
+   * The website test results ID.
    *
    * @var int
    */
-  protected $websiteId;
-
-  /**
-   * Returns all actions for URLs.
-   *
-   * @return string[]
-   *   Some of the self::ACTION_* constants.
-   */
-  public function getUrlActions() {
-    return array(self::ACTION_ADD_URL, self::ACTION_EXCLUDE_URL);
-  }
-
-  /**
-   * Returns all actions for websites.
-   *
-   * @return string[]
-   *   Some of the self::ACTION_* constants.
-   */
-  public function getWebsiteActions() {
-    return array(self::ACTION_ADD_WEBSITE, self::ACTION_EXCLUDE_WEBSITE, self::ACTION_RESCAN_WEBSITE);
-  }
+  protected $websiteTestResultsId;
 
   /**
    * Returns the URL ID.
@@ -109,23 +81,23 @@ class Action {
   }
 
   /**
-   * Returns the website ID.
+   * Returns the website test results ID.
    *
    * @return int
    */
-  public function getWebsiteId() {
-    return $this->websiteId;
+  public function getWebsiteTestResultsId() {
+    return $this->websiteTestResultsId;
   }
 
   /**
-   * Sets the website ID.
+   * Sets the website test results ID.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return $this
    */
-  public function setWebsiteId($website_id) {
-    $this->websiteId = $website_id;
+  public function setWebsiteTestResultsId($website_test_results_id) {
+    $this->websiteTestResultsId = $website_test_results_id;
 
     return $this;
   }
