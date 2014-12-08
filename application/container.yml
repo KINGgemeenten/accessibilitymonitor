@@ -9,13 +9,6 @@ parameters:
         port: 8080
         path: /solr/phantomcore
         timeout: 30
-  solr.nutch:
-    endpoint:
-      localhost:
-        host: 192.168.50.5
-        port: 8080
-        path: /solr/nutch
-        timeout: 30
   database.host_name: 192.168.50.05
   database.database_name: inspector
   database.user_name: inspector
@@ -41,11 +34,6 @@ services:
   solr.client.phantom:
     class: \Triquanta\AccessibilityMonitor\SolariumClient
     arguments: ['%solr.phantom%']
-    calls:
-      - [setEventDispatcher, ['@event_dispatcher']]
-  solr.client.nutch:
-    class: \Triquanta\AccessibilityMonitor\SolariumClient
-    arguments: ['%solr.nutch%']
     calls:
       - [setEventDispatcher, ['@event_dispatcher']]
   phantomjs:
