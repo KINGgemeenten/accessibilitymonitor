@@ -20,22 +20,6 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
-# Dump of table actions
-# ------------------------------------------------------------
-
-DROP TABLE IF EXISTS `actions`;
-
-CREATE TABLE `actions` (
-  `aid` int(11) NOT NULL AUTO_INCREMENT,
-  `action` varchar(255) NOT NULL,
-  `url` varchar(512) DEFAULT NULL,
-  `timestamp` int(11) DEFAULT '0',
-  `website_test_results_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`aid`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-
-
 # Dump of table url
 # ------------------------------------------------------------
 

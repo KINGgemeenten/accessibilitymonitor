@@ -83,6 +83,3 @@ services:
   google_pagespeed:
     class: \Triquanta\AccessibilityMonitor\GooglePagespeed
     arguments: ['@http_client', '%google_pagespeed.api_url%', '%google_pagespeed.api_key%', '%google_pagespeed.api_strategy%']
-  actions:
-    class: \Triquanta\AccessibilityMonitor\Actions
-    arguments: ['@storage', '@logger']

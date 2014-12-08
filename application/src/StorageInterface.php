@@ -22,16 +22,6 @@ interface StorageInterface extends TestingStatusInterface {
   public function getUrlById($id);
 
   /**
-   * Gets a URL by URL and website test results ID.
-   *
-   * @param string $url
-   * @param int $website_test_results_id
-   *
-   * @return \Triquanta\AccessibilityMonitor\Url|null
-   */
-  public function getUrlByUrlAndWebsiteTestResultsId($url, $website_test_results_id);
-
-  /**
    * Gets URLs by status.
    *
    * @param int $status
@@ -81,17 +71,6 @@ interface StorageInterface extends TestingStatusInterface {
    * @return int
    */
   public function countUrlsByWebsiteTestResultsId($website_test_results_id);
-
-  /**
-   * Gets the number of URLs by website ID.
-   *
-   * @param int $website_test_results_id
-   *   The website status.
-   * @param string $url
-   *
-   * @return int
-   */
-  public function countUrlsByWebsiteTestResultsIdIdAndUrl($website_test_results_id, $url);
 
   /**
    * Counts URLs by status.
@@ -148,20 +127,6 @@ interface StorageInterface extends TestingStatusInterface {
    *
    * @return int
    */
-  public function countGooglePagespeedResultsByWebsiteId($website_test_results_id);
-
-  /**
-   * Gets all pending actions.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Action[]
-   */
-  public function getPendingActions();
-
-  /**
-   * Saves an action.
-   *
-   * @parem \Triquanta\AccessibilityMonitor\Action
-   */
-  public function saveAction(Action $action);
+  public function countGooglePagespeedResultsByWebsiteTestResultsId($website_test_results_id);
 
 }

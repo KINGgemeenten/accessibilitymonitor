@@ -101,24 +101,6 @@ class DatabaseStorage implements StorageInterface {
   }
 
   /**
-   * Creates an action from a storage record.
-   *
-   * @param \stdClass $record
-   *   A record from the actions table.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Action
-   */
-  protected function createActionFromStorageRecord($record) {
-    $website = new Action();
-    $website->setId($record->aid)
-      ->setAction($record->action)
-      ->setUrl($record->url)
-      ->setTimestamp($record->timestamp);
-
-    return $website;
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function getUrlsByStatus($status, $limit = NULL) {
@@ -320,34 +302,17 @@ class DatabaseStorage implements StorageInterface {
   }
 
   /**
-   * {@inheritdoc}
+   * Gets the datetime of any URL's last analysis.
+   *
+   * @return int
+   *   A Unix timestamp.
    */
-  public function getPendingActions() {
-    $query = $this->getConnection()->prepare("SELECT * FROM actions WHERE timestamp = 0");
+  public function getUrlLastAnalysisDateTime() {
+    $query = $this->getConnection()->prepare("SELECT analysis FROM url WHERE ORDER BY analysis DESC LIMIT 1");
     $query->execute();
-    $actions = array();
-    while ($record = $query->fetchObject()) {
-      $actions[] = $this->createActionFromStorageRecord($record);
-    }
 
-    return $actions;
-  }
+    return $query->fetchColumn();
 
-  /**
-   * {@inheritdoc}
-   */
-  public function saveAction(Action $action) {
-    if (!$action->getId()) {
-      throw new \InvalidArgumentException('The action does not exist yet.');
-    }
-    $values = array(
-      'aid' => $action->getId(),
-      'timestamp' => $action->getTimestamp(),
-    );
-    $query = $this->getConnection()->prepare("UPDATE actions SET timestamp = :timestamp WHERE aid = :aid");
-    $query->execute($values);
-
-    return $this;
   }
 
 }
