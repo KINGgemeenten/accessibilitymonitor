@@ -1,5 +1,3 @@
 - \Triquanta\AccessibilityMonitor\Console\Command\Check
-- \Triquanta\AccessibilityMonitor\Console\Command\DetectCms
 - \Triquanta\AccessibilityMonitor\Console\Command\CommitSolr
-- \Triquanta\AccessibilityMonitor\Console\Command\GooglePagespeed
 - \Triquanta\AccessibilityMonitor\Console\Command\PurgeSolr
