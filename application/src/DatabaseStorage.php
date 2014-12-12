@@ -257,13 +257,13 @@ class DatabaseStorage implements StorageInterface {
     );
     if ($url->getId()) {
       $values['url_id'] = $url->getId();
-      $query = $this->getConnection()->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, priority = :priority WHERE url_id = :url_id");
+      $query = $this->getConnection()->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, priority = :priority, analysis = :analysis WHERE url_id = :url_id");
       $query->execute($values);
     }
     else {
       $values['url'] = $url->getUrl();
       $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
-      $insert = $this->getConnection()->prepare("INSERT INTO url (website_test_results_id, url, status, priority, cms, quail_result, pagespeed_result) VALUES (:website_test_results_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result)");
+      $insert = $this->getConnection()->prepare("INSERT INTO url (website_test_results_id, url, status, priority, cms, quail_result, pagespeed_result, analysis) VALUES (:website_test_results_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result, :analysis)");
       $insert->execute($values);
       $url->setId($this->getConnection()->lastInsertId());
     }
