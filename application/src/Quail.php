@@ -242,9 +242,11 @@ class Quail implements QuailInterface {
     // If there are finished workers, process the results and die.
     if (count($this->finishedWorkers)) {
       foreach ($this->finishedWorkers as $key => $finishedWorker) {
-        $this->processQuailResult($finishedWorker);
-        $this->processWappalyzerResults($finishedWorker);
-        $this->processGooglePagespeed($finishedWorker);
+        $url = $finishedWorker->getUrl();
+        $this->processQuailResult($url, $finishedWorker);
+        $this->processWappalyzerResults($url, $finishedWorker);
+        $this->processGooglePagespeed($url, $finishedWorker);
+        $this->storage->saveUrl($url);
 
         // Now unset the finished worker in the array.
         unset($this->finishedWorkers[$key]);
@@ -255,44 +257,42 @@ class Quail implements QuailInterface {
   /**
    * Process the quail results.
    *
+   * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
-  protected function processQuailResult(PhantomQuailWorker $finishedWorker) {
+  protected function processQuailResult(Url $url, PhantomQuailWorker $finishedWorker) {
     $time = time();
-    $url = $finishedWorker->getUrl();
     $url->setTestingStatus($finishedWorker->getStatus());
     $url->setAnalysis($time);
     $quailFinalResult = $finishedWorker->getQuailFinalResults();
     $url->setQuailResult($quailFinalResult);
-    $this->storage->saveUrl($url);
     $this->logger->debug('time: ' . $time);
   }
 
   /**
    * Store the cms in the website table.
    *
+   * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
-  protected function processWappalyzerResults(PhantomQuailWorker $finishedWorker) {
+  protected function processWappalyzerResults(Url $url, PhantomQuailWorker $finishedWorker) {
     $websiteCms = $finishedWorker->getWebsiteCms();
     if ($websiteCms) {
-      $url = $finishedWorker->getUrl();
       $url->setCms($websiteCms);
-      $this->storage->saveUrl($url);
     }
   }
 
   /**
    * Store the google pagespeed results.
    *
+   * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
-  protected function processGooglePagespeed(PhantomQuailWorker $finishedWorker) {
+  protected function processGooglePagespeed(Url $url, PhantomQuailWorker $finishedWorker) {
     // If there is a result, insert it.
     $pagespeedResult = $finishedWorker->getPageSpeedResult();
     if ($pagespeedResult) {
-      $finishedWorker->getUrl()->setGooglePagespeedResult($pagespeedResult);
-      $this->storage->saveUrl($finishedWorker->getUrl());
+      $url->setGooglePagespeedResult($pagespeedResult);
     }
   }
 
