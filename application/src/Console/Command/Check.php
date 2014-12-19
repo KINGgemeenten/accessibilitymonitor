@@ -121,8 +121,6 @@ class Check extends Command implements ContainerFactoryInterface {
    * {@inheritdoc}
    */
   protected function execute(InputInterface $input, OutputInterface $output) {
-    $count_before = $this->storage->countUrlsByStatus(Url::STATUS_SCHEDULED);
-
     if ($this->processManager->isAnotherProcessRegistered()) {
       $output->writeln('<info>Another process is already running.</info>');
       $last_analysis_timestamp = $this->storage->getUrlLastAnalysisDateTime();
@@ -138,9 +136,9 @@ class Check extends Command implements ContainerFactoryInterface {
     $this->quail->test();
 
     // Check the queue health.
-    $count_after = $this->storage->countUrlsByStatus(Url::STATUS_SCHEDULED);
-    $level = $count_after > $this->alertThreshold ? LogLevel::ALERT : ($count_after > $this->errorThreshold ? LogLevel::ERROR : ($count_after > $this->noticeThreshold ? LogLevel::NOTICE : LogLevel::INFO));
-    $this->logger->log($level, sprintf('%d URLs, of which %d newly added, are currently scheduled for testing.', $count_after, $count_after - $count_before));
+    $count = $this->storage->countUrlsByStatus(Url::STATUS_SCHEDULED);
+    $level = $count > $this->alertThreshold ? LogLevel::ALERT : ($count > $this->errorThreshold ? LogLevel::ERROR : ($count > $this->noticeThreshold ? LogLevel::NOTICE : LogLevel::INFO));
+    $this->logger->log($level, sprintf('%d URLs are currently scheduled for testing.', $count));
 
     $output->writeln('<info>Done.</info>');
   }
