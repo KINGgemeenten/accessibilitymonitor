@@ -393,6 +393,7 @@ class PhantomQuailWorker extends \Thread {
       $doc->testtype = $case->testCase;
       // Add document type.
       $doc->document_type = 'case';
+      $doc->website_test_results_id = $this->url->getWebsiteTestResultsId();
 
       return $doc;
     }
