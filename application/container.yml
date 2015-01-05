@@ -1,5 +1,5 @@
 parameters:
-  log.recipients: ['bart@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
+  log.recipients: ['bart@triquanta.nl', 'gerben@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
   log.sender: 'support@triquanta.nl'
   log.file: '/var/log/tam.log'
   solr.phantom:
