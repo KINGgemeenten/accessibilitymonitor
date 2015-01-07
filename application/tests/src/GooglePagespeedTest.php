@@ -57,6 +57,13 @@ class GooglePagespeedTest extends \PHPUnit_Framework_TestCase {
   protected $httpClient;
 
   /**
+   * The logger.
+   *
+   * @var \Psr\Log\LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  protected $logger;
+
+  /**
    * The storage manager.
    *
    * @var \Triquanta\AccessibilityMonitor\StorageInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -71,7 +78,9 @@ class GooglePagespeedTest extends \PHPUnit_Framework_TestCase {
   public function setUp() {
     $this->httpClient = $this->getMock('\GuzzleHttp\ClientInterface');
 
-    $this->command = new GooglePagespeed($this->httpClient, $this->apiUrl, $this->apiKey, $this->apiStrategy, $this->apiFetchLimit);
+    $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
+
+    $this->command = new GooglePagespeed($this->logger, $this->httpClient, $this->apiUrl, $this->apiKey, $this->apiStrategy, $this->apiFetchLimit);
   }
 
   /**
