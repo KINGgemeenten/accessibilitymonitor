@@ -64,13 +64,6 @@ class GooglePagespeedTest extends \PHPUnit_Framework_TestCase {
   protected $logger;
 
   /**
-   * The storage manager.
-   *
-   * @var \Triquanta\AccessibilityMonitor\StorageInterface|\PHPUnit_Framework_MockObject_MockObject
-   */
-  protected $storage;
-
-  /**
    * {@inheritdoc}
    *
    * @covers ::__construct
