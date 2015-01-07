@@ -190,9 +190,9 @@ class PhantomQuailWorker extends \Thread {
     if ($this->determineCms) {
       $this->detectCms();
     }
-//    if ($this->performGooglePagespeed) {
-//      $this->executeGooglePagespeed();
-//    }
+    if ($this->performGooglePagespeed) {
+      $this->executeGooglePagespeed();
+    }
     $this->analyzeQuail();
   }
 

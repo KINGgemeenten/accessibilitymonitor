@@ -1,3 +1,6 @@
+# The contents of this file can be overriden by container_overrides.yml. See
+# container_overrides_example.yml.
+
 parameters:
   log.recipients: ['bart@triquanta.nl', 'gerben@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
   log.sender: 'support@triquanta.nl'
@@ -20,7 +23,7 @@ parameters:
   quail.worker_count: 2
   quail.max_execution_time: 30
   google_pagespeed.api_url: https://www.googleapis.com/pagespeedonline/v1/runPagespeed
-  google_pagespeed.api_key: AIzaSyA3Q_W9PO_ibkvSzVGxfncaMNNu3382lcw
+  google_pagespeed.api_key: $$$EXAMPLE$$$
   google_pagespeed.api_strategy: mobile
   google_pagespeed.api_fetch_limit: 10
   queue.threshold.notice: 2500

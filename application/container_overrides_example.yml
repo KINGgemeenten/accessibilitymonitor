@@ -1,7 +1,6 @@
-# Use this file to generate overrides to the parameters of the service container.
+# This file contains example configuration and can be copied to
+# container_overrides_example.yml to override the contents of container.yml.
 parameters:
-#  log.recipients: ['bart@triquanta.nl', 'jur@triquanta.nl', 'support@triquanta.nl', 'beheer@triquanta.nl']
-#  log.sender: 'support@triquanta.nl'
   log.file: '/var/log/tam1.log'
   solr.phantom:
     endpoint:
@@ -10,17 +9,5 @@ parameters:
         port: 8080
         path: /solr/phantomcore
         timeout: 10
-#  database.host_name: 192.168.50.05
-#  database.database_name: inspector
-#  database.user_name: inspector
-#  database.password: z31lb00t
-#  phantomjs.executable: /usr/bin/phantomjs
-#  phantomjs.timeout: 10
-#  urls_per_sample: 10
-#  cpu_count: 2
-#  quail.worker_count: 2
-#  quail.max_execution_time: 30
-#  google_pagespeed.api_url: https://www.googleapis.com/pagespeedonline/v1/runPagespeed
-#  google_pagespeed.api_key: AIzaSyA3Q_W9PO_ibkvSzVGxfncaMNNu3382lcw
-#  google_pagespeed.api_strategy: mobile
-#  google_pagespeed.api_fetch_limit: 10
+  cpu_count: 4
+  quail.worker_count: 30
