@@ -7,6 +7,8 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
 use Psr\Log\LogLevel;
 use Solarium\Core\Client\Client;
 use Solarium\QueryType\Update\Query\Query;
@@ -38,11 +40,32 @@ class PhantomQuailWorker extends \Thread {
   );
 
   /**
-   * The Google Pagespeed tester.
+   * The Google PageSpeed API key.
    *
-   * @var \Triquanta\AccessibilityMonitor\GooglePagespeedInterface
+   * @var string
    */
-  protected $googlePagespeed;
+  protected $googlePagespeedApiKey;
+
+  /**
+   * The Google PageSpeed API strategy.
+   *
+   * @var string
+   */
+  protected $googlePagespeedApiStrategy;
+
+  /**
+   * The Google PageSpeed API URL.
+   *
+   * @var string
+   */
+  protected $googlePagespeedApiUrl;
+
+  /**
+   * The HTTP client.
+   *
+   * @var \GuzzleHttp\ClientInterface
+   */
+  protected $httpClient;
 
   /**
    * The Phantom JS manager.
@@ -126,16 +149,22 @@ class PhantomQuailWorker extends \Thread {
   /**
    * Constructs a new instance.
    *
-   * @param \Triquanta\AccessibilityMonitor\GooglePagespeedInterface $google_pagespeed
+   * @param \GuzzleHttp\ClientInterface
    * @param \Solarium\Core\Client\Client $solr_client
    * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface $phantom_js
    * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param $queueId
    * @param $determineCms
    * @param $executeGooglePagespeed
+   * @param string $google_pagespeed_api_url
+   * @param string $google_pagespeed_api_key
+   * @param string $google_pagespeed_api_strategy
    */
-  public function __construct(GooglePagespeedInterface $google_pagespeed, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, $queueId, $determineCms, $executeGooglePagespeed) {
-    $this->googlePagespeed = $google_pagespeed;
+  public function __construct(ClientInterface $http_client, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, $queueId, $determineCms, $executeGooglePagespeed, $google_pagespeed_api_url, $google_pagespeed_api_key, $google_pagespeed_api_strategy) {
+    $this->googlePagespeedApiKey = $google_pagespeed_api_key;
+    $this->googlePagespeedApiStrategy = $google_pagespeed_api_strategy;
+    $this->googlePagespeedApiUrl = $google_pagespeed_api_url;
+    $this->httpClient = $http_client;
     $this->phantomJs = $phantom_js;
     $this->solrClient = $solr_client;
 
@@ -209,8 +238,20 @@ class PhantomQuailWorker extends \Thread {
    */
   protected function executeGooglePagespeed() {
     $url = $this->url->getUrl();
-    $pageSpeedResult = $this->googlePagespeed->test($url);
-    $this->pageSpeedResult = json_encode($pageSpeedResult);
+    try {
+      $request = $this->httpClient->createRequest('GET', $this->googlePagespeedApiUrl);
+      $request->getQuery()->set('key', $this->googlePagespeedApiKey);
+      $request->getQuery()->set('url', $url);
+      $request->getQuery()->set('strategy', $this->googlePagespeedApiStrategy);
+      $request->setHeader('User-Agent', 'GT inspector script');
+      $response = $this->httpClient->send($request);
+
+      $this->pageSpeedResult = (string) $response->getBody();
+    }
+    catch (ClientException $e) {
+      $this->log(LogLevel::EMERGENCY, $e->getMessage());
+      $this->pageSpeedResult = json_encode(array());
+    }
   }
 
   /**
