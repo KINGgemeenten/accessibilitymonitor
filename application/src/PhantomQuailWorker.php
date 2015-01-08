@@ -301,7 +301,7 @@ class PhantomQuailWorker extends \Thread {
       // Now send the case results to solr.
       $this->log(LogLevel::DEBUG, 'Sending results to Solr.');
       $this->sendCaseResultsToSolr();
-      $this->log(LogLevel::DEBUG, 'Results sended to Solr.');
+      $this->log(LogLevel::DEBUG, 'Results sent to Solr.');
 
       // Update the result.
       $this->result = $this->url->getId();
