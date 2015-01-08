@@ -560,11 +560,8 @@ class PhantomQuailWorker extends \Thread {
    * @return string
    */
   protected function escapeUrlForSolr($url) {
-    $escaped_url = str_replace(':', '_', $url);
-    $escaped_url = str_replace('/', '_', $escaped_url);
-    $escaped_url = str_replace('.', '_', $escaped_url);
-
-    return $escaped_url;
+    $special_characters = array("'", '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':', '\\');
+    return str_replace($special_characters, '_', $url);
   }
 
   /**
