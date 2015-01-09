@@ -72,6 +72,13 @@ class Check extends Command implements ContainerFactoryInterface {
   protected $quail;
 
   /**
+   * The number of concurrent Quail workers.
+   *
+   * @var int
+   */
+  protected $quailWorkerCount;
+
+  /**
    * The storage manager.
    *
    * @var \Triquanta\AccessibilityMonitor\StorageInterface
@@ -91,8 +98,10 @@ class Check extends Command implements ContainerFactoryInterface {
    *   The number of items in the queue that should trigger an error log item.
    * @param int $alert_threshold
    *   The number of items in the queue that should trigger an alert log item.
+   * @param int $quail_worker_count
+   *   The number of concurrent Quail workers to use.
    */
-  public function __construct(ProcessInterface $process_manager, StorageInterface $storage, QuailInterface $quail, LoggerInterface $logger, $notice_threshold, $error_threshold, $alert_threshold) {
+  public function __construct(ProcessInterface $process_manager, StorageInterface $storage, QuailInterface $quail, LoggerInterface $logger, $notice_threshold, $error_threshold, $alert_threshold, $quail_worker_count) {
     parent::__construct();
     $this->alertThreshold = $alert_threshold;
     $this->errorThreshold = $error_threshold;
@@ -100,6 +109,7 @@ class Check extends Command implements ContainerFactoryInterface {
     $this->noticeThreshold = $notice_threshold;
     $this->processManager = $process_manager;
     $this->quail = $quail;
+    $this->quailWorkerCount = $quail_worker_count;
     $this->storage = $storage;
   }
 
@@ -107,7 +117,7 @@ class Check extends Command implements ContainerFactoryInterface {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static($container->get('process'), $container->get('storage'), $container->get('quail'), $container->get('logger'), $container->getParameter('queue.threshold.notice'), $container->getParameter('queue.threshold.error'), $container->getParameter('queue.threshold.alert'));
+    return new static($container->get('process'), $container->get('storage'), $container->get('quail'), $container->get('logger'), $container->getParameter('queue.threshold.notice'), $container->getParameter('queue.threshold.error'), $container->getParameter('queue.threshold.alert'), $container->getParameter('quail.worker_count'));
   }
 
   /**
@@ -140,9 +150,9 @@ class Check extends Command implements ContainerFactoryInterface {
 
     // Every check must update the URLs it tests with a final status ("tested"
     // or "error"). If there are URLs with a "testing" status at the beginning
-    // of a new check, the previous check did not end successfully.
+    // of a new check, the previous check did not end successfully. For some reason it can occur
     $count = $this->storage->countUrlsByStatus(Url::STATUS_TESTING);
-    if ($count > 0) {
+    if ($count > $this->quailWorkerCount) {
       $this->logger->emergency(sprintf('%d URLs are currently being tested. This means the previous test run failed to end successfully.', $count));
     }
 

@@ -65,6 +65,13 @@ class CheckTest extends \PHPUnit_Framework_TestCase {
   protected $quail;
 
   /**
+   * The number of concurrent Quail workers.
+   *
+   * @var int
+   */
+  protected $quailWorkerCount;
+
+  /**
    * The storage manager.
    *
    * @var \Triquanta\AccessibilityMonitor\StorageInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -87,9 +94,11 @@ class CheckTest extends \PHPUnit_Framework_TestCase {
 
     $this->quail = $this->getMock('\Triquanta\AccessibilityMonitor\QuailInterface');
 
+    $this->quailWorkerCount = mt_rand();
+
     $this->storage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
-    $this->command = new Check($this->processManager, $this->storage, $this->quail, $this->logger, $this->noticeThreshold, $this->errorThreshold, $this->alertThreshold);
+    $this->command = new Check($this->processManager, $this->storage, $this->quail, $this->logger, $this->noticeThreshold, $this->errorThreshold, $this->alertThreshold, $this->quailWorkerCount);
   }
 
   /**
