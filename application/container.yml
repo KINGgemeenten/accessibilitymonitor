@@ -26,9 +26,9 @@ parameters:
   google_pagespeed.api_key: $$$EXAMPLE$$$
   google_pagespeed.api_strategy: mobile
   google_pagespeed.api_fetch_limit: 10
-  queue.threshold.notice: 2500
-  queue.threshold.error: 4000
-  queue.threshold.alert: 5000
+  queue.threshold.notice: 200000
+  queue.threshold.error: 250000
+  queue.threshold.alert: 300000
 
 services:
   storage:
