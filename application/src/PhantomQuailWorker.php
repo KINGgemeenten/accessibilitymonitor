@@ -206,23 +206,28 @@ class PhantomQuailWorker extends \Thread {
    * Run function. This function is executed when the method start is executed.
    */
   public function run() {
-    // We need to include the autoloaders here.
-    // This is because this is a thread, and there
-    // are different rules.
-    // For this perticular case see:
-    // https://github.com/krakjoe/pthreads/issues/68
-    // Composer autoloader.
-    require( __DIR__ . '/../vendor/autoload.php');
-    Application::bootstrap();
+    try {
+      // We need to include the autoloaders here.
+      // This is because this is a thread, and there
+      // are different rules.
+      // For this perticular case see:
+      // https://github.com/krakjoe/pthreads/issues/68
+      // Composer autoloader.
+      require(__DIR__ . '/../vendor/autoload.php');
+      Application::bootstrap();
 
-    // If the website has not yet a cms detected, perform the detection here.
-    if ($this->determineCms) {
-      $this->detectCms();
+      // If the website has not yet a cms detected, perform the detection here.
+      if ($this->determineCms) {
+        $this->detectCms();
+      }
+      if ($this->performGooglePagespeed) {
+        $this->executeGooglePagespeed();
+      }
+      $this->analyzeQuail();
     }
-    if ($this->performGooglePagespeed) {
-      $this->executeGooglePagespeed();
+    catch (\Exception $e) {
+      $this->log(LogLevel::EMERGENCY, sprintf('Uncaught exception: %s.', $e->getMessage()));
     }
-    $this->analyzeQuail();
   }
 
   /**
