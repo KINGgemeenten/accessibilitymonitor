@@ -136,7 +136,7 @@ class Check extends Command implements ContainerFactoryInterface {
       $last_analysis_timestamp = $this->storage->getUrlLastAnalysisDateTime();
       if ((time() - $last_analysis_timestamp) > self::MAX_RUN_TIME) {
         $this->processManager->killOtherProcess();
-        $output->writeln(sprintf('<info>Killed the other process because it has not done anything for more than %d seconds.</info>', self::MAX_RUN_TIME));
+        $this->logger->error(sprintf('<info>Killed another process because it has not done anything for more than %d seconds.</info>', self::MAX_RUN_TIME));
       }
       else {
         return;
