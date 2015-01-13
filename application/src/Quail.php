@@ -116,85 +116,90 @@ class Quail implements QuailInterface {
    * {@inheritdoc}
    */
   public function test() {
-    while ($this->elapsedTime < $this->maxExecutionTime) {
-      // Determine the new amount of workers based on the load.
-      $this->updateWorkerCount();
+    try {
+      while ($this->elapsedTime < $this->maxExecutionTime) {
+        // Determine the new amount of workers based on the load.
+        $this->updateWorkerCount();
 
-      // Get the URLs to test.
-      $urls = $this->getTestingUrls();
+        // Get the URLs to test.
+        $urls = $this->getTestingUrls();
 
-      // Create the workers.
-      $this->workers = array();
+        // Create the workers.
+        $this->workers = array();
 
-      // Keys are website test result IDs, values are booleans that indicate
-      // whether there are results.
-      $cms_results = array();
-      // Keys are website test result IDs, values are booleans that indicate
-      // whether there are results.
-      $google_pagespeed_results = array();
+        // Keys are website test result IDs, values are booleans that indicate
+        // whether there are results.
+        $cms_results = array();
+        // Keys are website test result IDs, values are booleans that indicate
+        // whether there are results.
+        $google_pagespeed_results = array();
 
-      foreach ($urls as $url) {
-        // Determine which tests should be done.
-        if (!array_key_exists($url->getWebsiteTestResultsId(), $cms_results)) {
-          $cms_results[$url->getWebsiteTestResultsId()] = $this->storage->countCmsTestResultsByWebsiteTestResultsId($url->getWebsiteTestResultsId());
-        }
-        if (!array_key_exists($url->getWebsiteTestResultsId(), $google_pagespeed_results)) {
-          $google_pagespeed_results[$url->getWebsiteTestResultsId()] = $this->storage->countGooglePagespeedResultsByWebsiteTestResultsId($url->getWebsiteTestResultsId());
-        }
+        foreach ($urls as $url) {
+          // Determine which tests should be done.
+          if (!array_key_exists($url->getWebsiteTestResultsId(), $cms_results)) {
+            $cms_results[$url->getWebsiteTestResultsId()] = $this->storage->countCmsTestResultsByWebsiteTestResultsId($url->getWebsiteTestResultsId());
+          }
+          if (!array_key_exists($url->getWebsiteTestResultsId(), $google_pagespeed_results)) {
+            $google_pagespeed_results[$url->getWebsiteTestResultsId()] = $this->storage->countGooglePagespeedResultsByWebsiteTestResultsId($url->getWebsiteTestResultsId());
+          }
 
-        // Create a PhantomQuailWorker for each url.
-        $worker = $this->workerFactory->createWorker($url, $url->getId(), !$cms_results[$url->getWebsiteTestResultsId()], !$google_pagespeed_results[$url->getWebsiteTestResultsId()]);
-        // First delete all documents from solr.
-        $worker->deleteCasesFromSolr();
-        // Now start the thread.
+          // Create a PhantomQuailWorker for each url.
+          $worker = $this->workerFactory->createWorker($url, $url->getId(), !$cms_results[$url->getWebsiteTestResultsId()], !$google_pagespeed_results[$url->getWebsiteTestResultsId()]);
+          // First delete all documents from solr.
+          $worker->deleteCasesFromSolr();
+          // Now start the thread.
 //        $worker->start();
-        $worker->run();
-        $this->workers[] = $worker;
+          $worker->run();
+          $this->workers[] = $worker;
+        }
+        // Add some debugging.
+        $this->logger->debug('Prepare to send commit to solr.');
+
+        $this->sendCommitToPhantomcoreSolr();
+
+
+        $this->logger->debug('Commit to solr done.');
+
+        // Process the finished workers.
+        $this->processFinishedWorkers();
+
+        // Break if there are no more targets.
+        if (count($urls) === 0) {
+          break;
+        }
+
+        $this->logger->debug('Workers activated, waiting.');
+        // Join workers and put them in the finishedWorkers array.
+        foreach ($this->workers as $worker) {
+          foreach ($worker->getLogMessages() as $level => $messages) {
+            foreach ($messages as $message) {
+              $this->logger->log($level, $message);
+            }
+          }
+          $worker->join();
+          $this->finishedWorkers[] = $worker;
+        }
+        $this->logger->debug('All workers joined, continuing');
+
+        // Update the elapsed time.
+        $oldElapsedTime = $this->elapsedTime;
+        $this->elapsedTime = microtime(TRUE) - $this->startTime;
+
+        // ProcessTime.
+        $processTime = $this->elapsedTime - $oldElapsedTime;
+        // Log to the console.
+        $message = 'Analysis used ' . $processTime . ' seconds for ' . $this->workerCount . 'workers';
+        $this->logger->info($message);
       }
-      // Add some debugging.
-      $this->logger->debug('Prepare to send commit to solr.');
-
-      $this->sendCommitToPhantomcoreSolr();
-
-
-      $this->logger->debug('Commit to solr done.');
-
+      $this->logger->info('Elapsed time exceeded. Finishing.');
       // Process the finished workers.
       $this->processFinishedWorkers();
-
-      // Break if there are no more targets.
-      if (count($urls) === 0) {
-        break;
-      }
-
-      $this->logger->debug('Workers activated, waiting.');
-      // Join workers and put them in the finishedWorkers array.
-      foreach ($this->workers as $worker) {
-        foreach ($worker->getLogMessages() as $level => $messages) {
-          foreach ($messages as $message) {
-            $this->logger->log($level, $message);
-          }
-        }
-        $worker->join();
-        $this->finishedWorkers[] = $worker;
-      }
-      $this->logger->debug('All workers joined, continuing');
-
-      // Update the elapsed time.
-      $oldElapsedTime = $this->elapsedTime;
-      $this->elapsedTime = microtime(TRUE) - $this->startTime;
-
-      // ProcessTime.
-      $processTime = $this->elapsedTime - $oldElapsedTime;
-      // Log to the console.
-      $message = 'Analysis used ' . $processTime . ' seconds for ' . $this->workerCount . 'workers';
+      $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
       $this->logger->info($message);
     }
-    $this->logger->info('Elapsed time exceeded. Finishing.');
-    // Process the finished workers.
-    $this->processFinishedWorkers();
-    $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
-    $this->logger->info($message);
+    catch (\Exception $e) {
+      $this->logger->emergency(sprintf('Uncaught exception: %s.', $e->getMessage()));
+    }
   }
 
   /**
