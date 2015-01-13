@@ -153,7 +153,7 @@ class Check extends Command implements ContainerFactoryInterface {
     // of a new check, the previous check did not end successfully. For some reason it can occur
     $count = $this->storage->countUrlsByStatus(Url::STATUS_TESTING);
     if ($count > $this->quailWorkerCount) {
-      $this->logger->emergency(sprintf('%d URLs are currently being tested. This means the previous test run failed to end successfully.', $count));
+      $this->logger->emergency(sprintf('%d URLs are currently being tested. This means a previous test run failed to end successfully.', $count));
     }
 
     $this->quail->test();
