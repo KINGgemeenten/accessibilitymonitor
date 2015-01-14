@@ -225,6 +225,7 @@ class PhantomQuailWorker extends \Thread {
     try {
       $request = $this->httpClient->createRequest('GET', $this->googlePagespeedApiUrl);
       $request->getQuery()->set('key', $this->googlePagespeedApiKey);
+      $request->getQuery()->set('locale', 'nl');
       $request->getQuery()->set('url', $url);
       $request->getQuery()->set('strategy', $this->googlePagespeedApiStrategy);
       $request->setHeader('User-Agent', 'GT inspector script');
