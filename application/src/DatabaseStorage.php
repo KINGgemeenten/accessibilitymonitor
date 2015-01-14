@@ -96,7 +96,8 @@ class DatabaseStorage implements StorageInterface {
       ->setCms($record->cms)
       ->setQuailResult(json_decode($record->quail_result))
       ->setGooglePagespeedResult($record->pagespeed_result)
-      ->setAnalysis($record->analysis);
+      ->setAnalysis($record->analysis)
+      ->setRoot((bool) $record->is_root);
 
     return $url;
   }
@@ -254,16 +255,17 @@ class DatabaseStorage implements StorageInterface {
       'quail_result' => json_encode($url->getQuailResult()),
       'pagespeed_result' => $url->getGooglePagespeedResult(),
       'analysis' => $url->getAnalysis(),
+      'is_root' => (int) $url->isRoot(),
     );
     if ($url->getId()) {
       $values['url_id'] = $url->getId();
-      $query = $this->getConnection()->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, priority = :priority, analysis = :analysis WHERE url_id = :url_id");
+      $query = $this->getConnection()->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, priority = :priority, analysis = :analysis, is_root = :is_root WHERE url_id = :url_id");
       $query->execute($values);
     }
     else {
       $values['url'] = $url->getUrl();
       $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
-      $insert = $this->getConnection()->prepare("INSERT INTO url (website_test_results_id, url, status, priority, cms, quail_result, pagespeed_result, analysis) VALUES (:website_test_results_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result, :analysis)");
+      $insert = $this->getConnection()->prepare("INSERT INTO url (website_test_results_id, url, status, priority, cms, quail_result, pagespeed_result, analysis, is_root) VALUES (:website_test_results_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result, :analysis, :is_root)");
       $insert->execute($values);
       $url->setId($this->getConnection()->lastInsertId());
     }

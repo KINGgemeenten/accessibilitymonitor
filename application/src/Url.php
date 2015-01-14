@@ -80,6 +80,13 @@ class Url implements TestingStatusInterface {
   protected $cms;
 
   /**
+   * Whether this is a website's root URL.
+   *
+   * @var bool
+   */
+  protected $isRoot = FALSE;
+
+  /**
    * Returns the URL ID.
    *
    * @return int
@@ -327,6 +334,29 @@ class Url implements TestingStatusInterface {
     $this->analysis = $analysis;
 
     return $this;
+  }
+
+  /**
+   * Sets whether this URL is a root URL.
+   *
+   * @param bool $is_root
+   *
+   * @return $this
+   */
+  public function setRoot($is_root = TRUE) {
+    $this->isRoot = $is_root;
+
+    return $this;
+  }
+
+  /**
+   * Returns whether this URL is a root URL.
+   *
+   * @return int
+   *   A Unix timestamp.
+   */
+  public function isRoot() {
+    return $this->isRoot;
   }
 
 }

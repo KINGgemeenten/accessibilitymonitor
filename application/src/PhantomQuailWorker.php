@@ -94,23 +94,9 @@ class PhantomQuailWorker extends \Thread {
   protected $result;
 
   /**
-   * Whether the test includes CMS detection.
-   *
-   * @var bool
-   */
-  protected $determineCms = FALSE;
-
-  /**
    * @todo
    */
   protected $cmsResult;
-
-  /**
-   * Whether the test includes Google Pagespeed.
-   *
-   * @var bool
-   */
-  protected $performGooglePagespeed = FALSE;
 
   /**
    * @todo
@@ -154,13 +140,11 @@ class PhantomQuailWorker extends \Thread {
    * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface $phantom_js
    * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param $queueId
-   * @param $determineCms
-   * @param $executeGooglePagespeed
    * @param string $google_pagespeed_api_url
    * @param string $google_pagespeed_api_key
    * @param string $google_pagespeed_api_strategy
    */
-  public function __construct(ClientInterface $http_client, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, $queueId, $determineCms, $executeGooglePagespeed, $google_pagespeed_api_url, $google_pagespeed_api_key, $google_pagespeed_api_strategy) {
+  public function __construct(ClientInterface $http_client, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, $queueId, $google_pagespeed_api_url, $google_pagespeed_api_key, $google_pagespeed_api_strategy) {
     $this->googlePagespeedApiKey = $google_pagespeed_api_key;
     $this->googlePagespeedApiStrategy = $google_pagespeed_api_strategy;
     $this->googlePagespeedApiUrl = $google_pagespeed_api_url;
@@ -169,8 +153,6 @@ class PhantomQuailWorker extends \Thread {
     $this->solrClient = $solr_client;
 
     $this->url = $url;
-    $this->performGooglePagespeed = $executeGooglePagespeed;
-    $this->determineCms = $determineCms;
     // Fill the websiteCms if present.
     if ($url->getCms() != '') {
       $this->websiteCms = $url->getCms();
@@ -216,11 +198,8 @@ class PhantomQuailWorker extends \Thread {
       require(__DIR__ . '/../vendor/autoload.php');
       Application::bootstrap();
 
-      // If the website has not yet a cms detected, perform the detection here.
-      if ($this->determineCms) {
+      if ($this->url->isRoot()) {
         $this->detectCms();
-      }
-      if ($this->performGooglePagespeed) {
         $this->executeGooglePagespeed();
       }
       $this->analyzeQuail();
@@ -265,9 +244,7 @@ class PhantomQuailWorker extends \Thread {
    * @return mixed
    */
   public function getWebsiteCms() {
-    if ($this->determineCms) {
-      return $this->websiteCms;
-    }
+    return $this->websiteCms;
   }
 
   /**
@@ -539,10 +516,7 @@ class PhantomQuailWorker extends \Thread {
    * @return mixed
    */
   public function getCmsResult() {
-    if ($this->determineCms) {
-      return $this->cmsResult;
-    }
-    return FALSE;
+    return $this->cmsResult;
   }
 
   /**
@@ -551,10 +525,7 @@ class PhantomQuailWorker extends \Thread {
    * @return mixed
    */
   public function getPageSpeedResult() {
-    if ($this->performGooglePagespeed) {
-      return $this->pageSpeedResult;
-    }
-    return FALSE;
+    return $this->pageSpeedResult;
   }
 
   /**
