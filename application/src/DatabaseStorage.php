@@ -130,12 +130,8 @@ class DatabaseStorage implements StorageInterface {
     $query->execute(array(
       'url_id' => $id,
     ));
-    $urls = array();
-    while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
-      $urls[] = $this->createUrlFromStorageRecord($record);
-    }
 
-    return $urls;
+    return $this->createUrlFromStorageRecord($query->fetch(\PDO::FETCH_OBJ));
   }
 
   /**
