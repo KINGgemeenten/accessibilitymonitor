@@ -242,11 +242,6 @@ class PhantomQuailWorker extends \Thread {
    * Perform a google Pagespeed test.
    */
   protected function executeGooglePagespeed() {
-    // @todo Temporarily disable PageSpeed tests until the API issues have been
-    //   resolved.
-    $this->pageSpeedResult = json_encode(array());
-    return;
-
     $url = $this->url->getUrl();
     try {
       $request = $this->httpClient->createRequest('GET', $this->googlePagespeedApiUrl);
