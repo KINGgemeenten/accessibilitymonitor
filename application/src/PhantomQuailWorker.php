@@ -289,7 +289,7 @@ class PhantomQuailWorker extends \Thread {
       // Update the result.
       $this->result = $this->url->getId();
       // Set the status to tested.
-      $this->status = Url::STATUS_TESTED;
+      $this->status = $this->getQuailFinalResults() ? Url::STATUS_TESTED : Url::STATUS_ERROR;
     } catch (\Exception $e) {
       // If there is an exception, probably phantomjs timed out.
       $this->status = Url::STATUS_ERROR;
