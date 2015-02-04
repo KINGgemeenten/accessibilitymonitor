@@ -273,13 +273,12 @@ class PhantomQuailWorker extends \Thread {
       $rawQuailResults = array();
       // Create an array for
       foreach ($lines as $line) {
-        // Remove starting [ and ending ]
-        $line = substr($line, 1, -1);
+        // If the line starts with [{ we assume it is a json string with the quail results
+        if ($line != '' && preg_match("/^\[{/", $line)) {
 
-        if ($line != '' && preg_match("/^{/", $line)) {
-
-          // do stuff with $line
+          // Decode the json string to an array
           $rawResults = (array) json_decode($line);
+
           // Since there is only one result json, this is also the exact raw result.
           $this->rawResult = $rawResults;
           // Now process the quail result.
