@@ -158,7 +158,7 @@ class Check extends Command implements ContainerFactoryInterface {
 
     $this->quail->test();
 
-    $output->writeln('<info>Done.</info>');
+    $output->writeln('<info>['.date('d-m-Y h:i').'] Done.</info>');
   }
 
 }

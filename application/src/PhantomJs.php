@@ -84,10 +84,11 @@ class PhantomJs implements PhantomJsInterface {
    */
   public function getQuailResults($url) {
     $command = $this->executable . ' --ignore-ssl-errors=yes --ssl-protocol=any ' . $this->rootDirectory . '/phantomquail.js ' . $url;
-    $command = '/opt/quail/bin/quail -u ' . $url . '-R wcag2';
+    $command = '/opt/quail/bin/quail -u ' . $url . ' -R wcag2';
     // Print some debug info.
 //    $this->logger->debug('Starting phantomjs');
     $output = $this->execTimeout($command, $this->timeout);
+   // $this->logger->debug($output);
 //    $this->logger->debug('Phantomjs executed succesfully.');
 
     return $output;

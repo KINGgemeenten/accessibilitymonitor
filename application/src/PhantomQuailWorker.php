@@ -258,6 +258,8 @@ class PhantomQuailWorker extends \Thread {
     $url = $this->url->getUrl();
     try {
       $output = $this->phantomJs->getQuailResults($url);
+      $lines = preg_split("/((\r?\n)|(\r\n?))/", $output);
+
       // @TODO: check if we need the count for solr.
       // Now process the results from quail.
       // We have to generate a unique id later.
@@ -270,8 +272,12 @@ class PhantomQuailWorker extends \Thread {
       // arrays don't allow array_push or [].
       $rawQuailResults = array();
       // Create an array for
-      foreach (preg_split("/((\r?\n)|(\r\n?))/", $output) as $line) {
+      foreach ($lines as $line) {
+        // Remove starting [ and ending ]
+        $line = substr($line, 1, -1);
+
         if ($line != '' && preg_match("/^{/", $line)) {
+
           // do stuff with $line
           $rawResults = (array) json_decode($line);
           // Since there is only one result json, this is also the exact raw result.
