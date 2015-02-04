@@ -22,3 +22,5 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin
 
 Dit zorgt er voor dat de Solr omgeving (phantomcore) gevuld wordt. En dit zorgt er weer voor dat je lokale omgeving
 weet welke velden in Solr staan.
+
+- Let op dat je in de servercontrol niet develop maar master uitcheckt!!!! (in eerste instantie)
