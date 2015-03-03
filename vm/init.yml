@@ -6,4 +6,4 @@
   tasks:
 
     - name: Checkout triquanta server control
-      git: dest=servercontrol repo=git@bitbucket.org:triquanta/ansible-toegankelijk.git version=develop
+      git: dest=servercontrol repo=git@bitbucket.org:triquanta/ansible-toegankelijk.git version=master
