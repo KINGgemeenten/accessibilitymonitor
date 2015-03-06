@@ -108,7 +108,7 @@ ufw_whitelisted_ipv4_addresses:
 # That should do it
 
 quail_git_repo: https://github.com/GerbenSpil/quail
-quail_branch: gt-04022015
+quail_branch: dev
 
 #quail_git_repo: https://github.com/quailjs/quail
 #quail_branch: 2.2.12
