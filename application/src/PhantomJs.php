@@ -56,7 +56,7 @@ class PhantomJs implements PhantomJsInterface {
       $url = 'http://' . $url;
     }
     $command = $this->executable . ' --ignore-ssl-errors=yes --ssl-protocol=any ' . $this->rootDirectory . '/node_modules/phantalyzer/phantalyzer.js ' . $url;
-    $output = shell_exec($command);
+    $output = shell_exec(escapeshellcmd($command));
     $preg_split = preg_split("/((\r?\n)|(\r\n?))/", $output);
     $detectedAppsArray = array();
     foreach ($preg_split as $line) {
@@ -84,9 +84,11 @@ class PhantomJs implements PhantomJsInterface {
    */
   public function getQuailResults($url) {
     $command = $this->executable . ' --ignore-ssl-errors=yes --ssl-protocol=any ' . $this->rootDirectory . '/phantomquail.js ' . $url;
+    $command = '/opt/quail/bin/quail -u ' . $url . ' -R wcag2';
     // Print some debug info.
 //    $this->logger->debug('Starting phantomjs');
     $output = $this->execTimeout($command, $this->timeout);
+   // $this->logger->debug($output);
 //    $this->logger->debug('Phantomjs executed succesfully.');
 
     return $output;
@@ -114,7 +116,7 @@ class PhantomJs implements PhantomJsInterface {
 
 //    $this->logger->debug('Openining processes');
     // Start the process.
-    $process = proc_open('exec ' . $cmd, $descriptors, $pipes);
+    $process = proc_open(escapeshellcmd('exec ' . $cmd), $descriptors, $pipes);
 
     if (!is_resource($process)) {
       throw new \Exception('Could not execute process');

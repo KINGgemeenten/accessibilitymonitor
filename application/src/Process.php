@@ -85,7 +85,7 @@ class Process implements ProcessInterface {
    */
   public function killOtherProcess() {
     if ($this->isAnotherProcessRegistered()) {
-      shell_exec('kill -KILL ' . $this->getRegisteredProcessId());
+      shell_exec(escapeshellcmd('kill -KILL ' . $this->getRegisteredProcessId()));
     }
   }
 

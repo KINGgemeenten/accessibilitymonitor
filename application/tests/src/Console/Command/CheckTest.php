@@ -16,11 +16,39 @@ use Triquanta\AccessibilityMonitor\Console\Command\Check;
 class CheckTest extends \PHPUnit_Framework_TestCase {
 
   /**
+   * The number of items in the queue that should trigger an alert log item.
+   *
+   * @var int
+   */
+  protected $alertThreshold;
+
+  /**
    * The command under test.
    *
    * @var \Triquanta\AccessibilityMonitor\Console\Command\Check
    */
   protected $command;
+
+  /**
+   * The number of items in the queue that should trigger an error log item.
+   *
+   * @var int
+   */
+  protected $errorThreshold;
+
+  /**
+   * The logger.
+   *
+   * @var \Psr\Log\LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  protected $logger;
+
+  /**
+   * The number of items in the queue that should trigger a notice log item.
+   *
+   * @var int
+   */
+  protected $noticeThreshold;
 
   /**
    * The process manager.
@@ -37,6 +65,13 @@ class CheckTest extends \PHPUnit_Framework_TestCase {
   protected $quail;
 
   /**
+   * The number of concurrent Quail workers.
+   *
+   * @var int
+   */
+  protected $quailWorkerCount;
+
+  /**
    * The storage manager.
    *
    * @var \Triquanta\AccessibilityMonitor\StorageInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -47,13 +82,23 @@ class CheckTest extends \PHPUnit_Framework_TestCase {
    * {@inheritdoc}
    */
   public function setUp() {
+    $this->alertThreshold = mt_rand();
+
+    $this->errorThreshold = mt_rand();
+
+    $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
+
+    $this->noticeThreshold = mt_rand();
+
     $this->processManager = $this->getMock('\Triquanta\AccessibilityMonitor\ProcessInterface');
 
     $this->quail = $this->getMock('\Triquanta\AccessibilityMonitor\QuailInterface');
 
+    $this->quailWorkerCount = mt_rand();
+
     $this->storage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
-    $this->command = new Check($this->processManager, $this->storage, $this->quail);
+    $this->command = new Check($this->processManager, $this->storage, $this->quail, $this->logger, $this->noticeThreshold, $this->errorThreshold, $this->alertThreshold, $this->quailWorkerCount);
   }
 
   /**
@@ -64,12 +109,21 @@ class CheckTest extends \PHPUnit_Framework_TestCase {
   public function testCreate() {
     $container = $this->getMock('\Symfony\Component\DependencyInjection\ContainerInterface');
     $map = array(
+      array('logger', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->logger),
       array('process', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->processManager),
       array('quail', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->quail),
       array('storage', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->storage),
     );
     $container->expects($this->atLeastOnce())
       ->method('get')
+      ->willReturnMap($map);
+    $map = array(
+      array('queue.threshold.alert', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->alertThreshold),
+      array('queue.threshold.error', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->errorThreshold),
+      array('queue.threshold.notice', ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE, $this->noticeThreshold),
+    );
+    $container->expects($this->atLeastOnce())
+      ->method('getParameter')
       ->willReturnMap($map);
 
     $command = Check::create($container);
@@ -93,7 +147,7 @@ class CheckTest extends \PHPUnit_Framework_TestCase {
       ->willReturn($kill_other_process);
 
     $this->storage->expects($is_another_process_registered ? $this->once() : $this->never())
-      ->method('getWebsiteLastAnalysisDateTime')
+      ->method('getUrlLastAnalysisDateTime')
       ->willReturn($last_analysis_timestamp);
 
     $this->quail->expects($test ? $this->once() : $this->never())

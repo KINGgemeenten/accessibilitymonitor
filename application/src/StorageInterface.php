@@ -17,18 +17,9 @@ interface StorageInterface extends TestingStatusInterface {
    *
    * @param int $id
    *
-   * @return \Triquanta\AccessibilityMonitor\Url
+   * @return \Triquanta\AccessibilityMonitor\Url|null
    */
   public function getUrlById($id);
-
-  /**
-   * Gets a URL by URL.
-   *
-   * @param string $url
-   *
-   * @return \Triquanta\AccessibilityMonitor\Url
-   */
-  public function getUrlByUrl($url);
 
   /**
    * Gets URLs by status.
@@ -55,11 +46,11 @@ interface StorageInterface extends TestingStatusInterface {
   /**
    * Gets URLs for a specific website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return \Triquanta\AccessibilityMonitor\Url[]
    */
-  public function getUrlsByWebsiteId($website_id);
+  public function getUrlsByWebsiteTestResultsId($website_test_results_id);
 
   /**
    * Gets URLs without a Google Pagespeed score.
@@ -74,63 +65,34 @@ interface StorageInterface extends TestingStatusInterface {
   /**
    * Gets the number of URLs by website ID.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *   The website status.
    *
    * @return int
    */
-  public function countUrlsByWebsiteId($website_id);
+  public function countUrlsByWebsiteTestResultsId($website_test_results_id);
 
   /**
-   * Gets the number of URLs by website ID.
+   * Counts URLs by status.
    *
-   * @param int $website_id
-   *   The website status.
-   * @param string $full_url
+   * @param int $status
+   *   One of the self::STATUS_* constants.
    *
    * @return int
    */
-  public function countUrlsByWebsiteIdAndFullUrl($website_id, $full_url);
+  public function countUrlsByStatus($status);
 
   /**
    * Gets the number of URLs by status and website ID.
    *
    * @param int $status
    *   One of the self::STATUS_* constants.
-   * @param int $website_id
+   * @param int $website_test_results_id
    *   The website status.
    *
    * @return int
    */
-  public function countUrlsByStatusAndWebsiteId($status, $website_id);
-
-  /**
-   * Gets websites by status.
-   *
-   * @param int[] $statuses
-   *   One of the self::STATUS_* constants.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website[]
-   */
-  public function getWebsitesByStatuses(array $statuses);
-
-  /**
-   * Gets a website by website ID.
-   *
-   * @param int $website_id
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website
-   */
-  public function getWebsiteById($website_id);
-
-  /**
-   * Gets a website by URL.
-   *
-   * @param string $url
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website
-   */
-  public function getWebsiteByUrl($url);
+  public function countUrlsByStatusAndWebsiteId($status, $website_test_results_id);
 
   /**
    * Saves a URL.
@@ -142,62 +104,29 @@ interface StorageInterface extends TestingStatusInterface {
   public function saveUrl(Url $url);
 
   /**
-   * Gets the datetime of any website's last analysis.
+   * Gets the datetime of any URL's last analysis.
    *
    * @return int
    *   A Unix timestamp.
    */
-  public function getWebsiteLastAnalysisDateTime();
-
-  /**
-   * Saves a website.
-   *
-   * @param \Triquanta\AccessibilityMonitor\Website $website
-   *
-   * @return $this
-   */
-  public function saveWebsite(Website $website);
+  public function getUrlLastAnalysisDateTime();
 
   /**
    * Counts the number of CMS test results for a website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return int
    */
-  public function countCmsTestResultsByWebsiteId($website_id);
+  public function countCmsTestResultsByWebsiteTestResultsId($website_test_results_id);
 
   /**
    * Counts the number of Google PageSpeed results for a website.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return int
    */
-  public function countGooglePagespeedResultsByWebsiteId($website_id);
-
-  /**
-   * Gets a website's ID based on a URL that belongs to it.
-   *
-   * @param string $url
-   *   The URL may be anything, but must lie within a website's root URL.
-   *
-   * @return int
-   */
-  public function getWebsiteIdForNestedUrl($url);
-
-  /**
-   * Gets all pending actions.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Action[]
-   */
-  public function getPendingActions();
-
-  /**
-   * Saves an action.
-   *
-   * @parem \Triquanta\AccessibilityMonitor\Action
-   */
-  public function saveAction(Action $action);
+  public function countGooglePagespeedResultsByWebsiteTestResultsId($website_test_results_id);
 
 }

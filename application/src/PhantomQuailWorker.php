@@ -7,6 +7,8 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
 use Psr\Log\LogLevel;
 use Solarium\Core\Client\Client;
 use Solarium\QueryType\Update\Query\Query;
@@ -38,11 +40,32 @@ class PhantomQuailWorker extends \Thread {
   );
 
   /**
-   * The Google Pagespeed tester.
+   * The Google PageSpeed API key.
    *
-   * @var \Triquanta\AccessibilityMonitor\GooglePagespeedInterface
+   * @var string
    */
-  protected $googlePagespeed;
+  protected $googlePagespeedApiKey;
+
+  /**
+   * The Google PageSpeed API strategy.
+   *
+   * @var string
+   */
+  protected $googlePagespeedApiStrategy;
+
+  /**
+   * The Google PageSpeed API URL.
+   *
+   * @var string
+   */
+  protected $googlePagespeedApiUrl;
+
+  /**
+   * The HTTP client.
+   *
+   * @var \GuzzleHttp\ClientInterface
+   */
+  protected $httpClient;
 
   /**
    * The Phantom JS manager.
@@ -66,35 +89,14 @@ class PhantomQuailWorker extends \Thread {
   protected $url;
 
   /**
-   * The website of which a URL is being tested.
-   *
-   * @var \Triquanta\AccessibilityMonitor\Website
-   */
-  protected $website;
-
-  /**
    * @todo
    */
   protected $result;
 
   /**
-   * Whether the test includes CMS detection.
-   *
-   * @var bool
-   */
-  protected $determineCms = FALSE;
-
-  /**
    * @todo
    */
   protected $cmsResult;
-
-  /**
-   * Whether the test includes Google Pagespeed.
-   *
-   * @var bool
-   */
-  protected $performGooglePagespeed = FALSE;
 
   /**
    * @todo
@@ -133,30 +135,28 @@ class PhantomQuailWorker extends \Thread {
   /**
    * Constructs a new instance.
    *
-   * @param \Triquanta\AccessibilityMonitor\GooglePagespeedInterface $google_pagespeed
+   * @param \GuzzleHttp\ClientInterface
    * @param \Solarium\Core\Client\Client $solr_client
    * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface $phantom_js
    * @param \Triquanta\AccessibilityMonitor\Url $url
-   * @param \Triquanta\AccessibilityMonitor\Website $website
    * @param $queueId
-   * @param $determineCms
-   * @param $executeGooglePagespeed
+   * @param string $google_pagespeed_api_url
+   * @param string $google_pagespeed_api_key
+   * @param string $google_pagespeed_api_strategy
    */
-  public function __construct(GooglePagespeedInterface $google_pagespeed, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, Website $website, $queueId, $determineCms, $executeGooglePagespeed) {
-    $this->googlePagespeed = $google_pagespeed;
+  public function __construct(ClientInterface $http_client, Client $solr_client, PhantomJsInterface $phantom_js, Url $url, $queueId, $google_pagespeed_api_url, $google_pagespeed_api_key, $google_pagespeed_api_strategy) {
+    $this->googlePagespeedApiKey = $google_pagespeed_api_key;
+    $this->googlePagespeedApiStrategy = $google_pagespeed_api_strategy;
+    $this->googlePagespeedApiUrl = $google_pagespeed_api_url;
+    $this->httpClient = $http_client;
     $this->phantomJs = $phantom_js;
     $this->solrClient = $solr_client;
 
     $this->url = $url;
-    $this->website = $website;
-    $this->performGooglePagespeed = $executeGooglePagespeed;
-    $this->determineCms = $determineCms;
     // Fill the websiteCms if present.
     if ($url->getCms() != '') {
       $this->websiteCms = $url->getCms();
     }
-    // Fill the wid property.
-    $this->wid = $this->website->getId();
     $this->queueId = $queueId;
   }
 
@@ -188,30 +188,32 @@ class PhantomQuailWorker extends \Thread {
    * Run function. This function is executed when the method start is executed.
    */
   public function run() {
-    // We need to include the autoloaders here.
-    // This is because this is a thread, and there
-    // are different rules.
-    // For this perticular case see:
-    // https://github.com/krakjoe/pthreads/issues/68
-    // Composer autoloader.
-    require( __DIR__ . '/../vendor/autoload.php');
-    Application::bootstrap();
+    try {
+      // We need to include the autoloaders here.
+      // This is because this is a thread, and there
+      // are different rules.
+      // For this perticular case see:
+      // https://github.com/krakjoe/pthreads/issues/68
+      // Composer autoloader.
+      require(__DIR__ . '/../vendor/autoload.php');
+      Application::bootstrap();
 
-    // If the website has not yet a cms detected, perform the detection here.
-//    if ($this->determineCms) {
-//      $this->detectCms();
-//    }
-//    if ($this->performGooglePagespeed) {
-//      $this->executeGooglePagespeed();
-//    }
-    $this->analyzeQuail();
+      if ($this->url->isRoot()) {
+        $this->detectCms();
+        $this->executeGooglePagespeed();
+      }
+      $this->analyzeQuail();
+    }
+    catch (\Exception $e) {
+      $this->log(LogLevel::EMERGENCY, sprintf('Uncaught exception: %s.', $e->getMessage()));
+    }
   }
 
   /**
    * Detect the cms of the main website.
    */
   protected function detectCms() {
-    $testUrl = $this->website->getUrl();
+    $testUrl = $this->url->getUrl();
     $this->websiteCms = implode('|', $this->phantomJs->getDetectedApps($testUrl));
   }
 
@@ -219,21 +221,22 @@ class PhantomQuailWorker extends \Thread {
    * Perform a google Pagespeed test.
    */
   protected function executeGooglePagespeed() {
-    $url = $this->website->getUrl();
-    $pageSpeedResult = $this->googlePagespeed->test($url);
-    $this->pageSpeedResult = json_encode($pageSpeedResult);
-  }
+    $url = $this->url->getUrl();
+    try {
+      $request = $this->httpClient->createRequest('GET', $this->googlePagespeedApiUrl);
+      $request->getQuery()->set('key', $this->googlePagespeedApiKey);
+      $request->getQuery()->set('locale', 'nl');
+      $request->getQuery()->set('url', $url);
+      $request->getQuery()->set('strategy', $this->googlePagespeedApiStrategy);
+      $request->setHeader('User-Agent', 'GT inspector script');
+      $response = $this->httpClient->send($request);
 
-
-  /**
-   * Get the website id.
-   *
-   * This property only returns result, if a successful cms detection has been performed.
-   *
-   * @return mixed
-   */
-  public function getWid() {
-    return $this->wid;
+      $this->pageSpeedResult = (string) $response->getBody();
+    }
+    catch (ClientException $e) {
+      $this->log(LogLevel::EMERGENCY, $e->getMessage());
+      $this->pageSpeedResult = json_encode(array());
+    }
   }
 
   /**
@@ -242,9 +245,7 @@ class PhantomQuailWorker extends \Thread {
    * @return mixed
    */
   public function getWebsiteCms() {
-    if ($this->determineCms) {
-      return $this->websiteCms;
-    }
+    return $this->websiteCms;
   }
 
   /**
@@ -257,6 +258,8 @@ class PhantomQuailWorker extends \Thread {
     $url = $this->url->getUrl();
     try {
       $output = $this->phantomJs->getQuailResults($url);
+      $lines = preg_split("/((\r?\n)|(\r\n?))/", $output);
+
       // @TODO: check if we need the count for solr.
       // Now process the results from quail.
       // We have to generate a unique id later.
@@ -269,10 +272,13 @@ class PhantomQuailWorker extends \Thread {
       // arrays don't allow array_push or [].
       $rawQuailResults = array();
       // Create an array for
-      foreach (preg_split("/((\r?\n)|(\r\n?))/", $output) as $line) {
-        if ($line != '' && preg_match("/^{/", $line)) {
-          // do stuff with $line
+      foreach ($lines as $line) {
+        // If the line starts with [{ we assume it is a json string with the quail results
+        if ($line != '' && preg_match("/^\[{/", $line)) {
+
+          // Decode the json string to an array
           $rawResults = (array) json_decode($line);
+
           // Since there is only one result json, this is also the exact raw result.
           $this->rawResult = $rawResults;
           // Now process the quail result.
@@ -283,12 +289,12 @@ class PhantomQuailWorker extends \Thread {
       // Now send the case results to solr.
       $this->log(LogLevel::DEBUG, 'Sending results to Solr.');
       $this->sendCaseResultsToSolr();
-      $this->log(LogLevel::DEBUG, 'Results sended to Solr.');
+      $this->log(LogLevel::DEBUG, 'Results sent to Solr.');
 
       // Update the result.
       $this->result = $this->url->getId();
       // Set the status to tested.
-      $this->status = Url::STATUS_TESTED;
+      $this->status = $this->getQuailFinalResults() ? Url::STATUS_TESTED : Url::STATUS_ERROR;
     } catch (\Exception $e) {
       // If there is an exception, probably phantomjs timed out.
       $this->status = Url::STATUS_ERROR;
@@ -315,7 +321,7 @@ class PhantomQuailWorker extends \Thread {
           // The pointer contains the html snippet we need.
           if (isset($case->outcome->pointer) && isset($case->outcome->pointer[0]->chars) && ($case->outcome->result == 'failed' || $case->outcome->result == 'cantTell')) {
             // Create the unique key, to prevent that we store only one case per testCase per criterium.
-            $uniqueKey = str_replace('.', '_', $criteriumNumber) . '_' . $case->testCase;
+            $uniqueKey = str_replace('.', '_', $criteriumNumber) . '_' . $case->testCase . '_' . $case->outcome->result;
             if (! isset ($quailCases[$uniqueKey])) {
               // Add the unique key to the case.
               $case->uniqueKey = $uniqueKey;
@@ -407,13 +413,16 @@ class PhantomQuailWorker extends \Thread {
       if (property_exists($case->outcome, 'pointer')) {
         $doc->element = $case->outcome->pointer[0]->chars;
       }
-      $doc->name_en = $case->outcome->info->en;
-      $doc->name_nl = $case->outcome->info->nl;
+      if (property_exists($case->outcome, 'info')) {
+        $doc->name_en = $case->outcome->info->en;
+        $doc->name_nl = $case->outcome->info->nl;
+      }
       $doc->succescriterium = $case->criteriumName;
       $doc->test_result = $case->outcome->result;
       $doc->testtype = $case->testCase;
       // Add document type.
       $doc->document_type = 'case';
+      $doc->website_test_results_id = $this->url->getWebsiteTestResultsId();
 
       return $doc;
     }
@@ -430,7 +439,7 @@ class PhantomQuailWorker extends \Thread {
    */
   protected function createCaseSolrId($case) {
     // Create a hash based om the url and uniqueKey of the case.
-    $hash = md5($case->uniqueKey . $this->url->getUrl());
+    $hash = md5($case->uniqueKey . '_' . $this->url->getWebsiteTestResultsId() . '_' . $this->url->getUrl());
     return $hash;
   }
 
@@ -490,12 +499,12 @@ class PhantomQuailWorker extends \Thread {
   }
 
   /**
-   * Get the website id of the url.
+   * Gets the URL's website test results ID.
    *
-   * @return mixed
+   * @return int
    */
-  public function getWebsiteId() {
-    return $this->url->getWebsiteId();
+  public function getWebsiteTestResultsId() {
+    return $this->url->getWebsiteTestResultsId();
   }
 
   /**
@@ -508,24 +517,12 @@ class PhantomQuailWorker extends \Thread {
   }
 
   /**
-   * Gets the website of which this worker tests a URL.
-   *
-   * @return \Triquanta\AccessibilityMonitor\Website
-   */
-  public function getWebsite() {
-    return $this->website;
-  }
-
-  /**
    * Get the cms result.
    *
    * @return mixed
    */
   public function getCmsResult() {
-    if ($this->determineCms) {
-      return $this->cmsResult;
-    }
-    return FALSE;
+    return $this->cmsResult;
   }
 
   /**
@@ -534,10 +531,7 @@ class PhantomQuailWorker extends \Thread {
    * @return mixed
    */
   public function getPageSpeedResult() {
-    if ($this->performGooglePagespeed) {
-      return $this->pageSpeedResult;
-    }
-    return FALSE;
+    return $this->pageSpeedResult;
   }
 
   /**
@@ -548,11 +542,8 @@ class PhantomQuailWorker extends \Thread {
    * @return string
    */
   protected function escapeUrlForSolr($url) {
-    $escaped_url = str_replace(':', '_', $url);
-    $escaped_url = str_replace('/', '_', $escaped_url);
-    $escaped_url = str_replace('.', '_', $escaped_url);
-
-    return $escaped_url;
+    $special_characters = array("'", '+', '-', '&&', '||', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':', '\\');
+    return str_replace($special_characters, '_', $url);
   }
 
   /**

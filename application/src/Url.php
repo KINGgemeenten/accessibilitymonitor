@@ -20,11 +20,19 @@ class Url implements TestingStatusInterface {
   protected $id;
 
   /**
-   * The ID of the website the URL is for.
+   * The time of the analysis.
+   *
+   * @var int
+   *   A Unix timestamp.
+   */
+  protected $analysis;
+
+  /**
+   * The ID of the website test results the URL is for.
    *
    * @var int
    */
-  protected $websiteId;
+  protected $websiteTestResultsId;
 
   /**
    * The URL itself.
@@ -47,7 +55,7 @@ class Url implements TestingStatusInterface {
    * @var int
    *   A lower value means a higher priority.
    */
-  protected $priority;
+  protected $priority = 0;
 
   /**
    * The Quail test results.
@@ -70,6 +78,13 @@ class Url implements TestingStatusInterface {
    * @var string
    */
   protected $cms;
+
+  /**
+   * Whether this is a website's root URL.
+   *
+   * @var bool
+   */
+  protected $isRoot = FALSE;
 
   /**
    * Returns the URL ID.
@@ -99,27 +114,27 @@ class Url implements TestingStatusInterface {
   }
 
   /**
-   * Returns the ID of the website this URL is for.
+   * Returns the ID of the website test results this URL is for.
    *
    * @return int
    */
-  public function getWebsiteId() {
-    return $this->websiteId;
+  public function getWebsiteTestResultsId() {
+    return $this->websiteTestResultsId;
   }
 
   /**
-   * Sets the URL's website ID.
+   * Sets the URL's website test results ID.
    *
-   * @param int $website_id
+   * @param int $website_test_results_id
    *
    * @return $this
    */
-  public function setWebsiteId($website_id) {
-    if ($this->websiteId) {
-      throw new \BadMethodCallException('This URL already has a website ID.');
+  public function setWebsiteTestResultsId($website_test_results_id) {
+    if ($this->websiteTestResultsId) {
+      throw new \BadMethodCallException('This URL already has a website test results ID.');
     }
     else {
-      $this->websiteId = $website_id;
+      $this->websiteTestResultsId = $website_test_results_id;
     }
 
     return $this;
@@ -295,6 +310,53 @@ class Url implements TestingStatusInterface {
     $this->googlePagespeedResult = $result;
 
     return $this;
+  }
+
+  /**
+   * Returns the time of the analysis.
+   *
+   * @return int
+   *   A Unix timestamp.
+   */
+  public function getAnalysis() {
+    return $this->analysis;
+  }
+
+  /**
+   * Sets the time of the analysis.
+   *
+   * @param int $analysis
+   *   A Unix timestamp.
+   *
+   * @return $this
+   */
+  public function setAnalysis($analysis) {
+    $this->analysis = $analysis;
+
+    return $this;
+  }
+
+  /**
+   * Sets whether this URL is a root URL.
+   *
+   * @param bool $is_root
+   *
+   * @return $this
+   */
+  public function setRoot($is_root = TRUE) {
+    $this->isRoot = $is_root;
+
+    return $this;
+  }
+
+  /**
+   * Returns whether this URL is a root URL.
+   *
+   * @return int
+   *   A Unix timestamp.
+   */
+  public function isRoot() {
+    return $this->isRoot;
   }
 
 }

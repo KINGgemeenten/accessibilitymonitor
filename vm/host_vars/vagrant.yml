@@ -71,7 +71,7 @@ solr_cores:
   - name: "nutch"
     solr_conf: "default/nutch/conf"
   - name: "phantomcore"
-    solr_conf: "default/phantomcore-v3.0/conf"
+    solr_conf: "default/phantomcore-v3.1/conf"
 
 
 solr_version: "4.5.1"
@@ -97,7 +97,23 @@ ufw_whitelisted_ipv4_addresses:
 #      - ../../../files/keys/jur.pub
 #      - ../../../files/keys/server-control.pub
 
-quail_branch: king-v1-beta3
-quail_git_repo: https://github.com/WilcoFiers/quail.git
+
+
+# To set up a new quail do the following:
+#
+# Remove /opt/quail/dist/tests.json
+# Change the parameters below
+# vagrant provision
+#
+# That should do it
+
+quail_git_repo: https://github.com/GerbenSpil/quail
+quail_branch: dev
+
+#quail_git_repo: https://github.com/quailjs/quail
+#quail_branch: 2.2.12
+
+#quail_branch: king-v1-beta3
+#quail_git_repo: https://github.com/WilcoFiers/quail.git
 
 php55_cli_add_mongo: false

@@ -116,87 +116,75 @@ class Quail implements QuailInterface {
    * {@inheritdoc}
    */
   public function test() {
-    while ($this->elapsedTime < $this->maxExecutionTime) {
-      // Determine the new amount of workers based on the load.
-      $this->updateWorkerCount();
+    try {
+      while ($this->elapsedTime < $this->maxExecutionTime) {
+        // Determine the new amount of workers based on the load.
+        $this->updateWorkerCount();
 
-      // Get the URLs to test.
-      $urls = $this->getTestingUrls();
+        // Get the URLs to test.
+        $urls = $this->getTestingUrls();
 
-      // Create the workers.
-      $this->workers = array();
+        // Create the workers.
+        $this->workers = array();
 
-      // Keys are website IDs, values are booleans that indicate whether there
-      // are results for the websites.
-      $cms_results = array();
-      // Keys are website IDs, values are booleans that indicate whether there
-      // are results for the websites.
-      $google_pagespeed_results = array();
-
-      foreach ($urls as $url) {
-        // Get the website record from the database.
-        $website = $this->storage->getWebsiteById($url->getWebsiteId());
-        // Determine which tests should be done.
-        if (!array_key_exists($url->getWebsiteId(), $cms_results)) {
-          $cms_results[$url->getWebsiteId()] = $this->storage->countCmsTestResultsByWebsiteId($url->getWebsiteId());
-        }
-        if (!array_key_exists($url->getWebsiteId(), $google_pagespeed_results)) {
-          $google_pagespeed_results[$url->getWebsiteId()] = $this->storage->countGooglePagespeedResultsByWebsiteId($url->getWebsiteId());
-        }
-
-        // Create a PhantomQuailWorker for each url.
-        $worker = $this->workerFactory->createWorker($url, $website, $url->getId(), !$cms_results[$url->getWebsiteId()], !$google_pagespeed_results[$url->getWebsiteId()]);
-        // First delete all documents from solr.
-        $worker->deleteCasesFromSolr();
-        // Now start the thread.
+        foreach ($urls as $url) {
+          // Create a PhantomQuailWorker for each url.
+          $worker = $this->workerFactory->createWorker($url, $url->getId());
+          // First delete all documents from solr.
+          $worker->deleteCasesFromSolr();
+          // Now start the thread.
 //        $worker->start();
-        $worker->run();
-        $this->workers[] = $worker;
+          $worker->run();
+          $this->workers[] = $worker;
+        }
+        // Add some debugging.
+        $this->logger->debug('Prepare to send commit to solr.');
+
+        $this->sendCommitToPhantomcoreSolr();
+
+
+        $this->logger->debug('Commit to solr done.');
+
+        // Process the finished workers.
+        $this->processFinishedWorkers();
+
+        // Break if there are no more targets.
+        if (count($urls) === 0) {
+          break;
+        }
+
+        $this->logger->debug('Workers activated, waiting.');
+        // Join workers and put them in the finishedWorkers array.
+        foreach ($this->workers as $worker) {
+          foreach ($worker->getLogMessages() as $level => $messages) {
+            foreach ($messages as $message) {
+              $this->logger->log($level, $message);
+            }
+          }
+          $worker->join();
+          $this->finishedWorkers[] = $worker;
+        }
+        $this->logger->debug('All workers joined, continuing');
+
+        // Update the elapsed time.
+        $oldElapsedTime = $this->elapsedTime;
+        $this->elapsedTime = microtime(TRUE) - $this->startTime;
+
+        // ProcessTime.
+        $processTime = $this->elapsedTime - $oldElapsedTime;
+        // Log to the console.
+        $message = 'Analysis used ' . $processTime . ' seconds for ' . $this->workerCount . 'workers';
+        $this->logger->info($message);
       }
-      // Add some debugging.
-      $this->logger->debug('Prepare to send commit to solr.');
-
-      $this->sendCommitToPhantomcoreSolr();
-
-
-      $this->logger->debug('Commit to solr done.');
-
+      $this->logger->info('Elapsed time exceeded. Finishing.');
       // Process the finished workers.
       $this->processFinishedWorkers();
-
-      // Break if there are no more targets.
-      if (count($urls) === 0) {
-        break;
-      }
-
-      $this->logger->debug('Workers activated, waiting.');
-      // Join workers and put them in the finishedWorkers array.
-      foreach ($this->workers as $worker) {
-        foreach ($worker->getLogMessages() as $level => $messages) {
-          foreach ($messages as $message) {
-            $this->logger->log($level, $message);
-          }
-        }
-        $worker->join();
-        $this->finishedWorkers[] = $worker;
-      }
-      $this->logger->debug('All workers joined, continuing');
-
-      // Update the elapsed time.
-      $oldElapsedTime = $this->elapsedTime;
-      $this->elapsedTime = microtime(TRUE) - $this->startTime;
-
-      // ProcessTime.
-      $processTime = $this->elapsedTime - $oldElapsedTime;
-      // Log to the console.
-      $message = 'Analysis used ' . $processTime . ' seconds for ' . $this->workerCount . 'workers';
+      $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
       $this->logger->info($message);
     }
-    $this->logger->info('Elapsed time exceeded. Finishing.');
-    // Process the finished workers.
-    $this->processFinishedWorkers();
-    $message = 'Total execution time: ' . $this->elapsedTime . ' seconds';
-    $this->logger->info($message);
+    catch (\Exception $e) {
+      $this->logger->emergency(sprintf('Uncaught exception: %s.', $e->getMessage()));
+    }
   }
 
   /**
@@ -244,9 +232,11 @@ class Quail implements QuailInterface {
     // If there are finished workers, process the results and die.
     if (count($this->finishedWorkers)) {
       foreach ($this->finishedWorkers as $key => $finishedWorker) {
-        $this->processQuailResult($finishedWorker);
-        $this->processWappalyzerResults($finishedWorker);
-        $this->processGooglePagespeed($finishedWorker);
+        $url = $finishedWorker->getUrl();
+        $this->processQuailResult($url, $finishedWorker);
+        $this->processWappalyzerResults($url, $finishedWorker);
+        $this->processGooglePagespeed($url, $finishedWorker);
+        $this->storage->saveUrl($url);
 
         // Now unset the finished worker in the array.
         unset($this->finishedWorkers[$key]);
@@ -257,50 +247,42 @@ class Quail implements QuailInterface {
   /**
    * Process the quail results.
    *
+   * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
-  protected function processQuailResult(PhantomQuailWorker $finishedWorker) {
-    $url = $finishedWorker->getUrl();
-    // Now set the data.
-    $url->setCms($finishedWorker->getWebsiteCms());
+  protected function processQuailResult(Url $url, PhantomQuailWorker $finishedWorker) {
+    $time = time();
     $url->setTestingStatus($finishedWorker->getStatus());
+    $url->setAnalysis($time);
     $quailFinalResult = $finishedWorker->getQuailFinalResults();
     $url->setQuailResult($quailFinalResult);
-    $this->storage->saveUrl($url);
-    // Set the last_analysis date.
-    $time = time();
     $this->logger->debug('time: ' . $time);
-    $website = $finishedWorker->getWebsite();
-    $website->setLastAnalysis($time);
-    $website->setTestingStatus(Website::STATUS_TESTING);
-    $this->storage->saveWebsite($website);
   }
 
   /**
    * Store the cms in the website table.
    *
+   * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
-  protected function processWappalyzerResults(PhantomQuailWorker $finishedWorker) {
+  protected function processWappalyzerResults(Url $url, PhantomQuailWorker $finishedWorker) {
     $websiteCms = $finishedWorker->getWebsiteCms();
     if ($websiteCms) {
-      $finishedWorker->getUrl()->setCms($websiteCms);
-      $this->storage->saveUrl($finishedWorker->getUrl());
+      $url->setCms($websiteCms);
     }
   }
 
   /**
    * Store the google pagespeed results.
    *
+   * @param \Triquanta\AccessibilityMonitor\Url $url
    * @param \Triquanta\AccessibilityMonitor\PhantomQuailWorker $finishedWorker
    */
-  protected function processGooglePagespeed(PhantomQuailWorker $finishedWorker) {
-    $wid = $finishedWorker->getWid();
+  protected function processGooglePagespeed(Url $url, PhantomQuailWorker $finishedWorker) {
     // If there is a result, insert it.
     $pagespeedResult = $finishedWorker->getPageSpeedResult();
     if ($pagespeedResult) {
-      $finishedWorker->getUrl()->setGooglePagespeedResult($pagespeedResult);
-      $this->storage->saveUrl($finishedWorker->getUrl());
+      $url->setGooglePagespeedResult($pagespeedResult);
     }
   }
 

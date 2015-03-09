@@ -1,16 +1,17 @@
 notifications:
   email:
-    - bart@triquanta.nl
-    - jur@triquanta.nl
-
+    - secure: FOXkhPwmP2E/uJ8ThzriPED2+y/PiElpz/bilVtwcYnIS85Ygk/3/SqT/+dTFOEjnONZeLh75opJdjTXKN/26xnXEp8IiWloaDv1meu5cEbeBEZZud6ls/5AK7paRam/E8GrfxONbUMzRqlM0drJbYMIE8NsvPXgPC7bHW+qKN8=
+    - secure: AwhQyow/iE6PiXSA5TDbN88tIB79sz/oAB6v+wSpe0BvpCD2JUO+FedUPJcPb+ImPS6cSN6iKBViLe9ykVUIBMwje5WoFdA8HFRWIV0U4BaZc5M8e0RSUejuiZrLG0mZXpHIhPeTNyY+g9ivov5k+jWmTxfBB6UQ6BNta39C7C4=
+  hipchat:
+    rooms:
+      secure: RFZG6Zt+TySVmAzsvZ3DqPCekogBafCveX40kjqwTl/WNuTpH3AP281DmXJzXaBigsddMZ5vwbzHsNpYcuskl09yervsNQ7MyJIwyaT+ZmnpAErT+ZNr95lJ3rNiq44jVificNY2Gt+ye3Kxao65jHesEewCANuC4FkoNNVsGu4=
 language: php
-
 php:
-  - 5.4
-  - 5.5
-  - 5.6
-
+- 5.4
+- 5.5
+- 5.6
 script:
-  - cd $TRAVIS_BUILD_DIR/application
-  - composer install
-  - vendor/bin/phpunit -c ./phpunit.xml.dist --bootstrap ./tests/bootstrap.php --verbose --debug || exit 1
+- cd $TRAVIS_BUILD_DIR/application
+- composer install
+- vendor/bin/phpunit -c ./phpunit.xml.dist --bootstrap ./tests/bootstrap.php --verbose
+  --debug || exit 1

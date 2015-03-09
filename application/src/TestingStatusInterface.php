@@ -13,28 +13,23 @@ namespace Triquanta\AccessibilityMonitor;
 interface TestingStatusInterface {
 
   /**
-   * @todo Add a description.
+   * A URL that is scheduled for testing.
    */
   const STATUS_SCHEDULED = 0;
 
   /**
-   * @todo Add a description.
+   * A URL that is currently being tested.
    */
   const STATUS_TESTING = 1;
 
   /**
-   * @todo Add a description.
+   * A URL for which testing has successfully completed.
    */
   const STATUS_TESTED = 2;
 
   /**
-   * @todo Add a description.
+   * A URL for which testing was aborted due to errors.
    */
   const STATUS_ERROR = 3;
-
-  /**
-   * @todo Add a description.
-   */
-  const STATUS_EXCLUDED = 4;
 
 }

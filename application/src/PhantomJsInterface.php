@@ -7,8 +7,6 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
-use Psr\Log\LoggerInterface;
-
 /**
  * Defines a Phantom JS manager.
  */
