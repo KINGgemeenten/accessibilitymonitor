@@ -5,3 +5,6 @@ vagrant
 
 [inspector]
 vagrant
+
+[rabbitmq]
+vagrant
