@@ -111,7 +111,7 @@ class PhantomQuailWorker extends \Thread {
   /**
    * @todo
    */
-  protected $status = Url::STATUS_TESTING;
+  protected $status;
 
   // Variable to hold the absolute raw result.
   protected $rawResult;
