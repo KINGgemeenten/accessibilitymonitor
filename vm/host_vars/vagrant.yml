@@ -117,3 +117,11 @@ quail_branch: dev
 #quail_git_repo: https://github.com/WilcoFiers/quail.git
 
 php55_cli_add_mongo: false
+
+# Rabbit mq
+rabbitmq_users:
+  - name: test
+    password: test
+    write_priv: $^
+    read_priv: $^
+    configure_priv: $^
