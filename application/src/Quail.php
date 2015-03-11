@@ -195,12 +195,6 @@ class Quail implements QuailInterface {
   protected function getTestingUrls() {
     $urls = $this->storage->getUrlsByStatus(Url::STATUS_SCHEDULED, $this->workerCount);
 
-    // Now loop the results, and set the urls to be processing.
-    foreach ($urls as $url) {
-      $url->setTestingStatus($url::STATUS_TESTING);
-      $this->storage->saveUrl($url);
-    }
-
     return $urls;
   }
 

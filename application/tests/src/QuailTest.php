@@ -126,11 +126,6 @@ class QuailTest extends \PHPUnit_Framework_TestCase {
       ->getMock();
     /** @var \Triquanta\AccessibilityMonitor\Url[]|\PHPUnit_Framework_MockObject_MockObject[] $urls */
     $urls = array($url_a, $url_b);
-    foreach ($urls as $url) {
-      $url->expects($this->atLeastOnce())
-        ->method('setTestingStatus')
-        ->with(TestingStatusInterface::STATUS_TESTING);
-    }
 
     $this->storage->expects($this->once())
       ->method('getUrlsByStatus')
@@ -140,9 +135,6 @@ class QuailTest extends \PHPUnit_Framework_TestCase {
     foreach ($urls as $url) {
       $with[] = array($url);
     }
-    $invocation_mocker = $this->storage->expects($this->exactly(count($urls)))
-      ->method('saveUrl');
-    call_user_func_array(array($invocation_mocker, 'withConsecutive'), $with);
 
     $method = new \ReflectionMethod($this->quail, 'getTestingUrls');
     $method->setAccessible(TRUE);

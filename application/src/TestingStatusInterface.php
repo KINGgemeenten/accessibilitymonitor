@@ -18,11 +18,6 @@ interface TestingStatusInterface {
   const STATUS_SCHEDULED = 0;
 
   /**
-   * A URL that is currently being tested.
-   */
-  const STATUS_TESTING = 1;
-
-  /**
    * A URL for which testing has successfully completed.
    */
   const STATUS_TESTED = 2;

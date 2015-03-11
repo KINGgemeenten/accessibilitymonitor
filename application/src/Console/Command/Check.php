@@ -148,14 +148,6 @@ class Check extends Command implements ContainerFactoryInterface {
     $level = $count > $this->alertThreshold ? LogLevel::ALERT : ($count > $this->errorThreshold ? LogLevel::ERROR : ($count > $this->noticeThreshold ? LogLevel::NOTICE : LogLevel::INFO));
     $this->logger->log($level, sprintf('%d URLs are currently scheduled for testing. This may be too much. You should check the system load.', $count));
 
-    // Every check must update the URLs it tests with a final status ("tested"
-    // or "error"). If there are URLs with a "testing" status at the beginning
-    // of a new check, the previous check did not end successfully. For some reason it can occur
-    $count = $this->storage->countUrlsByStatus(Url::STATUS_TESTING);
-    if ($count > 10 * $this->quailWorkerCount) {
-      $this->logger->emergency(sprintf('%d URLs are currently being tested. This means a previous test run failed to end successfully.', $count));
-    }
-
     $this->quail->test();
 
     $output->writeln('<info>['.date('d-m-Y h:i').'] Done.</info>');
