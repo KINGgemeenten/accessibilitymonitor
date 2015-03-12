@@ -1,10 +1,13 @@
 vagrant ansible_ssh_host=192.168.50.5 ansible_ssh_user=vagrant
 
 [solr]
-vagrant
+#vagrant
 
 [inspector]
-vagrant
+#vagrant
 
 [rabbitmq]
+vagrant
+
+[results_storage]
 vagrant
