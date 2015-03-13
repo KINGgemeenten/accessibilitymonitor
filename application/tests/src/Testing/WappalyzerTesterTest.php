@@ -12,7 +12,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * @coversDefaultClass \Triquanta\AccessibilityMonitor\Testing\WappalyzerTester
  */
-class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase  {
+class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase
+{
 
     /**
      * The Phantom JS manager.
@@ -28,7 +29,8 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase  {
      */
     protected $sut;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->phantomJs = $this->getMock('\Triquanta\AccessibilityMonitor\PhantomJsInterface');
 
         $this->sut = new WappalyzerTester($this->phantomJs);
@@ -37,7 +39,8 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase  {
     /**
      * @covers ::__construct
      */
-    public function testConstruct() {
+    public function testConstruct()
+    {
         $this->sut = new WappalyzerTester($this->phantomJs);
     }
 
@@ -46,7 +49,8 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase  {
      *
      * @dataProvider providerTestRun
      */
-    public function testRun($isRoot) {
+    public function testRun($isRoot)
+    {
         $urlString = 'http://example.com/' . mt_rand();
 
         $url = new Url();
@@ -70,10 +74,11 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase  {
     /**
      * Provides data to self::testRun().
      */
-    public function providerTestRun() {
+    public function providerTestRun()
+    {
         return [
-            [true],
-            [false],
+          [true],
+          [false],
         ];
     }
 

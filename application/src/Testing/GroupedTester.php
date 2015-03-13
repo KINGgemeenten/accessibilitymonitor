@@ -12,7 +12,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * Provides a grouped tester.
  */
-class GroupedTester implements GroupedTesterInterface {
+class GroupedTester implements GroupedTesterInterface
+{
 
     /**
      * The testers.
@@ -21,11 +22,13 @@ class GroupedTester implements GroupedTesterInterface {
      */
     protected $testers = [];
 
-    public function addTester(TesterInterface $tester) {
+    public function addTester(TesterInterface $tester)
+    {
         $this->testers[] = $tester;
     }
 
-    public function run(Url $url) {
+    public function run(Url $url)
+    {
         foreach ($this->testers as $tester) {
             $tester->run($url);
         }

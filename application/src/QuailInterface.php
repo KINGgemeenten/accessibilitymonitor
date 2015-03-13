@@ -10,11 +10,12 @@ namespace Triquanta\AccessibilityMonitor;
 /**
  * Defines a Quail test manager.
  */
-interface QuailInterface {
+interface QuailInterface
+{
 
-  /**
-   * Runs the test.
-   */
-  public function test();
+    /**
+     * Runs the test.
+     */
+    public function test();
 
 } 

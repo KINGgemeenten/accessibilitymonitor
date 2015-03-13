@@ -10,7 +10,8 @@ namespace Triquanta\AccessibilityMonitor;
 /**
  * Defines a database manager.
  */
-class Database implements DatabaseInterface {
+class Database implements DatabaseInterface
+{
 
     /**
      * The database connection.
@@ -55,17 +56,20 @@ class Database implements DatabaseInterface {
      * @param string $userName
      * @param string $password
      */
-    public function __construct($hostName, $databaseName, $userName, $password) {
+    public function __construct($hostName, $databaseName, $userName, $password)
+    {
         $this->hostName = $hostName;
         $this->databaseName = $databaseName;
         $this->userName = $userName;
         $this->password = $password;
     }
 
-    public function getConnection() {
+    public function getConnection()
+    {
         if (!$this->connection) {
             $data_source_name = 'mysql:host=' . $this->hostName . ';dbname=' . $this->databaseName;
-            $pdo = new \PDO($data_source_name, $this->userName, $this->password);
+            $pdo = new \PDO($data_source_name, $this->userName,
+              $this->password);
             $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
             $this->connection = $pdo;
         }

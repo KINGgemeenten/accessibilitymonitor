@@ -12,7 +12,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * @coversDefaultClass \Triquanta\AccessibilityMonitor\Testing\GroupedTester
  */
-class GroupedTesterTest extends \PHPUnit_Framework_TestCase  {
+class GroupedTesterTest extends \PHPUnit_Framework_TestCase
+{
 
     /**
      * The class under test.
@@ -28,7 +29,8 @@ class GroupedTesterTest extends \PHPUnit_Framework_TestCase  {
      */
     protected $testers = [];
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->testers[] = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
         $this->testers[] = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
@@ -42,13 +44,14 @@ class GroupedTesterTest extends \PHPUnit_Framework_TestCase  {
      * @covers ::run
      * @covers ::addTester
      */
-    public function testRun() {
+    public function testRun()
+    {
         $url = new Url();
 
         foreach ($this->testers as $tester) {
             $tester->expects($this->once())
-                ->method('run')
-                ->with($url);
+              ->method('run')
+              ->with($url);
         }
 
         $this->sut->run($url);

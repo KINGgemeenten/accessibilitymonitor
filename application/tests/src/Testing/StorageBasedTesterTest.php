@@ -12,7 +12,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * @coversDefaultClass \Triquanta\AccessibilityMonitor\Testing\StorageBasedTester
  */
-class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase  {
+class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
+{
 
     /**
      * The result storage.
@@ -35,25 +36,30 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase  {
      */
     protected $tester;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->resultStorage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->sut = new StorageBasedTester($this->tester, $this->resultStorage);
+        $this->sut = new StorageBasedTester($this->tester,
+          $this->resultStorage);
     }
 
     /**
      * @covers ::__construct
      */
-    public function testConstruct() {
-        $this->sut = new StorageBasedTester($this->tester, $this->resultStorage);
+    public function testConstruct()
+    {
+        $this->sut = new StorageBasedTester($this->tester,
+          $this->resultStorage);
     }
 
     /**
      * @covers ::run
      */
-    public function testRun() {
+    public function testRun()
+    {
         $url = new Url();
 
         $this->tester->expects($this->once())
@@ -61,8 +67,8 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase  {
           ->with($url);
 
         $this->resultStorage->expects($this->once())
-            ->method('saveUrl')
-            ->with($url);
+          ->method('saveUrl')
+          ->with($url);
 
         $this->sut->run($url);
     }

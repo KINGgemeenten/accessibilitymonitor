@@ -12,52 +12,53 @@ use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
 /**
  * Represents a URL for a website.
  */
-class Url implements TestingStatusInterface {
+class Url implements TestingStatusInterface
+{
 
-  /**
-   * The URL ID.
-   *
-   * @var int
-   */
-  protected $id;
+    /**
+     * The URL ID.
+     *
+     * @var int
+     */
+    protected $id;
 
-  /**
-   * The time of the analysis.
-   *
-   * @var int
-   *   A Unix timestamp.
-   */
-  protected $analysis;
+    /**
+     * The time of the analysis.
+     *
+     * @var int
+     *   A Unix timestamp.
+     */
+    protected $analysis;
 
-  /**
-   * The ID of the website test results the URL is for.
-   *
-   * @var int
-   */
-  protected $websiteTestResultsId;
+    /**
+     * The ID of the website test results the URL is for.
+     *
+     * @var int
+     */
+    protected $websiteTestResultsId;
 
-  /**
-   * The URL itself.
-   *
-   * @var string
-   */
-  protected $url;
+    /**
+     * The URL itself.
+     *
+     * @var string
+     */
+    protected $url;
 
-  /**
-   * The current testing status.
-   *
-   * @var int
-   *   One of the self::STATUS_* constants.
-   */
-  protected $testingStatus;
+    /**
+     * The current testing status.
+     *
+     * @var int
+     *   One of the self::STATUS_* constants.
+     */
+    protected $testingStatus;
 
-  /**
-   * The current testing priority.
-   *
-   * @var int
-   *   A lower value means a higher priority.
-   */
-  protected $priority = 0;
+    /**
+     * The current testing priority.
+     *
+     * @var int
+     *   A lower value means a higher priority.
+     */
+    protected $priority = 0;
 
     /**
      * The Quail test results.
@@ -74,237 +75,254 @@ class Url implements TestingStatusInterface {
      */
     protected $quailResultCases = [];
 
-  /**
-   * The Google PageSpeed test results.
-   *
-   * @var string
-   */
-  protected $googlePageSpeedResult;
+    /**
+     * The Google PageSpeed test results.
+     *
+     * @var string
+     */
+    protected $googlePageSpeedResult;
 
-  /**
-   * The CMS that powers this URL.
-   *
-   * @var string
-   */
-  protected $cms;
+    /**
+     * The CMS that powers this URL.
+     *
+     * @var string
+     */
+    protected $cms;
 
-  /**
-   * Whether this is a website's root URL.
-   *
-   * @var bool
-   */
-  protected $isRoot = FALSE;
+    /**
+     * Whether this is a website's root URL.
+     *
+     * @var bool
+     */
+    protected $isRoot = false;
 
-  /**
-   * Returns the URL ID.
-   *
-   * @return int
-   */
-  public function getId() {
-    return $this->id;
-  }
-
-  /**
-   * Sets the URL ID.
-   *
-   * @param int $id
-   *
-   * @return $this
-   */
-  public function setId($id) {
-    if ($this->id) {
-      throw new \BadMethodCallException('This URL already has an ID.');
-    }
-    else {
-      $this->id = $id;
+    /**
+     * Returns the URL ID.
+     *
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
     }
 
-    return $this;
-  }
+    /**
+     * Sets the URL ID.
+     *
+     * @param int $id
+     *
+     * @return $this
+     */
+    public function setId($id)
+    {
+        if ($this->id) {
+            throw new \BadMethodCallException('This URL already has an ID.');
+        } else {
+            $this->id = $id;
+        }
 
-  /**
-   * Returns the ID of the website test results this URL is for.
-   *
-   * @return int
-   */
-  public function getWebsiteTestResultsId() {
-    return $this->websiteTestResultsId;
-  }
-
-  /**
-   * Sets the URL's website test results ID.
-   *
-   * @param int $website_test_results_id
-   *
-   * @return $this
-   */
-  public function setWebsiteTestResultsId($website_test_results_id) {
-    if ($this->websiteTestResultsId) {
-      throw new \BadMethodCallException('This URL already has a website test results ID.');
-    }
-    else {
-      $this->websiteTestResultsId = $website_test_results_id;
+        return $this;
     }
 
-    return $this;
-  }
-
-  /**
-   * Returns the URL.
-   *
-   * @return string
-   */
-  public function getUrl() {
-    return $this->url;
-  }
-
-  /**
-   * Get the main domain for this url.
-   *
-   * @return string
-   */
-  public function getMainDomain() {
-    $urlarr = parse_url($this->url);
-    $fqdArr = explode('.', $urlarr['host']);
-    if (count($fqdArr) > 2) {
-      $partcount = count($fqdArr);
-      return $fqdArr[$partcount - 2] . '.' . $fqdArr[$partcount - 1];
-    }
-    // In the other case, it's just the host.
-    return $urlarr['host'];
-  }
-
-  /**
-   * Get the hostname of the url.
-   *
-   * @return mixed
-   */
-  public function getHostName() {
-    $urlarr = parse_url($this->url);
-    return $urlarr['host'];
-  }
-
-  /**
-   * Sets the URL itself.
-   *
-   * @param string $url
-   *
-   * @return $this
-   */
-  public function setUrl($url) {
-    $url = Validator::validateUrl($url);
-    if ($this->url) {
-      throw new \BadMethodCallException('This URL already has a URL.');
-    }
-    elseif ($url === FALSE) {
-      throw new \InvalidArgumentException(sprintf('%s is not a valid URL.', $url));
-    }
-    else {
-      $this->url = $url;
+    /**
+     * Returns the ID of the website test results this URL is for.
+     *
+     * @return int
+     */
+    public function getWebsiteTestResultsId()
+    {
+        return $this->websiteTestResultsId;
     }
 
-    return $this;
-  }
+    /**
+     * Sets the URL's website test results ID.
+     *
+     * @param int $website_test_results_id
+     *
+     * @return $this
+     */
+    public function setWebsiteTestResultsId($website_test_results_id)
+    {
+        if ($this->websiteTestResultsId) {
+            throw new \BadMethodCallException('This URL already has a website test results ID.');
+        } else {
+            $this->websiteTestResultsId = $website_test_results_id;
+        }
 
-  /**
-   * Returns the current testing status.
-   *
-   * @return int
-   *   One of the self::STATUS_* constants.
-   */
-  public function getTestingStatus() {
-    return $this->testingStatus;
-  }
+        return $this;
+    }
 
-  /**
-   * Sets the current testing status.
-   *
-   * @param int $testing_status
-   *   One of the self::STATUS_* constants.
-   *
-   * @return $this
-   */
-  public function setTestingStatus($testing_status) {
-    $this->testingStatus = $testing_status;
+    /**
+     * Returns the URL.
+     *
+     * @return string
+     */
+    public function getUrl()
+    {
+        return $this->url;
+    }
 
-    return $this;
-  }
+    /**
+     * Sets the URL itself.
+     *
+     * @param string $url
+     *
+     * @return $this
+     */
+    public function setUrl($url)
+    {
+        $url = Validator::validateUrl($url);
+        if ($this->url) {
+            throw new \BadMethodCallException('This URL already has a URL.');
+        } elseif ($url === false) {
+            throw new \InvalidArgumentException(sprintf('%s is not a valid URL.',
+              $url));
+        } else {
+            $this->url = $url;
+        }
 
-  /**
-   * Returns the testing priority.
-   *
-   * @return int
-   *   A lower value means a higher priority.
-   */
-  public function getPriority() {
-    return $this->priority;
-  }
+        return $this;
+    }
 
-  /**
-   * Sets the testing priority.
-   *
-   * @param int $priority
-   *   A lower value means a higher priority.
-   *
-   * @return $this
-   */
-  public function setPriority($priority) {
-    $this->priority = $priority;
+    /**
+     * Get the main domain for this url.
+     *
+     * @return string
+     */
+    public function getMainDomain()
+    {
+        $urlarr = parse_url($this->url);
+        $fqdArr = explode('.', $urlarr['host']);
+        if (count($fqdArr) > 2) {
+            $partcount = count($fqdArr);
 
-    return $this;
-  }
+            return $fqdArr[$partcount - 2] . '.' . $fqdArr[$partcount - 1];
+        }
 
-  /**
-   * Returns the CMS that powers the URL.
-   *
-   * @return string
-   */
-  public function getCms() {
-    return $this->cms;
-  }
+        // In the other case, it's just the host.
+        return $urlarr['host'];
+    }
 
-  /**
-   * Sets the CMS that powers the URL.
-   *
-   * @param string $cms
-   *
-   * @return $this
-   */
-  public function setCms($cms) {
-    $this->cms = $cms;
+    /**
+     * Get the hostname of the url.
+     *
+     * @return mixed
+     */
+    public function getHostName()
+    {
+        $urlarr = parse_url($this->url);
 
-    return $this;
-  }
+        return $urlarr['host'];
+    }
 
-  /**
-   * Returns the Quail test results.
-   *
-   * @return string
-   *   Quail's JSON output.
-   */
-  public function getQuailResult() {
-    return $this->quailResult;
-  }
+    /**
+     * Returns the current testing status.
+     *
+     * @return int
+     *   One of the self::STATUS_* constants.
+     */
+    public function getTestingStatus()
+    {
+        return $this->testingStatus;
+    }
 
-  /**
-   * Sets the Quail test results.
-   *
-   * @param string $result
-   *
-   * @return $this
-   */
-  public function setQuailResult($result) {
-    $this->quailResult = $result;
+    /**
+     * Sets the current testing status.
+     *
+     * @param int $testing_status
+     *   One of the self::STATUS_* constants.
+     *
+     * @return $this
+     */
+    public function setTestingStatus($testing_status)
+    {
+        $this->testingStatus = $testing_status;
 
-    return $this;
-  }
+        return $this;
+    }
+
+    /**
+     * Returns the testing priority.
+     *
+     * @return int
+     *   A lower value means a higher priority.
+     */
+    public function getPriority()
+    {
+        return $this->priority;
+    }
+
+    /**
+     * Sets the testing priority.
+     *
+     * @param int $priority
+     *   A lower value means a higher priority.
+     *
+     * @return $this
+     */
+    public function setPriority($priority)
+    {
+        $this->priority = $priority;
+
+        return $this;
+    }
+
+    /**
+     * Returns the CMS that powers the URL.
+     *
+     * @return string
+     */
+    public function getCms()
+    {
+        return $this->cms;
+    }
+
+    /**
+     * Sets the CMS that powers the URL.
+     *
+     * @param string $cms
+     *
+     * @return $this
+     */
+    public function setCms($cms)
+    {
+        $this->cms = $cms;
+
+        return $this;
+    }
+
+    /**
+     * Returns the Quail test results.
+     *
+     * @return string
+     *   Quail's JSON output.
+     */
+    public function getQuailResult()
+    {
+        return $this->quailResult;
+    }
+
+    /**
+     * Sets the Quail test results.
+     *
+     * @param string $result
+     *
+     * @return $this
+     */
+    public function setQuailResult($result)
+    {
+        $this->quailResult = $result;
+
+        return $this;
+    }
 
     /**
      * Returns the Quail test result cases.
      *
      * @return array[]
      */
-    public function getQuailResultCases() {
+    public function getQuailResultCases()
+    {
         return $this->quailResultCases;
     }
 
@@ -315,79 +333,86 @@ class Url implements TestingStatusInterface {
      *
      * @return $this
      */
-    public function setQuailResultCases(array $cases) {
+    public function setQuailResultCases(array $cases)
+    {
         $this->quailResultCases = $cases;
 
         return $this;
     }
 
-  /**
-   * Returns the Google PageSpeed test results.
-   *
-   * @return string
-   */
-  public function getGooglePageSpeedResult() {
-    return $this->googlePageSpeedResult;
-  }
+    /**
+     * Returns the Google PageSpeed test results.
+     *
+     * @return string
+     */
+    public function getGooglePageSpeedResult()
+    {
+        return $this->googlePageSpeedResult;
+    }
 
-  /**
-   * Sets the Google PageSpeed test results.
-   *
-   * @param string $result
-   *
-   * @return $this
-   */
-  public function setGooglePageSpeedResult($result) {
-    $this->googlePageSpeedResult = $result;
+    /**
+     * Sets the Google PageSpeed test results.
+     *
+     * @param string $result
+     *
+     * @return $this
+     */
+    public function setGooglePageSpeedResult($result)
+    {
+        $this->googlePageSpeedResult = $result;
 
-    return $this;
-  }
+        return $this;
+    }
 
-  /**
-   * Returns the time of the analysis.
-   *
-   * @return int
-   *   A Unix timestamp.
-   */
-  public function getAnalysis() {
-    return $this->analysis;
-  }
+    /**
+     * Returns the time of the analysis.
+     *
+     * @return int
+     *   A Unix timestamp.
+     */
+    public function getAnalysis()
+    {
+        return $this->analysis;
+    }
 
-  /**
-   * Sets the time of the analysis.
-   *
-   * @param int $analysis
-   *   A Unix timestamp.
-   *
-   * @return $this
-   */
-  public function setAnalysis($analysis) {
-    $this->analysis = $analysis;
+    /**
+     * Sets the time of the analysis.
+     *
+     * @param int $analysis
+     *   A Unix timestamp.
+     *
+     * @return $this
+     */
+    public function setAnalysis($analysis)
+    {
+        $this->analysis = $analysis;
 
-    return $this;
-  }
+        return $this;
+    }
 
-  /**
-   * Sets whether this URL is a root URL.
-   *
-   * @param bool $is_root
-   *
-   * @return $this
-   */
-  public function setRoot($is_root = TRUE) {
-    $this->isRoot = $is_root;
+    /**
+     * Sets whether this URL is a root URL.
+     *
+     * @param bool $is_root
+     *
+     * @return $this
+     */
+    public function setRoot($is_root = true)
+    {
+        $this->isRoot = $is_root;
 
-    return $this;
-  }
+        return $this;
+    }
 
-  /**
-   * Returns whether this URL is a root URL.
-   *
-   * @return int
-   *   A Unix timestamp.
-   */
-  public function isRoot() {
-    return $this->isRoot;
-  }
+    /**
+     * Returns whether this URL is a root URL.
+     *
+     * @return int
+     *   A Unix timestamp.
+     */
+    public function isRoot()
+    {
+        return $this->isRoot;
+    }
 
 }

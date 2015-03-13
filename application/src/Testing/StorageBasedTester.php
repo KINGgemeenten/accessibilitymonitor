@@ -13,7 +13,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * Provides a storage-based tester.
  */
-class StorageBasedTester implements TesterInterface {
+class StorageBasedTester implements TesterInterface
+{
 
     /**
      * The result storage.
@@ -35,12 +36,16 @@ class StorageBasedTester implements TesterInterface {
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
      */
-    public function __construct(TesterInterface $tester, StorageInterface $resultStorage) {
+    public function __construct(
+      TesterInterface $tester,
+      StorageInterface $resultStorage
+    ) {
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
     }
 
-    public function run(Url $url) {
+    public function run(Url $url)
+    {
         // @todo Add a check to prevent DOS effects taking place on the website
         //   under test. See https://support.triquanta.nl/issues/16918.
         $this->tester->run($url);

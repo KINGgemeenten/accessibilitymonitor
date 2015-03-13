@@ -24,3 +24,27 @@ Dit zorgt er voor dat de Solr omgeving (phantomcore) gevuld wordt. En dit zorgt 
 weet welke velden in Solr staan.
 
 - Let op dat je in de servercontrol niet develop maar master uitcheckt!!!! (in eerste instantie)
+
+Development
+===========
+
+PSR-1 & PSR-2
+-------------
+All code must be written according the
+[PSR-1](http://www.php-fig.org/psr/psr-1/) and
+[PSR-2](http://www.php-fig.org/psr/psr-2/) guidelines.
+
+PSR-4
+-----
+Class and interface autoloading is done using
+[PSR-4](http://www.php-fig.org/psr/psr-4/) using the following namespace
+mappings:
+
+* `\Triquanta\AccessibilityMonitor` maps to `./applicaiton/src`
+* `\Triquanta\Tests\AccessibilityMonitor` maps to `./application/tests/src`
+
+Testing
+-------
+The library comes with [PHPUnit](https://phpunit.de/)-based tests that can be
+run using `./application/phpunit.xml.dist`. All tests are located in
+`\Triquanta\Tests\AccessibilityMonitor`.

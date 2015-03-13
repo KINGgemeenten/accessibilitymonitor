@@ -12,7 +12,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * @coversDefaultClass \Triquanta\AccessibilityMonitor\Testing\QuailTester
  */
-class QuailTesterTest extends \PHPUnit_Framework_TestCase  {
+class QuailTesterTest extends \PHPUnit_Framework_TestCase
+{
 
     /**
      * The logger.
@@ -35,7 +36,8 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase  {
      */
     protected $sut;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
 
         $this->phantomJs = $this->getMock('\Triquanta\AccessibilityMonitor\PhantomJsInterface');
@@ -46,7 +48,8 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase  {
     /**
      * @covers ::__construct
      */
-    public function testConstruct() {
+    public function testConstruct()
+    {
         $this->sut = new QuailTester($this->phantomJs, $this->logger);
     }
 
@@ -55,7 +58,8 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase  {
      * @covers ::processQuailResult
      * @covers ::getWcag2Mapping
      */
-    public function testRun() {
+    public function testRun()
+    {
         $urlString = 'http://example.com/' . mt_rand();
 
         $url = new Url();
@@ -69,7 +73,8 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase  {
           ->willReturn($json);
 
         $this->sut->run($url);
-        $this->assertSame(TestingStatusInterface::STATUS_TESTED, $url->getTestingStatus());
+        $this->assertSame(TestingStatusInterface::STATUS_TESTED,
+          $url->getTestingStatus());
         $this->assertNotEmpty($url->getQuailResult());
         $this->assertNotEmpty($url->getQuailResultCases());
     }
@@ -77,7 +82,8 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase  {
     /**
      * @covers ::run
      */
-    public function testRunWithPhantomJsException() {
+    public function testRunWithPhantomJsException()
+    {
         $urlString = 'http://example.com/' . mt_rand();
 
         $url = new Url();
@@ -89,7 +95,8 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase  {
           ->willThrowException(new \Exception());
 
         $this->sut->run($url);
-        $this->assertSame(TestingStatusInterface::STATUS_ERROR, $url->getTestingStatus());
+        $this->assertSame(TestingStatusInterface::STATUS_ERROR,
+          $url->getTestingStatus());
         $this->assertEmpty($url->getQuailResult());
         $this->assertEmpty($url->getQuailResultCases());
     }

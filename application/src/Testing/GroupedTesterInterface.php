@@ -10,7 +10,8 @@ namespace Triquanta\AccessibilityMonitor\Testing;
 /**
  * Defines a grouped tester.
  */
-interface GroupedTesterInterface extends TesterInterface {
+interface GroupedTesterInterface extends TesterInterface
+{
 
     /**
      * Adds a tester.
