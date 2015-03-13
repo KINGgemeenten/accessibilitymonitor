@@ -39,7 +39,6 @@ class Console extends ConsoleApplication {
    * Constructs a new instance.
    */
   public function __construct(ContainerInterface $container, CommandDiscoveryInterface $command_discovery, LoggerInterface $logger, EventDispatcherInterface $event_dispatcher, PhantomJsInterface $phantom_js) {
-    $phantom_js->killStalledProcesses();
     parent::__construct('Triquanta Accessibility Monitor', Application::VERSION);
     $this->setDispatcher($event_dispatcher);
 

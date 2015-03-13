@@ -7,6 +7,8 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Provides a Phantom JS manager.
  */
@@ -18,6 +20,13 @@ class PhantomJs implements PhantomJsInterface {
    * @var string
    */
   protected $executable;
+
+    /**
+     * The logger.
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
 
   /**
    * The application's root directory.
@@ -37,20 +46,21 @@ class PhantomJs implements PhantomJsInterface {
   /**
    * Constructs a new instance.
    *
+   * @param \Psr\Log\LoggerInterface $logger
    * @param string $executable
    * @param int $timeout
    * @param string $root_directory
    */
-  public function __construct($executable, $timeout, $root_directory) {
+  public function __construct(LoggerInterface $logger, $executable, $timeout, $root_directory) {
     $this->executable = $executable;
+    $this->logger = $logger;
     $this->rootDirectory = $root_directory;
     $this->timeout = $timeout;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function getDetectedApps($url) {
+      $this->killStalledProcesses();
+
     // Add http, if not present.
     if (! preg_match('/^http/', $url)) {
       $url = 'http://' . $url;
@@ -79,30 +89,39 @@ class PhantomJs implements PhantomJsInterface {
     return $detectedAppsArray;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function getQuailResults($url) {
-    $command = $this->executable . ' --ignore-ssl-errors=yes --ssl-protocol=any ' . $this->rootDirectory . '/phantomquail.js ' . $url;
-    $command = '/opt/quail/bin/quail -u ' . $url . ' -R wcag2';
-    // Print some debug info.
-//    $this->logger->debug('Starting phantomjs');
-    $output = $this->execTimeout($command, $this->timeout);
-   // $this->logger->debug($output);
-//    $this->logger->debug('Phantomjs executed succesfully.');
+  public function getQuailResult($url) {
+      $this->killStalledProcesses();
 
-    return $output;
+    $command = '/opt/quail/bin/quail -u ' . $url . ' -R wcag2';
+    $this->logger->debug('Starting phantomjs');
+    $output = $this->execTimeout($command, $this->timeout);
+    $this->logger->debug('Phantomjs executed succesfully.');
+
+      $lines = preg_split("/((\r?\n)|(\r\n?))/", $output);
+
+      $results = null;
+      foreach ($lines as $line) {
+          // If the line starts with [{ we assume it is a json string with the quail results
+          if ($line != '' && preg_match("/^\[{/", $line)) {
+              return $line;
+          }
+      }
+      return null;
   }
 
   /**
-   * Execute a command and return it's output. Either wait until the command exits or the timeout has expired.
+   * Executes a shell command with a timeout.
    *
    * This function is based on the following solution:
    * http://blog.dubbelboer.com/2012/08/24/execute-with-timeout.html
    *
-   * @param string $cmd     Command to execute.
-   * @param number $timeout Timeout in seconds.
+   * @param string $cmd
+   *   Command to execute.
+   * @param int $timeout
+   *   Timeout in seconds.
+   *
    * @return string Output of the command.
+   *
    * @throws \Exception
    */
   protected function execTimeout($cmd, $timeout) {
@@ -114,7 +133,7 @@ class PhantomJs implements PhantomJsInterface {
       2 => array('pipe', 'w')   // stderr
     );
 
-//    $this->logger->debug('Openining processes');
+    $this->logger->debug('Openining processes');
     // Start the process.
     $process = proc_open(escapeshellcmd('exec ' . $cmd), $descriptors, $pipes);
 
@@ -138,7 +157,7 @@ class PhantomJs implements PhantomJsInterface {
       // Wait until we have output or the timer expired.
       $read  = array($pipes[1]);
       $other = array();
-//      $this->logger->debug('Before stream_select');
+      $this->logger->debug('Before stream_select');
       stream_select($read, $other, $other, 0, $timeout);
 
       // Get the status of the process.
@@ -146,11 +165,11 @@ class PhantomJs implements PhantomJsInterface {
       // this way we can't lose the last bit of output if the process dies between these functions.
       $status = proc_get_status($process);
 
-//      $this->logger->debug('Getting stream content.');
+      $this->logger->debug('Getting stream content.');
       // Read the contents from the buffer.
       // This function will always return immediately as the stream is none-blocking.
       $buffer .= stream_get_contents($pipes[1]);
-//      $this->logger->debug('Buffer filled');
+      $this->logger->debug('Buffer filled');
 
       if (!$status['running']) {
         $timedOut = false;
@@ -175,26 +194,23 @@ class PhantomJs implements PhantomJsInterface {
 
     // Kill the process in case the timeout expired and it's still running.
     // If the process already exited this won't do anything.
-//    $this->logger->debug('Terminating process');
+    $this->logger->debug('Terminating process');
     proc_terminate($process, 9);
-//    $this->logger->debug('Process terminated');
+    $this->logger->debug('Process terminated');
 
     // Close all streams.
     fclose($pipes[0]);
     fclose($pipes[1]);
     fclose($pipes[2]);
 
-//    $this->logger->debug('Pipes closed');
+    $this->logger->debug('Pipes closed');
     proc_close($process);
 
-//    $this->logger->debug('Process closed');
+    $this->logger->debug('Process closed');
 
     return $buffer;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function killStalledProcesses() {
     // @todo This only seems to work on Debian-based systems.
     shell_exec('killall --older-than 2m phantomjs');

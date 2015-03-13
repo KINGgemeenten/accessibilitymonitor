@@ -20,7 +20,7 @@ class Application {
   /**
    * The application's version.
    */
-  const VERSION = '2';
+  const VERSION = '3';
 
   /**
    * The service container.
@@ -42,6 +42,7 @@ class Application {
       $service_loader->load($override_file);
     }
     $container->setParameter('root_directory', dirname(__DIR__));
+    $container->compile();
     static::setContainer($container);
   }
 

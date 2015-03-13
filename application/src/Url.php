@@ -7,6 +7,8 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
+
 /**
  * Represents a URL for a website.
  */
@@ -57,20 +59,27 @@ class Url implements TestingStatusInterface {
    */
   protected $priority = 0;
 
-  /**
-   * The Quail test results.
-   *
-   * @var string
-   *   Quail's JSON output.
-   */
-  protected $quailResult;
+    /**
+     * The Quail test results.
+     *
+     * @var string
+     *   Quail's JSON output, minus the cases.
+     */
+    protected $quailResult;
+
+    /**
+     * The Quail test result cases.
+     *
+     * @var array[]
+     */
+    protected $quailResultCases = [];
 
   /**
    * The Google PageSpeed test results.
    *
    * @var string
    */
-  protected $googlePagespeedResult;
+  protected $googlePageSpeedResult;
 
   /**
    * The CMS that powers this URL.
@@ -290,13 +299,35 @@ class Url implements TestingStatusInterface {
     return $this;
   }
 
+    /**
+     * Returns the Quail test result cases.
+     *
+     * @return array[]
+     */
+    public function getQuailResultCases() {
+        return $this->quailResultCases;
+    }
+
+    /**
+     * Sets the Quail test result cases.
+     *
+     * @param array[] $cases
+     *
+     * @return $this
+     */
+    public function setQuailResultCases(array $cases) {
+        $this->quailResultCases = $cases;
+
+        return $this;
+    }
+
   /**
    * Returns the Google PageSpeed test results.
    *
    * @return string
    */
-  public function getGooglePagespeedResult() {
-    return $this->googlePagespeedResult;
+  public function getGooglePageSpeedResult() {
+    return $this->googlePageSpeedResult;
   }
 
   /**
@@ -306,8 +337,8 @@ class Url implements TestingStatusInterface {
    *
    * @return $this
    */
-  public function setGooglePagespeedResult($result) {
-    $this->googlePagespeedResult = $result;
+  public function setGooglePageSpeedResult($result) {
+    $this->googlePageSpeedResult = $result;
 
     return $this;
   }

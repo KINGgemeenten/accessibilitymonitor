@@ -257,7 +257,7 @@ class PhantomQuailWorker extends \Thread {
 
     $url = $this->url->getUrl();
     try {
-      $output = $this->phantomJs->getQuailResults($url);
+      $output = $this->phantomJs->getQuailResult($url);
       $lines = preg_split("/((\r?\n)|(\r\n?))/", $output);
 
       // @TODO: check if we need the count for solr.
