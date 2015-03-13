@@ -86,6 +86,7 @@ ufw_whitelisted_ports:
   -  { port: 8080, protocol: tcp }
   -  { port: 3306, protocol: tcp }
   -  { port: 9000, protocol: tcp }
+  -  { port: 5672, protocol: tcp }
 
 ufw_whitelisted_ipv4_addresses:
   - { address: 192.168.50.1,    port: 8080, protocol: tcp }
@@ -117,3 +118,11 @@ quail_branch: dev
 #quail_git_repo: https://github.com/WilcoFiers/quail.git
 
 php55_cli_add_mongo: false
+
+# Rabbit mq
+rabbitmq_users:
+  - name: test
+    password: test
+    write_priv: .*
+    read_priv: .*
+    configure_priv: .*
