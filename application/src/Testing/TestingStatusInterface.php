@@ -5,7 +5,7 @@
  * Contains \Triquanta\AccessibilityMonitor\TestingStatusInterface.
  */
 
-namespace Triquanta\AccessibilityMonitor;
+namespace Triquanta\AccessibilityMonitor\Testing;
 
 /**
  * Defines testing statuses.

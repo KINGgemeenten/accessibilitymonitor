@@ -7,6 +7,8 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
+
 /**
  * Defines a storage manager.
  */

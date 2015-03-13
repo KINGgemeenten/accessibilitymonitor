@@ -32,7 +32,7 @@ interface PhantomJsInterface {
    * @return string
    *   The JSON results.
    */
-  public function getQuailResults($url);
+  public function getQuailResult($url);
 
   /**
    * Kill all stalled phantomjs processes.
