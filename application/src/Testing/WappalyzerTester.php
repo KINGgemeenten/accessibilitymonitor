@@ -13,7 +13,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * Provides a Wappalyzer tester.
  */
-class WappalyzerTester implements TesterInterface {
+class WappalyzerTester implements TesterInterface
+{
 
     /**
      * The Phantom JS manager.
@@ -27,13 +28,16 @@ class WappalyzerTester implements TesterInterface {
      *
      * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface
      */
-    public function __construct(PhantomJsInterface $phantomJs) {
+    public function __construct(PhantomJsInterface $phantomJs)
+    {
         $this->phantomJs = $phantomJs;
     }
 
-    public function run(Url $url) {
+    public function run(Url $url)
+    {
         if ($url->isRoot()) {
-            $url->setCms(implode('|', $this->phantomJs->getDetectedApps($url->getUrl())));
+            $url->setCms(implode('|',
+              $this->phantomJs->getDetectedApps($url->getUrl())));
         }
     }
 

@@ -10,33 +10,34 @@ namespace Triquanta\AccessibilityMonitor;
 /**
  * Defines a Phantom JS manager.
  */
-interface PhantomJsInterface {
+interface PhantomJsInterface
+{
 
-  /**
-   * Detects the apps powering a URL.
-   *
-   * @param string $url
-   *   The URL to scan.
-   *
-   * @return string[]
-   *   The names of the detected apps.
-   */
-  public function getDetectedApps($url);
+    /**
+     * Detects the apps powering a URL.
+     *
+     * @param string $url
+     *   The URL to scan.
+     *
+     * @return string[]
+     *   The names of the detected apps.
+     */
+    public function getDetectedApps($url);
 
-  /**
-   * Gets the Quail analysis results for a URL.
-   *
-   * @param string $url
-   *   The URL to scan.
-   *
-   * @return string
-   *   The JSON results.
-   */
-  public function getQuailResult($url);
+    /**
+     * Gets the Quail analysis results for a URL.
+     *
+     * @param string $url
+     *   The URL to scan.
+     *
+     * @return string
+     *   The JSON results.
+     */
+    public function getQuailResult($url);
 
-  /**
-   * Kill all stalled phantomjs processes.
-   */
-  public function killStalledProcesses();
+    /**
+     * Kill all stalled phantomjs processes.
+     */
+    public function killStalledProcesses();
 
 }

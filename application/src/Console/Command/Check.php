@@ -76,14 +76,15 @@ class Check extends Command implements ContainerFactoryInterface
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $url = new Url();
-        $url->setRoot(TRUE);
+        $url->setRoot(true);
         $url->setUrl($input->getArgument('url'));
 
-        $this->logger->info(sprintf('Testing %s. The result will not be stored.', $url->getUrl()));
+        $this->logger->info(sprintf('Testing %s. The result will not be stored.',
+          $url->getUrl()));
 
-        $start = microtime(TRUE);
+        $start = microtime(true);
         $this->tester->run($url);
-        $end = microtime(TRUE);
+        $end = microtime(true);
 
         // @todo Decide how to output the test results.
 

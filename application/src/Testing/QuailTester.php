@@ -14,7 +14,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * Provides a Quail tester.
  */
-class QuailTester implements TesterInterface {
+class QuailTester implements TesterInterface
+{
 
     /**
      * The logger.
@@ -36,12 +37,16 @@ class QuailTester implements TesterInterface {
      * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface $phantomJs
      * @param \Psr\Log\LoggerInterface $logger
      */
-    public function __construct(PhantomJsInterface $phantomJs, LoggerInterface $logger) {
+    public function __construct(
+      PhantomJsInterface $phantomJs,
+      LoggerInterface $logger
+    ) {
         $this->logger = $logger;
         $this->phantomJs = $phantomJs;
     }
 
-    public function run(Url $url) {
+    public function run(Url $url)
+    {
         try {
             $result = $this->phantomJs->getQuailResult($url->getUrl());
             $this->processQuailResult($url, $result);
@@ -58,7 +63,8 @@ class QuailTester implements TesterInterface {
     /**
      * @param \Triquanta\AccessibilityMonitor\Url $url
      */
-    protected function processQuailResult(Url $url, $result) {
+    protected function processQuailResult(Url $url, $result)
+    {
         $quailFinalResults = array();
         // Store the quailCases in a temporary array.
         $quailCases = array();
@@ -69,14 +75,17 @@ class QuailTester implements TesterInterface {
             // Extract the most important cases.
             // First check if there is a pointer, because if there is none,
             // the cases doesn't need to be stored.
-            if (property_exists($criterium, 'hasPart') && count($criterium->hasPart)) {
+            if (property_exists($criterium,
+                'hasPart') && count($criterium->hasPart)
+            ) {
                 foreach ($criterium->hasPart as $case) {
                     // Check if there is a pointer in the outcome.
                     // The pointer contains the html snippet we need.
                     if (isset($case->outcome->pointer) && isset($case->outcome->pointer[0]->chars) && ($case->outcome->result == 'failed' || $case->outcome->result == 'cantTell')) {
                         // Create the unique key, to prevent that we store only one case per testCase per criterium.
-                        $uniqueKey = str_replace('.', '_', $criteriumNumber) . '_' . $case->testCase . '_' . $case->outcome->result;
-                        if (! isset ($quailCases[$uniqueKey])) {
+                        $uniqueKey = str_replace('.', '_',
+                            $criteriumNumber) . '_' . $case->testCase . '_' . $case->outcome->result;
+                        if (!isset ($quailCases[$uniqueKey])) {
                             // Add the unique key to the case.
                             $case->uniqueKey = $uniqueKey;
                             // Add the criteriumName to the case.
@@ -104,7 +113,8 @@ class QuailTester implements TesterInterface {
      *
      * @return array
      */
-    protected function getWcag2Mapping() {
+    protected function getWcag2Mapping()
+    {
         $wcag20Mapping = [
           "wcag20:text-equiv-all" => "1.1.1",
           "wcag20:media-equiv-av-only-alt" => "1.2.1",

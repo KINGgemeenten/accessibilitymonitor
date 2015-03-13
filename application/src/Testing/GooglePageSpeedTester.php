@@ -15,7 +15,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * Provides a Google PageSpeed tester.
  */
-class GooglePageSpeedTester implements TesterInterface {
+class GooglePageSpeedTester implements TesterInterface
+{
 
     /**
      * The API key.
@@ -61,7 +62,13 @@ class GooglePageSpeedTester implements TesterInterface {
      * @param string $apiUrl
      * @param string $apiStrategy
      */
-    public function __construct(LoggerInterface $logger, ClientInterface $httpClient, $apiKey, $apiUrl, $apiStrategy) {
+    public function __construct(
+      LoggerInterface $logger,
+      ClientInterface $httpClient,
+      $apiKey,
+      $apiUrl,
+      $apiStrategy
+    ) {
         $this->apiKey = $apiKey;
         $this->apiStrategy = $apiStrategy;
         $this->apiUrl = $apiUrl;
@@ -69,10 +76,12 @@ class GooglePageSpeedTester implements TesterInterface {
         $this->logger = $logger;
     }
 
-    public function run(Url $url) {
+    public function run(Url $url)
+    {
         if ($url->isRoot()) {
             try {
-                $request = $this->httpClient->createRequest('GET', $this->apiUrl);
+                $request = $this->httpClient->createRequest('GET',
+                  $this->apiUrl);
                 $request->getQuery()->set('key', $this->apiKey);
                 $request->getQuery()->set('locale', 'nl');
                 $request->getQuery()->set('url', $url->getUrl());
@@ -81,9 +90,9 @@ class GooglePageSpeedTester implements TesterInterface {
 
                 $response = $this->httpClient->send($request);
 
-                $url->setGooglePageSpeedResult($response->getBody()->getContents());
-            }
-            catch (ClientException $e) {
+                $url->setGooglePageSpeedResult($response->getBody()
+                  ->getContents());
+            } catch (ClientException $e) {
                 $this->logger->emergency($e->getMessage());
             }
         }

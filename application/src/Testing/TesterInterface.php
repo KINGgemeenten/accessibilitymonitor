@@ -12,7 +12,8 @@ use Triquanta\AccessibilityMonitor\Url;
 /**
  * Defines a tester.
  */
-interface TesterInterface {
+interface TesterInterface
+{
 
     /**
      * Runs the test for a URL.
