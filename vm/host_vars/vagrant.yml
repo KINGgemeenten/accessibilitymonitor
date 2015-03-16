@@ -121,8 +121,8 @@ php55_cli_add_mongo: false
 
 # Rabbit mq
 rabbitmq_users:
-  - name: test
-    password: test
+  - name: inspector
+    password: z31lb00t
     write_priv: .*
     read_priv: .*
     configure_priv: .*
