@@ -24,6 +24,10 @@ parameters:
   google_pagespeed.api_strategy: mobile
   google_pagespeed.api_fetch_limit: 10
   queue.name: inspector
+  queue.host: localhost
+  queue.port: 5672
+  queue.user: guest
+  queue.password: guest
 
 services:
   queue:
