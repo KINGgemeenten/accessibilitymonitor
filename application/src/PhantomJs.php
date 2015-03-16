@@ -176,7 +176,6 @@ class PhantomJs implements PhantomJsInterface
             // Wait until we have output or the timer expired.
             $read = array($pipes[1]);
             $other = array();
-            $this->logger->debug('Before stream_select');
             stream_select($read, $other, $other, 0, $timeout);
 
             // Get the status of the process.
@@ -184,7 +183,6 @@ class PhantomJs implements PhantomJsInterface
             // this way we can't lose the last bit of output if the process dies between these functions.
             $status = proc_get_status($process);
 
-            $this->logger->debug('Getting stream content.');
             // Read the contents from the buffer.
             // This function will always return immediately as the stream is none-blocking.
             $buffer .= stream_get_contents($pipes[1]);

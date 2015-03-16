@@ -43,8 +43,7 @@ class Console extends ConsoleApplication
       ContainerInterface $container,
       CommandDiscoveryInterface $command_discovery,
       LoggerInterface $logger,
-      EventDispatcherInterface $event_dispatcher,
-      PhantomJsInterface $phantom_js
+      EventDispatcherInterface $event_dispatcher
     ) {
         parent::__construct('Triquanta Accessibility Monitor',
           Application::VERSION);

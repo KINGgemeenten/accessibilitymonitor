@@ -89,7 +89,8 @@ class Check extends Command implements ContainerFactoryInterface
         // @todo Decide how to output the test results.
 
         $duration = $end - $start;
-        $output->writeln('<info>Done testing (' . $duration . ' seconds)</info>');
+        $this->logger->info(sprintf('Done testing (%s seconds)',
+          $duration));
     }
 
 }
