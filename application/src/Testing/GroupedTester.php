@@ -29,9 +29,12 @@ class GroupedTester implements GroupedTesterInterface
 
     public function run(Url $url)
     {
+        $results = [];
         foreach ($this->testers as $tester) {
-            $tester->run($url);
+            $results[] = $tester->run($url);
         }
+
+        return !in_array(FALSE, $results, TRUE);
     }
 
 }

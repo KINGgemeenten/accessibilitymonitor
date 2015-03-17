@@ -139,4 +139,17 @@ interface StorageInterface extends TestingStatusInterface
       $website_test_results_id
     );
 
+    /**
+     * Counts the number of URLs that was tested in a specific period.
+     *
+     * @param int $websiteTestResultsId
+     * @param $start
+     *   A UNIX timestamp.
+     * @param $end
+     *   A UNIX timestamp.
+     *
+     * @return int
+     */
+    public function countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($websiteTestResultsId, $start, $end);
+
 }

@@ -38,7 +38,9 @@ class WappalyzerTester implements TesterInterface
         if ($url->isRoot()) {
             $url->setCms(implode('|',
               $this->phantomJs->getDetectedApps($url->getUrl())));
+            return TRUE;
         }
+        return FALSE;
     }
 
 }

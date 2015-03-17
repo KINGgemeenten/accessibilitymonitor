@@ -54,7 +54,7 @@ class GroupedTesterTest extends \PHPUnit_Framework_TestCase
               ->with($url);
         }
 
-        $this->sut->run($url);
+        $this->assertInternalType('bool', $this->sut->run($url));
     }
 
 }

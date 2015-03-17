@@ -92,10 +92,13 @@ class GooglePageSpeedTester implements TesterInterface
 
                 $url->setGooglePageSpeedResult($response->getBody()
                   ->getContents());
+                return TRUE;
             } catch (ClientException $e) {
                 $this->logger->emergency($e->getMessage());
+                return FALSE;
             }
         }
+        return FALSE;
     }
 
 }
