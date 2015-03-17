@@ -16,6 +16,16 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
+     * The flooding thresholds.
+     *
+     * @var int[]
+     *   Keys are periods in seconds, values are maximum number of requests.
+     *   They represent the maximum number of requests that can be made to a
+     *   host in the past period.
+     */
+    protected $floodingThresholds = [];
+
+    /**
      * The result storage.
      *
      * @var \Triquanta\AccessibilityMonitor\StorageInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -38,12 +48,14 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $this->floodingThresholds[mt_rand()] = mt_rand();
+
         $this->resultStorage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
         $this->sut = new StorageBasedTester($this->tester,
-          $this->resultStorage);
+          $this->resultStorage, $this->floodingThresholds);
     }
 
     /**
@@ -52,7 +64,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
     public function testConstruct()
     {
         $this->sut = new StorageBasedTester($this->tester,
-          $this->resultStorage);
+          $this->resultStorage, $this->floodingThresholds);
     }
 
     /**
@@ -70,7 +82,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
           ->method('saveUrl')
           ->with($url);
 
-        $this->sut->run($url);
+        $this->assertInternalType('bool', $this->sut->run($url));
     }
 
 }

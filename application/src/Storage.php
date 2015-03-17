@@ -112,7 +112,9 @@ class Storage implements StorageInterface
           'url_id' => $id,
         ));
 
-        return $this->createUrlFromStorageRecord($query->fetch(\PDO::FETCH_OBJ));
+        $record = $query->fetch(\PDO::FETCH_OBJ);
+
+        return $record ? $this->createUrlFromStorageRecord($record) : NULL;
     }
 
     /**
@@ -320,7 +322,18 @@ class Storage implements StorageInterface
         $query->execute();
 
         return $query->fetchColumn();
+    }
 
+    public function countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($websiteTestResultsId, $start, $end) {
+        $query = $this->database->getConnection()
+          ->prepare("SELECT COUNT(1) FROM url WHERE website_test_results_id = :website_test_results_id AND analysis > :start AND analysis < :end");
+        $query->execute(array(
+          'website_test_results_id' => $websiteTestResultsId,
+          'start' => $start,
+          'end' => $end,
+        ));
+
+        return $query->fetchColumn();
     }
 
     /**

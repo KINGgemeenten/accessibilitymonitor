@@ -65,7 +65,7 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase
           ->with($urlString)
           ->willReturn($detectedApps);
 
-        $this->sut->run($url);
+        $this->assertInternalType('bool', $this->sut->run($url));
         if ($isRoot) {
             $this->assertSame($detectedAppsString, $url->getCms());
         }

@@ -126,23 +126,36 @@ class StartWorker extends Command implements ContainerFactoryInterface
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     public function processMessage(AMQPMessage $message) {
-        $urlId = $message->body;
-        if (preg_match('/^\d+$/', $urlId)) {
+        // Check whether the message format is correct.
+        if (preg_match('/^\d+$/', $message->body)) {
+            $urlId = $message->body;
             $url = $this->resultStorage->getUrlById($urlId);
 
-            $this->logger->info(sprintf('Testing %s.',
-              $url->getUrl()));
+            if ($url) {
+                $this->logger->info(sprintf('Testing %s.',
+                  $url->getUrl()));
 
-            $start = microtime(true);
-            $this->tester->run($url);
-            $end = microtime(true);
+                $start = microtime(true);
+                $result = $this->tester->run($url);
+                $end = microtime(true);
 
-            $duration = $end - $start;
-            $this->logger->info(sprintf('Done testing (%s seconds)',
-              $duration));
+                if ($result) {
+                    $duration = $end - $start;
+                    $this->logger->info(sprintf('Done testing (%s seconds)',
+                      $duration));
+                } // If the URL was not tested, add it back to the queue and stop.
+                else {
+                    $message->delivery_info['channel']->basic_publish($message,
+                      '', $this->queueName);
+                    $this->logger->info('Skipped testing.');
+                }
+            }
+            else {
+                $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
+            }
         }
         else {
-            $this->logger->emergency(sprintf('"%s" is not a valid URL ID.', $urlId));
+            $this->logger->emergency(sprintf('"%s" is not a valid URL ID.', $message->body));
         }
         $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
     }

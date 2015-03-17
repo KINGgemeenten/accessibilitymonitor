@@ -72,7 +72,7 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase
           ->with($urlString)
           ->willReturn($json);
 
-        $this->sut->run($url);
+        $this->assertInternalType('bool', $this->sut->run($url));
         $this->assertSame(TestingStatusInterface::STATUS_TESTED,
           $url->getTestingStatus());
         $this->assertNotEmpty($url->getQuailResult());
@@ -94,7 +94,7 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase
           ->with($urlString)
           ->willThrowException(new \Exception());
 
-        $this->sut->run($url);
+        $this->assertInternalType('bool', $this->sut->run($url));
         $this->assertSame(TestingStatusInterface::STATUS_ERROR,
           $url->getTestingStatus());
         $this->assertEmpty($url->getQuailResult());

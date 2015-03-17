@@ -52,12 +52,16 @@ class QuailTester implements TesterInterface
             $this->processQuailResult($url, $result);
             // Set the status to tested.
             $url->setTestingStatus($url->getQuailResult() ? Url::STATUS_TESTED : Url::STATUS_ERROR);
+            $return = TRUE;
         } catch (\Exception $e) {
             // If there is an exception, probably phantomjs timed out.
             $url->setTestingStatus(Url::STATUS_ERROR);
             $this->logger->error($e->getMessage());
+            $return = FALSE;
         }
         $url->setAnalysis(time());
+
+        return $return;
     }
 
     /**
