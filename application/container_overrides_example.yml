@@ -9,5 +9,7 @@ parameters:
         port: 8080
         path: /solr/phantomcore
         timeout: 10
-  cpu_count: 4
-  quail.worker_count: 30
+  queue.host: localhost
+  queue.port: 5672
+  queue.user: inspector
+  queue.password: z31lb00t
