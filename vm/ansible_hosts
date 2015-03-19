@@ -9,6 +9,9 @@ vagrant
 [solr]
 vagrant
 
+[inspector]
+vagrant
+
 [rabbitmq]
 vagrant
 
