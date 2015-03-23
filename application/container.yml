@@ -51,7 +51,7 @@ services:
     arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%']
   testing.tester:
     class: \Triquanta\AccessibilityMonitor\Testing\StorageBasedTester
-    arguments: ['@testing.tester.grouped', '@testing.result_storage', '%testing.flooding_thresholds%']
+    arguments: ['@logger', '@testing.tester.grouped', '@testing.result_storage', '%testing.flooding_thresholds%']
   testing.tester.grouped:
     class: \Triquanta\AccessibilityMonitor\Testing\GroupedTester
     calls:
