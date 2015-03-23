@@ -26,6 +26,13 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
     protected $floodingThresholds = [];
 
     /**
+     * The logger.
+     *
+     * @var \Psr\Log\LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $logger;
+
+    /**
      * The result storage.
      *
      * @var \Triquanta\AccessibilityMonitor\StorageInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -40,7 +47,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
     protected $sut;
 
     /**
-     * The testers.
+     * The tester.
      *
      * @var \Triquanta\AccessibilityMonitor\Testing\TesterInterface|\PHPUnit_Framework_MockObject_MockObject
      */
@@ -50,11 +57,13 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
     {
         $this->floodingThresholds[mt_rand()] = mt_rand();
 
+        $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
+
         $this->resultStorage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->sut = new StorageBasedTester($this->tester,
+        $this->sut = new StorageBasedTester($this->logger, $this->tester,
           $this->resultStorage, $this->floodingThresholds);
     }
 
@@ -63,7 +72,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new StorageBasedTester($this->tester,
+        $this->sut = new StorageBasedTester($this->logger, $this->tester,
           $this->resultStorage, $this->floodingThresholds);
     }
 
@@ -82,7 +91,25 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
           ->method('saveUrl')
           ->with($url);
 
-        $this->assertInternalType('bool', $this->sut->run($url));
+        $this->assertTrue($this->sut->run($url));
+    }
+
+    /**
+     * @covers ::run
+     */
+    public function testRunWithException()
+    {
+        $url = new Url();
+
+        $this->tester->expects($this->once())
+            ->method('run')
+            ->with($url)
+            ->willThrowException(new \Exception());
+
+        $this->resultStorage->expects($this->never())
+          ->method('saveUrl');
+
+        $this->assertFalse($this->sut->run($url));
     }
 
 }

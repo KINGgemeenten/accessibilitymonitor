@@ -7,6 +7,7 @@
 
 namespace Triquanta\AccessibilityMonitor\Testing;
 
+use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\StorageInterface;
 use Triquanta\AccessibilityMonitor\Url;
 
@@ -34,6 +35,13 @@ class StorageBasedTester implements TesterInterface
     protected $resultStorage;
 
     /**
+     * The logger.
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
+
+    /**
      * The tester.
      *
      * @var \Triquanta\AccessibilityMonitor\Testing\TesterInterface
@@ -51,11 +59,13 @@ class StorageBasedTester implements TesterInterface
      *   host in the past period.
      */
     public function __construct(
+      LoggerInterface $logger,
       TesterInterface $tester,
       StorageInterface $resultStorage,
       array $floodingThresholds
     ) {
         $this->floodingThresholds = $floodingThresholds;
+        $this->logger = $logger;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
     }
@@ -63,9 +73,15 @@ class StorageBasedTester implements TesterInterface
     public function run(Url $url)
     {
         if ($this->preventFlooding($url)) {
-            $this->tester->run($url);
-            $this->resultStorage->saveUrl($url);
-            return TRUE;
+            try {
+                $this->tester->run($url);
+                $this->resultStorage->saveUrl($url);
+                return true;
+            }
+            catch (\Exception $e) {
+                $this->logger->emergency(sprintf('%s on %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));
+                return FALSE;
+            }
         }
         return FALSE;
     }
