@@ -79,26 +79,20 @@ class GooglePageSpeedTester implements TesterInterface
     public function run(Url $url)
     {
         if ($url->isRoot()) {
-            try {
-                $request = $this->httpClient->createRequest('GET',
-                  $this->apiUrl);
-                $request->getQuery()->set('key', $this->apiKey);
-                $request->getQuery()->set('locale', 'nl');
-                $request->getQuery()->set('url', $url->getUrl());
-                $request->getQuery()->set('strategy', $this->apiStrategy);
-                $request->setHeader('User-Agent', 'GT inspector script');
+            $request = $this->httpClient->createRequest('GET',
+              $this->apiUrl);
+            $request->getQuery()->set('key', $this->apiKey);
+            $request->getQuery()->set('locale', 'nl');
+            $request->getQuery()->set('url', $url->getUrl());
+            $request->getQuery()->set('strategy', $this->apiStrategy);
+            $request->setHeader('User-Agent', 'GT inspector script');
 
-                $response = $this->httpClient->send($request);
+            $response = $this->httpClient->send($request);
 
-                $url->setGooglePageSpeedResult($response->getBody()
-                  ->getContents());
-                return TRUE;
-            } catch (ClientException $e) {
-                $this->logger->emergency($e->getMessage());
-                return FALSE;
-            }
+            $url->setGooglePageSpeedResult($response->getBody()
+              ->getContents());
         }
-        return FALSE;
+        return true;
     }
 
 }
