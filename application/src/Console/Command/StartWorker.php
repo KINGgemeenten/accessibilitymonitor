@@ -126,6 +126,7 @@ class StartWorker extends Command implements ContainerFactoryInterface
         $queueChannel->basic_qos(null, 1, null);
         $queueChannel->basic_consume($this->queueName, '', false, false, false, false, [$this, 'processMessage']);
         $start = time();
+        $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds.', $this->ttl));
         while(count($queueChannel->callbacks) && $start + $this->ttl > time()) {
             $queueChannel->wait();
         }
