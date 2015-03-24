@@ -61,6 +61,13 @@ class StartWorker extends Command implements ContainerFactoryInterface
     protected $tester;
 
     /**
+     * The worker's TTL in seconds.
+     *
+     * @var int
+     */
+    protected $ttl;
+
+    /**
      * Constructs a new instance.
      *
      * @param \Psr\Log\LoggerInterface
@@ -74,7 +81,8 @@ class StartWorker extends Command implements ContainerFactoryInterface
       TesterInterface $tester,
       StorageInterface $resultStorage,
       AMQPStreamConnection $queue,
-      $queueName
+      $queueName,
+      $ttl
     ) {
         parent::__construct();
         $this->logger = $logger;
@@ -82,6 +90,7 @@ class StartWorker extends Command implements ContainerFactoryInterface
         $this->queueName = $queueName;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
+        $this->ttl = $ttl;
     }
 
     /**
@@ -93,7 +102,8 @@ class StartWorker extends Command implements ContainerFactoryInterface
           $container->get('testing.tester'),
           $container->get('testing.result_storage'),
           $container->get('queue'),
-          $container->getParameter('queue.name'));
+          $container->getParameter('queue.name'),
+          $container->getParameter('worker_ttl'));
     }
 
     /**
@@ -115,7 +125,8 @@ class StartWorker extends Command implements ContainerFactoryInterface
         $queueChannel->queue_declare($this->queueName, false, true, false, false, false, $properties);
         $queueChannel->basic_qos(null, 1, null);
         $queueChannel->basic_consume($this->queueName, '', false, false, false, false, [$this, 'processMessage']);
-        while(count($queueChannel->callbacks)) {
+        $start = time();
+        while(count($queueChannel->callbacks) && $start + $this->ttl > time()) {
             $queueChannel->wait();
         }
     }

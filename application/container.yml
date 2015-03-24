@@ -29,6 +29,7 @@ parameters:
   queue.password: guest
   testing.flooding_thresholds:
     5: 10
+  worker_ttl: 300
 
 services:
   queue:
