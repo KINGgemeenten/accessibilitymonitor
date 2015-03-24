@@ -163,8 +163,7 @@ class Worker implements WorkerInterface {
         }
         $end = microtime(true);
         $duration = $end - $start;
-        $this->logger->info(sprintf('Done testing (%s seconds)',
-          $duration));
+        $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
 
         // Process the test outcome.
         if (!$outcome) {
