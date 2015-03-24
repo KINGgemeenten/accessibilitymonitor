@@ -147,7 +147,6 @@ class StartWorker extends Command implements ContainerFactoryInterface
                 else {
                     $message->delivery_info['channel']->basic_publish($message,
                       '', $this->queueName);
-                    $this->logger->info('Skipped testing.');
                 }
             }
             else {

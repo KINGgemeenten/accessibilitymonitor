@@ -77,14 +77,20 @@ class StorageBasedTester implements TesterInterface
                 if ($this->tester->run($url)) {
                     return $this->resultStorage->saveUrl($url);
                 }
+                else {
+                    $this->logger->info(sprintf('The results for %s were not saved, because testing failed or was not completed.', $url->getUrl()));
+                }
                 return false;
             }
             catch (\Exception $e) {
-                $this->logger->emergency(sprintf('%s on %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));
+                $this->logger->emergency(sprintf('%s on %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
                 return false;
             }
         }
-        return false;
+        else {
+            $this->logger->info(sprintf('Skipped testing of %s to prevent flooding.', $url->getUrl()));
+            return false;
+        }
     }
 
     /**
