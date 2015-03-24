@@ -51,8 +51,6 @@ class QuailTester implements TesterInterface
             $result = $this->phantomJs->getQuailResult($url->getUrl());
             $this->processQuailResult($url, $result);
             if ($url->getQuailResult()) {
-                $url->setTestingStatus(Url::STATUS_TESTED);
-                $url->setAnalysis(time());
                 return true;
             }
             else {

@@ -73,8 +73,6 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase
           ->willReturn($json);
 
         $this->assertInternalType('bool', $this->sut->run($url));
-        $this->assertSame(TestingStatusInterface::STATUS_TESTED,
-          $url->getTestingStatus());
         $this->assertNotEmpty($url->getQuailResult());
         $this->assertNotEmpty($url->getQuailResultCases());
     }

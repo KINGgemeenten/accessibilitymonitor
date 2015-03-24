@@ -34,7 +34,14 @@ class GroupedTester implements GroupedTesterInterface
             $results[] = $tester->run($url);
         }
 
-        return !in_array(FALSE, $results, TRUE);
+        if (in_array(false, $results, true)) {
+            return false;
+        }
+        else {
+            $url->setTestingStatus(Url::STATUS_TESTED);
+            $url->setAnalysis(time());
+            return true;
+        }
     }
 
 }
