@@ -170,7 +170,7 @@ class Worker implements WorkerInterface {
         if (!$outcome) {
             $messageData->failedTestRuns[] = time();
             // The URL was tested often enough. Dismiss it.
-            if (count($messageData->failedTestRuns) +1 >= $this->maxFailedTestRunCount
+            if (count($messageData->failedTestRuns) >= $this->maxFailedTestRunCount
               && min($messageData->failedTestRuns) + $this->maxFailedTestRunPeriod <= time()) {
                 $url->setTestingStatus(TestingStatusInterface::STATUS_ERROR);
                 $url->setAnalysis(time());
