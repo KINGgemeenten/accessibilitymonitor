@@ -106,9 +106,10 @@ class QuailTester implements TesterInterface
             $criterium->criterium = $criteriumNumber;
             $quailFinalResults[$criteriumNumber] = $criterium;
         }
-        $url->setQuailResult($quailFinalResults);
-        $url->setQuailResultCases($quailCases);
-
+        if ($quailFinalResults) {
+            $url->setQuailResult($quailFinalResults);
+            $url->setQuailResultCases($quailCases);
+        }
     }
 
     /**

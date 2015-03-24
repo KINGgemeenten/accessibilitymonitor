@@ -95,8 +95,7 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase
           ->willThrowException(new \Exception());
 
         $this->assertInternalType('bool', $this->sut->run($url));
-        $this->assertSame(TestingStatusInterface::STATUS_ERROR,
-          $url->getTestingStatus());
+        $this->assertNull($url->getTestingStatus());
         $this->assertEmpty($url->getQuailResult());
         $this->assertEmpty($url->getQuailResultCases());
     }
