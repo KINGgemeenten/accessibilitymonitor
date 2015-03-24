@@ -34,6 +34,9 @@ parameters:
   worker.max_failed_test_run_period: 86400
 
 services:
+  worker:
+    class: \Triquanta\AccessibilityMonitor\Worker
+    arguments: ['@logger', '@testing.tester', '@testing.result_storage', '@queue', '%queue.name%', '%worker.ttl%', '%worker.max_failed_test_run_count%', '%worker.max_failed_test_run_count%']
   queue:
     class: \PhpAmqpLib\Connection\AMQPStreamConnection
     arguments: ['%queue.host%', '%queue.port%', '%queue.user%', '%queue.password%']
