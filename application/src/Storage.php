@@ -257,18 +257,18 @@ class Storage implements StorageInterface
             $values['url_id'] = $url->getId();
             $query = $this->database->getConnection()
               ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, priority = :priority, analysis = :analysis, is_root = :is_root WHERE url_id = :url_id");
-            $query->execute($values);
+            $dbSaveResult = $query->execute($values);
         } else {
             $values['url'] = $url->getUrl();
             $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
             $insert = $this->database->getConnection()
               ->prepare("INSERT INTO url (website_test_results_id, url, status, priority, cms, quail_result, pagespeed_result, analysis, is_root) VALUES (:website_test_results_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result, :analysis, :is_root)");
-            $insert->execute($values);
+            $dbSaveResult = $insert->execute($values);
             $url->setId($this->database->getConnection()->lastInsertId());
         }
-        $this->sendCaseResultsToSolr($url);
+        $solrSaveResult = $this->sendCaseResultsToSolr($url);
 
-        return $this;
+        return $dbSaveResult && $solrSaveResult;
     }
 
     /**
@@ -340,6 +340,9 @@ class Storage implements StorageInterface
      * Send all the cases to solr.
      *
      * @param \Triquanta\AccessibilityMonitor\Url $url
+     *
+     * @return bool
+     *   Whether saving the data was successful or not.
      */
     protected function sendCaseResultsToSolr(Url $url)
     {
@@ -365,10 +368,12 @@ class Storage implements StorageInterface
             try {
                 $this->solrClient->execute($updateQuery);
             } catch (\Exception $e) {
-                $this->logger->error('Error sending cases to solr. Solr responded with an exception: ' . $e->getMessage());
+                $this->logger->emergency('Error sending cases to solr. Solr responded with an exception: ' . $e->getMessage());
+                return false;
             }
         }
         $this->logger->debug('Results sent to Solr.');
+        return true;
     }
 
     /**

@@ -74,16 +74,17 @@ class StorageBasedTester implements TesterInterface
     {
         if ($this->preventFlooding($url)) {
             try {
-                $this->tester->run($url);
-                $this->resultStorage->saveUrl($url);
-                return true;
+                if ($this->tester->run($url)) {
+                    return $this->resultStorage->saveUrl($url);
+                }
+                return false;
             }
             catch (\Exception $e) {
                 $this->logger->emergency(sprintf('%s on %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));
-                return FALSE;
+                return false;
             }
         }
-        return FALSE;
+        return false;
     }
 
     /**

@@ -105,7 +105,8 @@ interface StorageInterface extends TestingStatusInterface
      *
      * @param \Triquanta\AccessibilityMonitor\Url $url
      *
-     * @return $this
+     * @return bool
+     *   Whether saving the data was successful or not.
      */
     public function saveUrl(Url $url);
 

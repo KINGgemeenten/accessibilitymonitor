@@ -78,20 +78,35 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers ::run
+     *
+     * @dataProvider providerTestRun
      */
-    public function testRun()
+    public function testRun($expected, $testSuccess, $storageSuccess = NULL)
     {
         $url = new Url();
 
         $this->tester->expects($this->once())
           ->method('run')
-          ->with($url);
+          ->with($url)
+          ->willReturn($testSuccess);
 
-        $this->resultStorage->expects($this->once())
+        $this->resultStorage->expects(is_bool($storageSuccess) ? $this->once() : $this->never())
           ->method('saveUrl')
-          ->with($url);
+          ->with($url)
+          ->willReturn($storageSuccess);
 
-        $this->assertTrue($this->sut->run($url));
+        $this->assertSame($expected, $this->sut->run($url));
+    }
+
+    /**
+     * Provides data to self::testRun().
+     */
+    public function providerTestRun() {
+        return [
+          [TRUE, TRUE, TRUE],
+          [FALSE, TRUE, FALSE],
+          [FALSE, FALSE, NULL],
+        ];
     }
 
     /**
