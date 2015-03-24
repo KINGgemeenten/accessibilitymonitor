@@ -75,10 +75,14 @@ class StorageBasedTester implements TesterInterface
         if ($this->preventFlooding($url)) {
             try {
                 if ($this->tester->run($url)) {
-                    return $this->resultStorage->saveUrl($url);
+                    $storageResult = $this->resultStorage->saveUrl($url);
+                    if (!$storageResult) {
+                        $this->logger->emergency(sprintf('The results for %s were not saved, because of a storage error.', $url->getUrl()));
+                    }
+                    return $storageResult;
                 }
                 else {
-                    $this->logger->error(sprintf('The results for %s were not saved, because testing failed or was not completed.', $url->getUrl()));
+                    $this->logger->debug(sprintf('The results for %s were not saved, because testing failed or was not completed.', $url->getUrl()));
                 }
                 return false;
             }
