@@ -129,6 +129,7 @@ class StartWorker extends Command implements ContainerFactoryInterface
         while(count($queueChannel->callbacks) && $start + $this->ttl > time()) {
             $queueChannel->wait();
         }
+        $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached.', $this->ttl));
     }
 
     /**
