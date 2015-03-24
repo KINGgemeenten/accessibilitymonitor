@@ -346,7 +346,7 @@ class Storage implements StorageInterface
      */
     protected function sendCaseResultsToSolr(Url $url)
     {
-        $this->logger->debug('Sending results to Solr.');
+        $this->logger->debug(sprintf('Sending results for %s to Solr.', $url->getUrl()));
         // First check if there are results to send.
         if ($url->getQuailResultCases()) {
             // Create an update query.
@@ -368,11 +368,11 @@ class Storage implements StorageInterface
             try {
                 $this->solrClient->execute($updateQuery);
             } catch (\Exception $e) {
-                $this->logger->emergency('Error sending cases to solr. Solr responded with an exception: ' . $e->getMessage());
+                $this->logger->emergency(sprintf('Error sending cases for %s to Solr. Solr responded with an exception: %s', $url->getUrl(), $e->getMessage()));
                 return false;
             }
         }
-        $this->logger->debug('Results sent to Solr.');
+        $this->logger->debug(sprintf('Results for %s sent to Solr.', $url->getUrl()));
         return true;
     }
 
