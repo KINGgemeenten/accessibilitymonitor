@@ -18,7 +18,6 @@ parameters:
   database.password: z31lb00t
   phantomjs.executable: /usr/bin/phantomjs
   phantomjs.timeout: 10
-  quail.max_execution_time: 30
   google_pagespeed.api_url: https://www.googleapis.com/pagespeedonline/v1/runPagespeed
   google_pagespeed.api_key: $$$EXAMPLE$$$
   google_pagespeed.api_strategy: mobile
