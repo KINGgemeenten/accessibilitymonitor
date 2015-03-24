@@ -72,8 +72,8 @@ class Console extends ConsoleApplication
         try {
             parent::doRun($input, $output);
         } catch (\Exception $e) {
-            $this->logger->emergency(sprintf('%s in %s on line %d.',
-              $e->getMessage(), $e->getFile(), $e->getLine()));
+            $this->logger->emergency(sprintf('%s on line %d in %s.',
+              $e->getMessage(), $e->getLine(), $e->getFile()));
             throw $e;
         }
     }

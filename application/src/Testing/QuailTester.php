@@ -56,7 +56,7 @@ class QuailTester implements TesterInterface
         } catch (\Exception $e) {
             // If there is an exception, probably phantomjs timed out.
             $url->setTestingStatus(Url::STATUS_ERROR);
-            $this->logger->emergency(sprintf('%s on %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
+            $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
             $return = FALSE;
         }
         $url->setAnalysis(time());
