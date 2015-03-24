@@ -29,7 +29,9 @@ parameters:
   queue.password: guest
   testing.flooding_thresholds:
     5: 10
-  worker_ttl: 300
+  worker.ttl: 300
+  worker.max_failed_test_run_count: 2
+  worker.max_failed_test_run_period: 86400
 
 services:
   queue:

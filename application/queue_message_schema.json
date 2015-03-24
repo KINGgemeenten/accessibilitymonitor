@@ -1,0 +1,17 @@
+{
+  "description": "Queue message",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["urlId", "failedTestRuns"],
+  "properties": {
+    "urlId": {
+      "type": "integer"
+    },
+    "failedTestRuns": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    }
+  }
+}
