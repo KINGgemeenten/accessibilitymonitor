@@ -80,24 +80,6 @@ class Storage implements StorageInterface
         return $url;
     }
 
-    public function getUrlsByStatus($status, $limit = null)
-    {
-        $query_string = "SELECT * FROM url WHERE status = :status ORDER BY priority ASC, RAND()";
-        if ($limit) {
-            $query_string .= " LIMIT " . $limit;
-        }
-        $query = $this->database->getConnection()->prepare($query_string);
-        $query->execute(array(
-          'status' => $status,
-        ));
-        $urls = array();
-        while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
-            $urls[] = $this->createUrlFromStorageRecord($record);
-        }
-
-        return $urls;
-    }
-
     public function getUrlById($id)
     {
         $query = $this->database->getConnection()
@@ -109,102 +91,6 @@ class Storage implements StorageInterface
         $record = $query->fetch(\PDO::FETCH_OBJ);
 
         return $record ? $this->createUrlFromStorageRecord($record) : NULL;
-    }
-
-    public function getUrlsByWebsiteTestResultsId($website_test_results_id)
-    {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT * FROM url WHERE website_test_results_id = :website_test_results_id");
-        $query->execute(array(
-          'website_test_results_id' => $website_test_results_id,
-        ));
-        $urls = array();
-        while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
-            $urls[] = $this->createUrlFromStorageRecord($record);
-        }
-
-        return $urls;
-    }
-
-    public function getUrlsByNotStatus($status)
-    {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT * FROM url WHERE cms IS NULL AND status != :status");
-        $query->execute(array(
-          'status' => $status
-        ));
-        $urls = array();
-        while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
-            $urls[] = $this->createUrlFromStorageRecord($record);
-        }
-
-        return $urls;
-    }
-
-    public function getUrlsWithoutGooglePagespeedScore($limit = null)
-    {
-        $query_string = "SELECT * FROM url WHERE pagespeed_result IS NULL";
-        if (is_int($limit)) {
-            $query_string .= " LIMIT " . $limit;
-        }
-        $query = $this->database->getConnection()->prepare($query_string);
-        $query->execute();
-        $urls = array();
-        while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
-            $urls[] = $this->createUrlFromStorageRecord($record);
-        }
-
-        return $urls;
-    }
-
-    public function countUrlsByWebsiteTestResultsId($website_test_results_id)
-    {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT count(*) FROM url WHERE website_test_results_id = :website_test_results_id");
-        $query->execute(array(
-          'website_test_results_id' => $website_test_results_id,
-        ));
-
-        return $query->fetchColumn();
-    }
-
-    public function countUrlsByWebsiteTestResultsIdAndUrl(
-      $website_test_results_id,
-      $url
-    ) {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT count(*) FROM url WHERE website_test_results_id = :website_test_results_id AND url = :url");
-        $query->execute(array(
-          'url' => $url,
-          'website_test_results_id' => $website_test_results_id,
-        ));
-
-        return $query->fetchColumn();
-    }
-
-    public function countUrlsByStatus($status)
-    {
-        $query_string = "SELECT count(*) FROM url WHERE status = :status";
-        $query = $this->database->getConnection()->prepare($query_string);
-        $query->execute(array(
-          'status' => $status,
-        ));
-
-        return $query->fetchColumn();
-    }
-
-    public function countUrlsByStatusAndWebsiteId(
-      $status,
-      $website_test_results_id
-    ) {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT count(*) FROM url WHERE website_test_results_id = :website_test_results_id AND status = :status");
-        $query->execute(array(
-          'website_test_results_id' => $website_test_results_id,
-          'status' => $status,
-        ));
-
-        return $query->fetchColumn();
     }
 
     public function saveUrl(Url $url)
@@ -234,39 +120,6 @@ class Storage implements StorageInterface
         $solrSaveResult = $this->sendCaseResultsToSolr($url);
 
         return $dbSaveResult && $solrSaveResult;
-    }
-
-    public function countCmsTestResultsByWebsiteTestResultsId(
-      $website_test_results_id
-    ) {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT COUNT(*) FROM url WHERE website_test_results_id = :website_test_results_id AND cms IS NOT NULL");
-        $query->execute(array(
-          'website_test_results_id' => $website_test_results_id,
-        ));
-
-        return $query->fetchColumn();
-    }
-
-    public function countGooglePagespeedResultsByWebsiteTestResultsId(
-      $website_test_results_id
-    ) {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT COUNT(*) FROM url WHERE website_test_results_id = :website_test_results_id AND pagespeed_result <> ''");
-        $query->execute(array(
-          'website_test_results_id' => $website_test_results_id,
-        ));
-
-        return $query->fetchColumn();
-    }
-
-    public function getUrlLastAnalysisDateTime()
-    {
-        $query = $this->database->getConnection()
-          ->prepare("SELECT analysis FROM url WHERE ORDER BY analysis DESC LIMIT 1");
-        $query->execute();
-
-        return $query->fetchColumn();
     }
 
     public function countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($websiteTestResultsId, $start, $end) {
