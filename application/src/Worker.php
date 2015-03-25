@@ -34,7 +34,7 @@ class Worker implements WorkerInterface {
      *
      * @var int
      */
-    protected $maxFailedTestRunCount;
+    protected $minFailedTestRunCount;
 
     /**
      * The maximum number of failed test runs per time period.
@@ -42,7 +42,7 @@ class Worker implements WorkerInterface {
      * @var int
      *   A period in seconds.
      */
-    protected $maxFailedTestRunPeriod;
+    protected $minFailedTestRunPeriod;
 
     /**
      * The queue.
@@ -102,8 +102,8 @@ class Worker implements WorkerInterface {
       $maxFailedTestRunPeriod
     ) {
         $this->logger = $logger;
-        $this->maxFailedTestRunCount = $maxFailedTestRunCount;
-        $this->maxFailedTestRunPeriod = $maxFailedTestRunPeriod;
+        $this->minFailedTestRunCount = $maxFailedTestRunCount;
+        $this->minFailedTestRunPeriod = $maxFailedTestRunPeriod;
         $this->queue = $queue;
         $this->queueName = $queueName;
         $this->resultStorage = $resultStorage;
@@ -169,12 +169,12 @@ class Worker implements WorkerInterface {
         if (!$outcome) {
             $messageData->failedTestRuns[] = time();
             // The URL was tested often enough. Dismiss it.
-            if (count($messageData->failedTestRuns) >= $this->maxFailedTestRunCount
-              && min($messageData->failedTestRuns) + $this->maxFailedTestRunPeriod <= time()) {
+            if (count($messageData->failedTestRuns) >= $this->minFailedTestRunCount
+              && min($messageData->failedTestRuns) + $this->minFailedTestRunPeriod <= time()) {
                 $url->setTestingStatus(TestingStatusInterface::STATUS_ERROR);
                 $url->setAnalysis(time());
                 $this->resultStorage->saveUrl($url);
-                $this->logger->info(sprintf('Dismissed testing %s, because it has been tested at least %d times in the past %d seconds.', $url->getUrl(), $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod));
+                $this->logger->info(sprintf('Dismissed testing %s, because it has been tested at least %d times in the past %d seconds.', $url->getUrl(), $this->minFailedTestRunCount, $this->minFailedTestRunPeriod));
             }
             // Reschedule the URL for testing at a later time.
             else {
