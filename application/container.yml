@@ -36,7 +36,7 @@ parameters:
 services:
   worker:
     class: \Triquanta\AccessibilityMonitor\Worker
-    arguments: ['@logger', '@testing.tester', '@testing.result_storage', '@queue', '%queue.name%', '%worker.ttl%', '%worker.min_failed_test_run_count%', '%worker.min_failed_test_run_count%']
+    arguments: ['@logger', '@testing.tester', '@testing.result_storage', '@queue', '%queue.name%', '%worker.ttl%', '%worker.min_failed_test_run_count%', '%worker.min_failed_test_run_period%']
   queue:
     class: \PhpAmqpLib\Connection\AMQPStreamConnection
     arguments: ['%queue.host%', '%queue.port%', '%queue.user%', '%queue.password%']
