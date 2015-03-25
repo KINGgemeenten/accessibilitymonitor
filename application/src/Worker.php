@@ -175,16 +175,15 @@ class Worker implements WorkerInterface {
                 $url->setAnalysis(time());
                 $this->resultStorage->saveUrl($url);
                 $this->logger->info(sprintf('Dismissed testing %s, because it has been tested at least %d times in the past %d seconds.', $url->getUrl(), $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod));
-                $this->acknowledgeMessage($message);
             }
             // Reschedule the URL for testing at a later time.
             else {
                 $message->body = json_encode($messageData);
                 $this->publishMessage($message);
-                $this->acknowledgeMessage($message);
                 $this->logger->info(sprintf('Rescheduled %s for testing, because the current test failed.', $url->getUrl()));
             }
         }
+        $this->acknowledgeMessage($message);
     }
 
     /**
