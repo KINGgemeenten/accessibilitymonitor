@@ -72,27 +72,31 @@ class StorageBasedTester implements TesterInterface
 
     public function run(Url $url)
     {
-        if ($this->preventFlooding($url)) {
-            try {
-                if ($this->tester->run($url)) {
-                    $storageResult = $this->resultStorage->saveUrl($url);
-                    if (!$storageResult) {
-                        $this->logger->emergency(sprintf('The results for %s were not saved, because of a storage error.', $url->getUrl()));
-                    }
-                    return $storageResult;
+        if (!$this->preventFlooding($url)) {
+            $this->logger->info(sprintf('Skipped testing of %s to prevent flooding.',
+              $url->getUrl()));
+
+            return false;
+        }
+
+        try {
+            if ($this->tester->run($url)) {
+                $storageResult = $this->resultStorage->saveUrl($url);
+                if ($storageResult) {
+                    $this->logger->debug(sprintf('The results for %s were saved.', $url->getUrl()));
                 }
                 else {
-                    $this->logger->debug(sprintf('The results for %s were not saved, because testing failed or was not completed.', $url->getUrl()));
+                    $this->logger->emergency(sprintf('The results for %s were not properly saved, because of a storage error.', $url->getUrl()));
                 }
-                return false;
+                return $storageResult;
             }
-            catch (\Exception $e) {
-                $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
-                return false;
+            else {
+                $this->logger->debug(sprintf('The results for %s were not saved, because testing failed or was not completed.', $url->getUrl()));
             }
+            return false;
         }
-        else {
-            $this->logger->info(sprintf('Skipped testing of %s to prevent flooding.', $url->getUrl()));
+        catch (\Exception $e) {
+            $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
             return false;
         }
     }
