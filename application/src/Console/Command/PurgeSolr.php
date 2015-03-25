@@ -38,26 +38,17 @@ class PurgeSolr extends Command implements ContainerFactoryInterface
         $this->solrClient = $solr_client;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function create(ContainerInterface $container)
     {
         // @todo Should this command really only purge one core and not both?
         return new static($container->get('solr.client.phantom'));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this->setName('solr-purge');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $update = $this->solrClient->createUpdate();

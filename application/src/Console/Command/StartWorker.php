@@ -39,25 +39,16 @@ class StartWorker extends Command implements ContainerFactoryInterface
         $this->worker = $worker;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function create(ContainerInterface $container)
     {
         return new static($container->get('worker'));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this->setName('start-worker');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->worker->registerWorker();

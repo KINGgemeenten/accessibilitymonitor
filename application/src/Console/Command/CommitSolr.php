@@ -38,26 +38,17 @@ class CommitSolr extends Command implements ContainerFactoryInterface
         $this->solrClient = $solr_client;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function create(ContainerInterface $container)
     {
         return new static($container->get('solr.client.phantom'));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         // @todo Give this command a more descriptive name based on what it is supposed to achieve.
         $this->setName('solr-commit');
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $update = $this->solrClient->createUpdate();

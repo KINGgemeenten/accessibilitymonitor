@@ -15,9 +15,6 @@ use Symfony\Component\Yaml\Yaml;
 class YamlCommandDiscovery implements CommandDiscoveryInterface
 {
 
-    /**
-     * {@inheritdoc}
-     */
     public function getCommands()
     {
         return Yaml::parse(file_get_contents(__DIR__ . '/commands.yml'));

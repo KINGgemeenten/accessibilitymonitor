@@ -52,27 +52,18 @@ class Check extends Command implements ContainerFactoryInterface
         $this->tester = $tester;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function create(ContainerInterface $container)
     {
         return new static($container->get('logger'),
           $container->get('testing.tester.grouped'));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function configure()
     {
         $this->setName('check')
           ->addArgument('url', InputArgument::REQUIRED);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $url = new Url();

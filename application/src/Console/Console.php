@@ -64,9 +64,6 @@ class Console extends ConsoleApplication
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function doRun(InputInterface $input, OutputInterface $output)
     {
         try {

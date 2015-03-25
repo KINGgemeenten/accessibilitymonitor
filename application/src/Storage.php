@@ -80,9 +80,6 @@ class Storage implements StorageInterface
         return $url;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUrlsByStatus($status, $limit = null)
     {
         $query_string = "SELECT * FROM url WHERE status = :status ORDER BY priority ASC, RAND()";
@@ -101,9 +98,6 @@ class Storage implements StorageInterface
         return $urls;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUrlById($id)
     {
         $query = $this->database->getConnection()
@@ -117,9 +111,6 @@ class Storage implements StorageInterface
         return $record ? $this->createUrlFromStorageRecord($record) : NULL;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUrlsByWebsiteTestResultsId($website_test_results_id)
     {
         $query = $this->database->getConnection()
@@ -135,9 +126,6 @@ class Storage implements StorageInterface
         return $urls;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUrlsByNotStatus($status)
     {
         $query = $this->database->getConnection()
@@ -153,9 +141,6 @@ class Storage implements StorageInterface
         return $urls;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getUrlsWithoutGooglePagespeedScore($limit = null)
     {
         $query_string = "SELECT * FROM url WHERE pagespeed_result IS NULL";
@@ -172,9 +157,6 @@ class Storage implements StorageInterface
         return $urls;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function countUrlsByWebsiteTestResultsId($website_test_results_id)
     {
         $query = $this->database->getConnection()
@@ -186,9 +168,6 @@ class Storage implements StorageInterface
         return $query->fetchColumn();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function countUrlsByWebsiteTestResultsIdAndUrl(
       $website_test_results_id,
       $url
@@ -203,14 +182,6 @@ class Storage implements StorageInterface
         return $query->fetchColumn();
     }
 
-    /**
-     * Counts URLs by status.
-     *
-     * @param int $status
-     *   One of the self::STATUS_* constants.
-     *
-     * @return int
-     */
     public function countUrlsByStatus($status)
     {
         $query_string = "SELECT count(*) FROM url WHERE status = :status";
@@ -222,9 +193,6 @@ class Storage implements StorageInterface
         return $query->fetchColumn();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function countUrlsByStatusAndWebsiteId(
       $status,
       $website_test_results_id
@@ -239,9 +207,6 @@ class Storage implements StorageInterface
         return $query->fetchColumn();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function saveUrl(Url $url)
     {
         $values = array(
@@ -271,13 +236,6 @@ class Storage implements StorageInterface
         return $dbSaveResult && $solrSaveResult;
     }
 
-    /**
-     * Counts the number of CMS test results for a website.
-     *
-     * @param int $website_test_results_id
-     *
-     * @return int
-     */
     public function countCmsTestResultsByWebsiteTestResultsId(
       $website_test_results_id
     ) {
@@ -290,13 +248,6 @@ class Storage implements StorageInterface
         return $query->fetchColumn();
     }
 
-    /**
-     * Counts the number of Google PageSpeed results for a website.
-     *
-     * @param int $website_test_results_id
-     *
-     * @return int
-     */
     public function countGooglePagespeedResultsByWebsiteTestResultsId(
       $website_test_results_id
     ) {
@@ -309,12 +260,6 @@ class Storage implements StorageInterface
         return $query->fetchColumn();
     }
 
-    /**
-     * Gets the datetime of any URL's last analysis.
-     *
-     * @return int
-     *   A Unix timestamp.
-     */
     public function getUrlLastAnalysisDateTime()
     {
         $query = $this->database->getConnection()
