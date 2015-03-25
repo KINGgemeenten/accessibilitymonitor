@@ -1,29 +1,32 @@
 Accessibility Monitor
 =====================
 
-[![Build Status](https://travis-ci.org/KINGgemeenten/accessibilitymonitor.svg?branch=release%2F20141023-01-v1.0)](https://travis-ci.org/KINGgemeenten/accessibilitymonitor)
+[![Build Status](https://travis-ci.org/KINGgemeenten/accessibilitymonitor.svg?branch=feature/rabbitmq)](https://travis-ci.org/KINGgemeenten/accessibilitymonitor)
 
-To use the virtual machine, read ./vm/README.md.
+Requirements
+============
+* PHP 5.4+
+* [Composer](http://getcomposer.org)
+* An operating system with Upstart (Ubuntu is used for all examples)
 
-POST INSTALLATION INSTRUCTIONS
+Installation
+============
 
-- Installeer de crontab (gebruiker root)
+Application
+-----------
+* `cd ./application`
+* `composer install`
+* `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` and edit the values. 
 
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin
-* * * * * /opt/accessibilitymonitor/application/bin/tam check >> /var/log/inspect.log 2>&1
+Worker manager
+--------------
 
-
-- Draai composer om de vendor map te maken
-
-/opt/accessibilitymonitor/application$ composer install
-
-
-- Vraag een sneltoets aan op een website om de database op de inspector server te vullen
-
-Dit zorgt er voor dat de Solr omgeving (phantomcore) gevuld wordt. En dit zorgt er weer voor dat je lokale omgeving
-weet welke velden in Solr staan.
-
-- Let op dat je in de servercontrol niet develop maar master uitcheckt!!!! (in eerste instantie)
+* `mkdir /etc/accessibilitymonitor`
+* `echo $MAX > /etc/accessibilitymonitor/max_worker_count`, where `$MAX` is the maximum number of concurrent workers for
+ the machine.
+* `` echo `pwd`/application/bin/tam start-worker > /etc/accessibilitymonitor/worker ``
+* `cp ./application/scripts/accessibilitymonitor.conf /etc/init/`
+* `start accessibilitymonitor`
 
 Development
 ===========
@@ -48,3 +51,7 @@ Testing
 The library comes with [PHPUnit](https://phpunit.de/)-based tests that can be
 run using `./application/phpunit.xml.dist`. All tests are located in
 `\Triquanta\Tests\AccessibilityMonitor`.
+
+Virtual machine
+---------------
+See ./vm/README.md.
