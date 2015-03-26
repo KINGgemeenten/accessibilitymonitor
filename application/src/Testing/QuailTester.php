@@ -73,7 +73,8 @@ class QuailTester implements TesterInterface
         $quailCases = array();
         $wcag20Mapping = $this->getWcag2Mapping();
         $rawResult = json_decode($result);
-        if (is_array($rawResult)) {
+
+        if (is_object($rawResult)) {
             foreach ($rawResult as $criterium) {
                 $criteriumNumber = $wcag20Mapping[$criterium->testRequirement];
                 // Extract the most important cases.

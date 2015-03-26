@@ -108,22 +108,30 @@ class PhantomJs implements PhantomJsInterface
     {
         $this->killStalledProcesses();
 
-        $command = '/opt/quail/bin/quail -u ' . $url . ' -R wcag2';
-        $this->logger->debug('Starting phantomjs');
-        $output = $this->execTimeout($command, $this->timeout);
-        $this->logger->debug('Phantomjs executed succesfully.');
-
-        $lines = preg_split("/((\r?\n)|(\r\n?))/", $output);
-
-        $results = null;
-        foreach ($lines as $line) {
-            // If the line starts with [{ we assume it is a json string with the quail results
-            if ($line != '' && preg_match("/^\[{/", $line)) {
-                return $line;
-            }
+        do {
+            $testResultsDirectory = '/tmp/accessibilitymonitor/quail_results-' . sha1(mt_rand());
+        }
+        while (file_exists($testResultsDirectory));
+        if (!mkdir($testResultsDirectory, 0700, true)) {
+            $this->logger->emergency(sprintf('Cannot create directory %s.', $testResultsDirectory));
+            return json_encode(new \stdClass());
         }
 
-        return null;
+        $command = sprintf('/opt/quail/bin/quail -R wcag2 -u %s -o %s', $url, $testResultsDirectory);
+        $this->logger->debug('Starting phantomjs');
+        $this->execTimeout($command, $this->timeout);
+        $this->logger->debug('Phantomjs executed succesfully.');
+
+        $files = glob($testResultsDirectory . '/*.js');
+        if ($files) {
+            $file = reset($files);
+            $results = file_get_contents($file);
+            rmdir($testResultsDirectory);
+            return $results;
+        }
+        else {
+            return json_encode(new \stdClass());
+        }
     }
 
     /**
