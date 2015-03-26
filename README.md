@@ -16,7 +16,9 @@ Application
 -----------
 * `cd ./application`
 * `composer install`
-* `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` and edit the values. 
+* `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` and edit the values.
+* Make sure that the `tmp_directory` path (defaults to `/tmp/accessibilitymonitor`) is writable by the user under which
+  the workers run. This directory path can be overridden in `container_overrides.yml`.
 
 Worker manager
 --------------
@@ -43,7 +45,7 @@ Class and interface autoloading is done using
 [PSR-4](http://www.php-fig.org/psr/psr-4/) using the following namespace
 mappings:
 
-* `\Triquanta\AccessibilityMonitor` maps to `./applicaiton/src`
+* `\Triquanta\AccessibilityMonitor` maps to `./application/src`
 * `\Triquanta\Tests\AccessibilityMonitor` maps to `./application/tests/src`
 
 Testing

@@ -32,6 +32,7 @@ parameters:
   worker.ttl: 300
   worker.min_failed_test_run_count: 2
   worker.min_failed_test_run_period: 86400
+  tmp_directory: /tmp/accessibilitymonitor
 
 services:
   worker:
@@ -53,7 +54,7 @@ services:
       - [setEventDispatcher, ['@event_dispatcher']]
   phantomjs:
     class: \Triquanta\AccessibilityMonitor\PhantomJs
-    arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%']
+    arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%', '%tmp_directory%']
   testing.tester:
     class: \Triquanta\AccessibilityMonitor\Testing\StorageBasedTester
     arguments: ['@logger', '@testing.tester.grouped', '@testing.result_storage', '%testing.flooding_thresholds%']

@@ -45,23 +45,34 @@ class PhantomJs implements PhantomJsInterface
     protected $timeout;
 
     /**
+     * The path to the tmp directory.
+     *
+     * @var string
+     */
+    protected $tmpDirectory;
+
+    /**
      * Constructs a new instance.
      *
      * @param \Psr\Log\LoggerInterface $logger
      * @param string $executable
      * @param int $timeout
      * @param string $root_directory
+     * @param string $tmpDirectory
+     *   The path to the tmp directory.
      */
     public function __construct(
       LoggerInterface $logger,
       $executable,
       $timeout,
-      $root_directory
+      $root_directory,
+      $tmpDirectory
     ) {
         $this->executable = $executable;
         $this->logger = $logger;
         $this->rootDirectory = $root_directory;
         $this->timeout = $timeout;
+        $this->tmpDirectory = $tmpDirectory;
     }
 
     public function getDetectedApps($url)
@@ -109,7 +120,7 @@ class PhantomJs implements PhantomJsInterface
         $this->killStalledProcesses();
 
         do {
-            $testResultsDirectory = '/tmp/accessibilitymonitor/quail_results-' . sha1(mt_rand());
+            $testResultsDirectory = $this->tmpDirectory . '/quail_results-' . sha1(mt_rand());
         }
         while (file_exists($testResultsDirectory));
         if (!mkdir($testResultsDirectory, 0700, true)) {
