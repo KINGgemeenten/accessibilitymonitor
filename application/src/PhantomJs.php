@@ -137,12 +137,12 @@ class PhantomJs implements PhantomJsInterface
         if ($files) {
             $file = reset($files);
             $results = file_get_contents($file);
-            rmdir($testResultsDirectory);
-            return $results;
         }
         else {
-            return json_encode(new \stdClass());
+            $results = json_encode(new \stdClass());
         }
+        rmdir($testResultsDirectory);
+        return $results;
     }
 
     /**
