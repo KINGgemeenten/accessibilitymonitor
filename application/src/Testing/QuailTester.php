@@ -73,38 +73,38 @@ class QuailTester implements TesterInterface
         $quailCases = array();
         $wcag20Mapping = $this->getWcag2Mapping();
         $rawResult = json_decode($result);
-        foreach ($rawResult as $criterium) {
-            $criteriumNumber = $wcag20Mapping[$criterium->testRequirement];
-            // Extract the most important cases.
-            // First check if there is a pointer, because if there is none,
-            // the cases doesn't need to be stored.
-            if (property_exists($criterium,
-                'hasPart') && count($criterium->hasPart)
-            ) {
-                foreach ($criterium->hasPart as $case) {
-                    // Check if there is a pointer in the outcome.
-                    // The pointer contains the html snippet we need.
-                    if (isset($case->outcome->pointer) && isset($case->outcome->pointer[0]->chars) && ($case->outcome->result == 'failed' || $case->outcome->result == 'cantTell')) {
-                        // Create the unique key, to prevent that we store only one case per testCase per criterium.
-                        $uniqueKey = str_replace('.', '_',
-                            $criteriumNumber) . '_' . $case->testCase . '_' . $case->outcome->result;
-                        if (!isset ($quailCases[$uniqueKey])) {
-                            // Add the unique key to the case.
-                            $case->uniqueKey = $uniqueKey;
-                            // Add the criteriumName to the case.
-                            $case->criteriumName = $criteriumNumber;
-                            $quailCases[$uniqueKey] = $case;
+        if (is_array($rawResult)) {
+            foreach ($rawResult as $criterium) {
+                $criteriumNumber = $wcag20Mapping[$criterium->testRequirement];
+                // Extract the most important cases.
+                // First check if there is a pointer, because if there is none,
+                // the cases doesn't need to be stored.
+                if (property_exists($criterium,
+                    'hasPart') && count($criterium->hasPart)
+                ) {
+                    foreach ($criterium->hasPart as $case) {
+                        // Check if there is a pointer in the outcome.
+                        // The pointer contains the html snippet we need.
+                        if (isset($case->outcome->pointer) && isset($case->outcome->pointer[0]->chars) && ($case->outcome->result == 'failed' || $case->outcome->result == 'cantTell')) {
+                            // Create the unique key, to prevent that we store only one case per testCase per criterium.
+                            $uniqueKey = str_replace('.', '_',
+                                $criteriumNumber) . '_' . $case->testCase . '_' . $case->outcome->result;
+                            if (!isset ($quailCases[$uniqueKey])) {
+                                // Add the unique key to the case.
+                                $case->uniqueKey = $uniqueKey;
+                                // Add the criteriumName to the case.
+                                $case->criteriumName = $criteriumNumber;
+                                $quailCases[$uniqueKey] = $case;
+                            }
                         }
                     }
                 }
+                // Now unset the hasPart, on order to save space.
+                unset($criterium->hasPart);
+                // Add criterium.
+                $criterium->criterium = $criteriumNumber;
+                $quailFinalResults[$criteriumNumber] = $criterium;
             }
-            // Now unset the hasPart, on order to save space.
-            unset($criterium->hasPart);
-            // Add criterium.
-            $criterium->criterium = $criteriumNumber;
-            $quailFinalResults[$criteriumNumber] = $criterium;
-        }
-        if ($quailFinalResults) {
             $url->setQuailResult($quailFinalResults);
             $url->setQuailResultCases($quailCases);
         }
