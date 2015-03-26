@@ -60,6 +60,7 @@ services:
     arguments: ['@logger', '@testing.tester.grouped', '@testing.result_storage', '%testing.flooding_thresholds%']
   testing.tester.grouped:
     class: \Triquanta\AccessibilityMonitor\Testing\GroupedTester
+    arguments: ['@logger']
     calls:
       - [addTester, ['@testing.tester.wappalyzer']]
       - [addTester, ['@testing.tester.google_pagespeed']]

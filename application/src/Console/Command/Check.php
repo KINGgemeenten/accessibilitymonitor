@@ -11,6 +11,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Triquanta\AccessibilityMonitor\ContainerFactoryInterface;
@@ -61,14 +62,17 @@ class Check extends Command implements ContainerFactoryInterface
     protected function configure()
     {
         $this->setName('check')
-          ->addArgument('url', InputArgument::REQUIRED);
+          ->addArgument('url', InputArgument::REQUIRED)
+          ->addOption('root', null, InputOption::VALUE_NONE, 'Whether the URL is a root URL.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $url = new Url();
-        $url->setRoot(true);
         $url->setUrl($input->getArgument('url'));
+        if ($input->getOption('root')) {
+            $url->setRoot(true);
+        }
 
         $this->logger->info(sprintf('Testing %s. The result will not be stored.',
           $url->getUrl()));
