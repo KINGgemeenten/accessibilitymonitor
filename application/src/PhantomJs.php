@@ -128,7 +128,7 @@ class PhantomJs implements PhantomJsInterface
             return json_encode(new \stdClass());
         }
 
-        $command = sprintf('/opt/quail/bin/quail -R wcag2 -u %s -o %s', $url, $testResultsDirectory);
+        $command = sprintf('/opt/quail/bin/quail -R wcag2 -u "%s" -o %s', $url, $testResultsDirectory);
         $this->logger->debug('Starting phantomjs');
         $this->execTimeout($command, $this->timeout);
         $this->logger->debug('Phantomjs executed succesfully.');
