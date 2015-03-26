@@ -180,7 +180,7 @@ class Worker implements WorkerInterface {
             else {
                 $message->body = json_encode($messageData);
                 $this->publishMessage($message);
-                $this->logger->info(sprintf('Rescheduled %s for testing, because the current test failed.', $url->getUrl()));
+                $this->logger->info(sprintf('Rescheduled %s for testing, because the current test failed or was not completed.', $url->getUrl()));
             }
         }
         $this->acknowledgeMessage($message);
