@@ -48,8 +48,21 @@ class QuailTester implements TesterInterface
     public function run(Url $url)
     {
         try {
+            // Run Quail.
+            $quailStart = microtime(true);
             $result = $this->phantomJs->getQuailResult($url->getUrl());
+            $quailEnd = microtime(true);
+            $quailDuration = $quailEnd - $quailStart;
+            $this->logger->debug(sprintf('Done running Quail tests for %s (%s seconds)', $url->getUrl(), $quailDuration));
+
+            // Process the Quail results.
+            $processResultsStart = microtime(true);
             $this->processQuailResult($url, $result);
+            $processResultsEnd = microtime(true);
+            $processResultsDuration = $processResultsEnd - $processResultsStart;
+            $this->logger->debug(sprintf('Done processing Quail results for %s (%s seconds)', $url->getUrl(), $processResultsDuration));
+
+            // Handle the outcome.
             if ($url->getQuailResult()) {
                 return true;
             }

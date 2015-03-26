@@ -16,6 +16,13 @@ class GroupedTesterTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
+     * The logger.
+     *
+     * @var \Psr\Log\LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $logger;
+
+    /**
      * The class under test.
      *
      * @var \Triquanta\AccessibilityMonitor\Testing\GroupedTester
@@ -31,10 +38,12 @@ class GroupedTesterTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
+
         $this->testers[] = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
         $this->testers[] = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->sut = new GroupedTester();
+        $this->sut = new GroupedTester($this->logger);
         foreach ($this->testers as $tester) {
             $this->sut->addTester($tester);
         }
