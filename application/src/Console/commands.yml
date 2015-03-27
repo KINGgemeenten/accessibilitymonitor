@@ -1,3 +1,2 @@
 - \Triquanta\AccessibilityMonitor\Console\Command\Check
-- \Triquanta\AccessibilityMonitor\Console\Command\CommitSolr
-- \Triquanta\AccessibilityMonitor\Console\Command\PurgeSolr
+- \Triquanta\AccessibilityMonitor\Console\Command\StartWorker

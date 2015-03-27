@@ -12,15 +12,16 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Provides a console to the accessibility monitor application.
  */
-interface ContainerFactoryInterface {
+interface ContainerFactoryInterface
+{
 
-  /**
-   * Constructs a new instance using the dependency injection container.
-   *
-   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
-   *
-   * @return static
-   */
-  public static function create(ContainerInterface $container);
+    /**
+     * Constructs a new instance using the dependency injection container.
+     *
+     * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+     *
+     * @return static
+     */
+    public static function create(ContainerInterface $container);
 
 }

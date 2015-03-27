@@ -1,26 +1,59 @@
 Accessibility Monitor
 =====================
 
-[![Build Status](https://travis-ci.org/KINGgemeenten/accessibilitymonitor.svg?branch=release%2F20141023-01-v1.0)](https://travis-ci.org/KINGgemeenten/accessibilitymonitor)
+[![Build Status](https://travis-ci.org/KINGgemeenten/accessibilitymonitor.svg?branch=feature/rabbitmq)](https://travis-ci.org/KINGgemeenten/accessibilitymonitor)
 
-To use the virtual machine, read ./vm/README.md.
+Requirements
+============
+* PHP 5.4+
+* [Composer](http://getcomposer.org)
+* An operating system with Upstart (Ubuntu is used for all examples)
 
-POST INSTALLATION INSTRUCTIONS
+Installation
+============
 
-- Installeer de crontab (gebruiker root)
+Application
+-----------
+* `cd ./application`
+* `composer install`
+* `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` and edit the values.
+* Make sure that the `tmp_directory` path (defaults to `/tmp/accessibilitymonitor`) is writable by the user under which
+  the workers run. This directory path can be overridden in `container_overrides.yml`.
 
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin
-* * * * * /opt/accessibilitymonitor/application/bin/tam check >> /var/log/inspect.log 2>&1
+Worker manager
+--------------
 
+* `mkdir /etc/accessibilitymonitor`
+* `echo $MAX > /etc/accessibilitymonitor/max_worker_count`, where `$MAX` is the maximum number of concurrent workers for
+ the machine.
+* `` echo `pwd`/application/bin/tam start-worker > /etc/accessibilitymonitor/worker ``
+* `cp ./application/scripts/accessibilitymonitor.conf /etc/init/`
+* `start accessibilitymonitor`
 
-- Draai composer om de vendor map te maken
+Development
+===========
 
-/opt/accessibilitymonitor/application$ composer install
+PSR-1 & PSR-2
+-------------
+All code must be written according the
+[PSR-1](http://www.php-fig.org/psr/psr-1/) and
+[PSR-2](http://www.php-fig.org/psr/psr-2/) guidelines.
 
+PSR-4
+-----
+Class and interface autoloading is done using
+[PSR-4](http://www.php-fig.org/psr/psr-4/) using the following namespace
+mappings:
 
-- Vraag een sneltoets aan op een website om de database op de inspector server te vullen
+* `\Triquanta\AccessibilityMonitor` maps to `./application/src`
+* `\Triquanta\Tests\AccessibilityMonitor` maps to `./application/tests/src`
 
-Dit zorgt er voor dat de Solr omgeving (phantomcore) gevuld wordt. En dit zorgt er weer voor dat je lokale omgeving
-weet welke velden in Solr staan.
+Testing
+-------
+The library comes with [PHPUnit](https://phpunit.de/)-based tests that can be
+run using `./application/phpunit.xml.dist`. All tests are located in
+`\Triquanta\Tests\AccessibilityMonitor`.
 
-- Let op dat je in de servercontrol niet develop maar master uitcheckt!!!! (in eerste instantie)
+Virtual machine
+---------------
+See ./vm/README.md.
