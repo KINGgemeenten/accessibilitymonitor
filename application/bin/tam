@@ -10,5 +10,5 @@ include __DIR__ . '/../vendor/autoload.php';
 Application::bootstrap();
 
 $container = Application::getContainer();
-$console = new Console($container, new YamlCommandDiscovery(), $container->get('logger'), $container->get('event_dispatcher'), $container->get('phantomjs'));
+$console = new Console($container, new YamlCommandDiscovery(), $container->get('logger'), $container->get('event_dispatcher'));
 $console->run();

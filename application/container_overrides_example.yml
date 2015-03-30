@@ -1,13 +1,20 @@
 # This file contains example configuration and can be copied to
 # container_overrides_example.yml to override the contents of container.yml.
 parameters:
-  log.file: '/var/log/tam1.log'
   solr.phantom:
     endpoint:
       localhost:
         host: 192.168.50.5
         port: 8080
         path: /solr/phantomcore
-        timeout: 10
-  cpu_count: 4
-  quail.worker_count: 30
+
+  queue.host: localhost
+  queue.user: inspector
+  queue.password: z31lb00t
+
+  database.host_name: 192.168.50.05
+  database.database_name: inspector
+  database.user_name: inspector
+  database.password: z31lb00t
+
+  google_pagespeed.api_key: $$$EXAMPLE$$$

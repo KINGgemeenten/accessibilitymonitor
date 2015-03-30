@@ -18,22 +18,35 @@ parameters:
   database.password: z31lb00t
   phantomjs.executable: /usr/bin/phantomjs
   phantomjs.timeout: 10
-  urls_per_sample: 10
-  cpu_count: 2
-  quail.worker_count: 2
-  quail.max_execution_time: 30
   google_pagespeed.api_url: https://www.googleapis.com/pagespeedonline/v1/runPagespeed
   google_pagespeed.api_key: $$$EXAMPLE$$$
   google_pagespeed.api_strategy: mobile
   google_pagespeed.api_fetch_limit: 10
-  queue.threshold.notice: 200000
-  queue.threshold.error: 250000
-  queue.threshold.alert: 300000
+  queue.name: inspector
+  queue.host: localhost
+  queue.port: 5672
+  queue.user: guest
+  queue.password: guest
+  testing.flooding_thresholds:
+    5: 10
+  worker.ttl: 300
+  worker.min_failed_test_run_count: 2
+  worker.min_failed_test_run_period: 86400
+  tmp_directory: /tmp/accessibilitymonitor
 
 services:
-  storage:
-    class: \Triquanta\AccessibilityMonitor\DatabaseStorage
+  worker:
+    class: \Triquanta\AccessibilityMonitor\Worker
+    arguments: ['@logger', '@testing.tester', '@testing.result_storage', '@queue', '%queue.name%', '%worker.ttl%', '%worker.min_failed_test_run_count%', '%worker.min_failed_test_run_period%']
+  queue:
+    class: \PhpAmqpLib\Connection\AMQPStreamConnection
+    arguments: ['%queue.host%', '%queue.port%', '%queue.user%', '%queue.password%']
+  database:
+    class: \Triquanta\AccessibilityMonitor\Database
     arguments: ['%database.host_name%', '%database.database_name%', '%database.user_name%', '%database.password%']
+  testing.result_storage:
+    class: \Triquanta\AccessibilityMonitor\Storage
+    arguments: ['@database', '@solr.client.phantom', '@logger']
   solr.client.phantom:
     class: \Triquanta\AccessibilityMonitor\SolariumClient
     arguments: ['%solr.phantom%']
@@ -41,15 +54,26 @@ services:
       - [setEventDispatcher, ['@event_dispatcher']]
   phantomjs:
     class: \Triquanta\AccessibilityMonitor\PhantomJs
-    arguments: ['%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%']
-  process:
-    class: \Triquanta\AccessibilityMonitor\Process
-  quail:
-    class: \Triquanta\AccessibilityMonitor\Quail
-    arguments: ['@storage', '@solr.client.phantom', '@logger', '@quail_worker_factory', '%quail.max_execution_time%', '%quail.worker_count%', '%cpu_count%']
-  quail_worker_factory:
-    class: \Triquanta\AccessibilityMonitor\QuailWorkerFactory
-    arguments: ['@service_container']
+    arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%', '%tmp_directory%']
+  testing.tester:
+    class: \Triquanta\AccessibilityMonitor\Testing\StorageBasedTester
+    arguments: ['@logger', '@testing.tester.grouped', '@testing.result_storage', '%testing.flooding_thresholds%']
+  testing.tester.grouped:
+    class: \Triquanta\AccessibilityMonitor\Testing\GroupedTester
+    arguments: ['@logger']
+    calls:
+      - [addTester, ['@testing.tester.wappalyzer']]
+      - [addTester, ['@testing.tester.google_pagespeed']]
+      - [addTester, ['@testing.tester.quail']]
+  testing.tester.wappalyzer:
+    class: \Triquanta\AccessibilityMonitor\Testing\WappalyzerTester
+    arguments: ['@phantomjs']
+  testing.tester.quail:
+    class: \Triquanta\AccessibilityMonitor\Testing\QuailTester
+    arguments: ['@phantomjs', '@logger']
+  testing.tester.google_pagespeed:
+    class: \Triquanta\AccessibilityMonitor\Testing\GooglePageSpeedTester
+    arguments: ['@logger', '@http_client', '%google_pagespeed.api_key%', '%google_pagespeed.api_url%', '%google_pagespeed.api_strategy%']
   logger:
     class: \Monolog\Logger
     arguments: ['global']
