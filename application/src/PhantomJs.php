@@ -218,7 +218,10 @@ class PhantomJs implements PhantomJsInterface
         }
 
         if ($timedOut) {
-            throw new \Exception('Operation timed out');
+            // @todo Uncomment the following line as soon as Nutch stops
+            //   returning URLs for resources that aren't web pages. Timeouts
+            //   occur so often, they flood the error log. -Bart
+//            throw new \Exception('Operation timed out');
         }
 
         // Check if there were any errors.
