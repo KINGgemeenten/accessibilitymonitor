@@ -71,7 +71,7 @@ class QuailTester implements TesterInterface
                 return false;
             }
         } catch (\Exception $e) {
-            $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
+            $this->logger->error(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
             return false;
         }
     }
