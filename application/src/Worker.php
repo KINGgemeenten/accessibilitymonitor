@@ -45,18 +45,18 @@ class Worker implements WorkerInterface {
     protected $minFailedTestRunPeriod;
 
     /**
-     * The queue.
+     * The AMQP queue.
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection
      */
-    protected $queue;
+    protected $amqpQueue;
 
     /**
-     * The name of the queue.
+     * The queue.
      *
-     * @var string
+     * @var \Triquanta\AccessibilityMonitor\Queue
      */
-    protected $queueName;
+    protected $queue;
 
     /**
      * The result storage.
@@ -86,7 +86,6 @@ class Worker implements WorkerInterface {
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
      * @param \PhpAmqpLib\Connection\AMQPStreamConnection $queue
-     * @param string $queueName
      * @param int $ttl
      * @param int $maxFailedTestRunCount
      * @param int $maxFailedTestRunPeriod
@@ -96,7 +95,6 @@ class Worker implements WorkerInterface {
       TesterInterface $tester,
       StorageInterface $resultStorage,
       AMQPStreamConnection $queue,
-      $queueName,
       $ttl,
       $maxFailedTestRunCount,
       $maxFailedTestRunPeriod
@@ -104,8 +102,7 @@ class Worker implements WorkerInterface {
         $this->logger = $logger;
         $this->minFailedTestRunCount = $maxFailedTestRunCount;
         $this->minFailedTestRunPeriod = $maxFailedTestRunPeriod;
-        $this->queue = $queue;
-        $this->queueName = $queueName;
+        $this->amqpQueue = $queue;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
         $this->ttl = $ttl;
@@ -113,18 +110,30 @@ class Worker implements WorkerInterface {
 
     public function registerWorker()
     {
-        $queueChannel = $this->queue->channel();
-        $properties = new AMQPTable();
-        $properties->set('x-max-priority', 9);
-        $queueChannel->queue_declare($this->queueName, false, true, false, false, false, $properties);
-        $queueChannel->basic_qos(null, 1, null);
-        $queueChannel->basic_consume($this->queueName, '', false, false, false, false, [$this, 'processMessage']);
-        $start = time();
-        $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds.', $this->ttl));
-        while(count($queueChannel->callbacks) && $start + $this->ttl > time()) {
-            $queueChannel->wait();
+        $this->queue = $this->resultStorage->getQueueToSubscribeTo();
+        if ($this->queue) {
+            $this->logger->info('Starting worker.');
+
+            // Declare the queue.
+            $queueChannel = $this->amqpQueue->channel();
+            $properties = new AMQPTable();
+            $properties->set('x-max-priority', 9);
+            $queueChannel->queue_declare($this->queue->getId(), false, true, false, false, false, $properties);
+            $queueChannel->basic_qos(null, 1, null);
+
+            // Register the current script as a worker.
+            $queueChannel->basic_consume($this->queue->getId(), '', false, false, false, false, [$this, 'processMessage']);
+            $start = time();
+            $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds.', $this->ttl));
+            while (count($queueChannel->callbacks) && $start + $this->ttl > time()) {
+                $queueChannel->wait();
+            }
+
+            $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached.', $this->ttl));
         }
-        $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached.', $this->ttl));
+        else {
+            $this->logger->info('Not starting worker, because no queues were available.');
+        }
     }
 
     /**
@@ -133,9 +142,13 @@ class Worker implements WorkerInterface {
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     public function processMessage(AMQPMessage $message) {
+        $this->queue->setLastRequest(time());
+        $this->resultStorage->saveQueue($this->queue);
+
         if (!$this->validateMessage($message)) {
             $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
             $this->acknowledgeMessage($message);
+            $message->delivery_info['channel']->getConnection()->close();
             return;
         }
 
@@ -147,6 +160,7 @@ class Worker implements WorkerInterface {
         if (!$url) {
             $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
             $this->acknowledgeMessage($message);
+            $message->delivery_info['channel']->getConnection()->close();
             return;
         }
 
@@ -184,6 +198,7 @@ class Worker implements WorkerInterface {
             }
         }
         $this->acknowledgeMessage($message);
+        $message->delivery_info['channel']->getConnection()->close();
     }
 
     /**
@@ -201,7 +216,7 @@ class Worker implements WorkerInterface {
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     protected function publishMessage(AMQPMessage $message) {
-        $message->delivery_info['channel']->basic_publish($message, '', $this->queueName);
+        $message->delivery_info['channel']->basic_publish($message, '', $this->queue->getId());
     }
 
     /**

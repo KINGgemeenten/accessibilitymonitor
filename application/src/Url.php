@@ -53,14 +53,6 @@ class Url implements TestingStatusInterface
     protected $testingStatus;
 
     /**
-     * The current testing priority.
-     *
-     * @var int
-     *   A lower value means a higher priority.
-     */
-    protected $priority = 0;
-
-    /**
      * The Quail test results.
      *
      * @var string
@@ -237,32 +229,6 @@ class Url implements TestingStatusInterface
     public function setTestingStatus($testing_status)
     {
         $this->testingStatus = $testing_status;
-
-        return $this;
-    }
-
-    /**
-     * Returns the testing priority.
-     *
-     * @return int
-     *   A lower value means a higher priority.
-     */
-    public function getPriority()
-    {
-        return $this->priority;
-    }
-
-    /**
-     * Sets the testing priority.
-     *
-     * @param int $priority
-     *   A lower value means a higher priority.
-     *
-     * @return $this
-     */
-    public function setPriority($priority)
-    {
-        $this->priority = $priority;
 
         return $this;
     }
