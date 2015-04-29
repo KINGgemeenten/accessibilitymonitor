@@ -13,19 +13,11 @@ use Triquanta\AccessibilityMonitor\Url;
 
 /**
  * Provides a storage-based tester.
+ *
+ * Decorates another tester in order to save the results.
  */
 class StorageBasedTester implements TesterInterface
 {
-
-    /**
-     * The flooding thresholds.
-     *
-     * @var int[]
-     *   Keys are periods in seconds, values are maximum number of requests.
-     *   They represent the maximum number of requests that can be made to a
-     *   host in the past period.
-     */
-    protected $floodingThresholds = [];
 
     /**
      * The result storage.
@@ -53,18 +45,12 @@ class StorageBasedTester implements TesterInterface
      *
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
-     * @param int[] $floodingThresholds
-     *   Keys are periods in seconds, values are maximum number of requests.
-     *   They represent the maximum number of requests that can be made to a
-     *   host in the past period.
      */
     public function __construct(
       LoggerInterface $logger,
       TesterInterface $tester,
-      StorageInterface $resultStorage,
-      array $floodingThresholds
+      StorageInterface $resultStorage
     ) {
-        $this->floodingThresholds = $floodingThresholds;
         $this->logger = $logger;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
@@ -72,13 +58,6 @@ class StorageBasedTester implements TesterInterface
 
     public function run(Url $url)
     {
-        if (!$this->preventFlooding($url)) {
-            $this->logger->info(sprintf('Skipped testing of %s to prevent flooding.',
-              $url->getUrl()));
-
-            return false;
-        }
-
         try {
             $outcome = $this->tester->run($url);
             if (!$outcome) {
@@ -99,23 +78,6 @@ class StorageBasedTester implements TesterInterface
             $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
             return false;
         }
-    }
-
-    /**
-     * Prevents flooding of hosts with requests (DOS attack).
-     *
-     * @param \Triquanta\AccessibilityMonitor\Url $url
-     *
-     * @return bool
-     *   Whether the URL can be tested.
-     */
-    protected function preventFlooding(Url $url) {
-        foreach ($this->floodingThresholds as $period => $maximum) {
-            if ($this->resultStorage->countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($url->getWebsiteTestResultsId(), time() - $period, time()) >= $maximum) {
-                return FALSE;
-            }
-        }
-        return TRUE;
     }
 
 }

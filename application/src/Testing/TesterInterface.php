@@ -18,6 +18,8 @@ interface TesterInterface
     /**
      * Runs the test for a URL.
      *
+     * Results must be stored on the URL object itself.
+     *
      * @param \Triquanta\AccessibilityMonitor\Url $url
      *
      * @return bool

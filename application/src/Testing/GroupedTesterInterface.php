@@ -14,7 +14,7 @@ interface GroupedTesterInterface extends TesterInterface
 {
 
     /**
-     * Adds a tester.
+     * Adds a tester to the group.
      *
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
      */

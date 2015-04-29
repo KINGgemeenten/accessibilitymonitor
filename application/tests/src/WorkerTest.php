@@ -8,6 +8,7 @@
 namespace Triquanta\Tests\AccessibilityMonitor;
 
 use PhpAmqpLib\Message\AMQPMessage;
+use Triquanta\AccessibilityMonitor\Queue;
 use Triquanta\AccessibilityMonitor\Url;
 use Triquanta\AccessibilityMonitor\Worker;
 
@@ -45,13 +46,6 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $queue;
-
-    /**
-     * The name of the queue.
-     *
-     * @var string
-     */
-    protected $queueName;
 
     /**
      * The result storage.
@@ -96,16 +90,14 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
           ->disableOriginalConstructor()
           ->getMock();
 
-        $this->queueName = 'fooBar200' . mt_rand();
-
         $this->resultStorage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->ttl = mt_rand();
+        $this->ttl = mt_rand(2, 5);
 
-        $this->sut = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Worker')
-          ->setConstructorArgs([$this->logger, $this->tester, $this->resultStorage, $this->queue, $this->queueName, $this->ttl, $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod])
+        $this->sut = $this->getMockBuilder('\Triquanta\Tests\AccessibilityMonitor\WorkerTestWorker')
+          ->setConstructorArgs([$this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl, $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod])
           ->setMethods(['acknowledgeMessage', 'publishMessage'])
           ->getMock();
     }
@@ -115,7 +107,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new Worker($this->logger, $this->tester, $this->resultStorage, $this->queue, $this->queueName, $this->ttl, $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod);
+        $this->sut = new Worker($this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl, $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod);
     }
 
     /**
@@ -123,14 +115,50 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      *
      * @todo Extend this with some proper assertions.
      */
-    public function testRegisterWorker()
+    public function testRegisterWorkerWithoutAvailableQueues()
     {
+        $this->resultStorage->expects($this->atLeastOnce())
+          ->method('getQueueToSubscribeTo')
+          ->willReturn(null);
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->never())
+          ->method('queue_declare');
+
+        $this->queue->expects($this->never())
+          ->method('channel');
+
+        $this->sut->registerWorker();
+    }
+
+    /**
+     * @covers ::registerWorker
+     *
+     * @todo Extend this with some proper assertions.
+     */
+    public function testRegisterWorkerWithAvailableQueue()
+    {
+        $queueName = 'foo_bar_' . mt_rand();
+
+        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $queue->expects($this->atLeastOnce())
+            ->method('getName')
+            ->willReturn($queueName);
+
+        $this->resultStorage->expects($this->atLeastOnce())
+            ->method('getQueueToSubscribeTo')
+            ->willReturn($queue);
+
         $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
           ->getMock();
         $channel->expects($this->atLeastOnce())
           ->method('queue_declare')
-          ->with($this->queueName);
+          ->with($queueName);
 
         $this->queue->expects($this->atLeastOnce())
           ->method('channel')
@@ -147,12 +175,32 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     {
         $urlId = mt_rand();
         $failedTestRuns = [time(), time()];
+
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+            ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+            ->method('getConnection')
+            ->willReturn($connection);
+
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $messageData->failedTestRuns = $failedTestRuns;
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
 
         $url = new Url();
+
+        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $this->sut->setQueue($queue);
 
         $this->resultStorage->expects($this->atLeastOnce())
           ->method('getUrlById')
@@ -176,10 +224,30 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         foreach (range(1, 3) as $i) {
             $failedTestRuns[] = time();
         }
+
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+          ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+          ->method('getConnection')
+          ->willReturn($connection);
+
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $messageData->failedTestRuns = $failedTestRuns;
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
+
+        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $this->sut->setQueue($queue);
 
         $this->resultStorage->expects($this->atLeastOnce())
           ->method('getUrlById')
@@ -201,8 +269,27 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessageWithInvalidMessage()
     {
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+          ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+          ->method('getConnection')
+          ->willReturn($connection);
+
         $messageData = new \stdClass();
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
+
+        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $this->sut->setQueue($queue);
 
         $this->tester->expects($this->never())
             ->method('run');
@@ -234,12 +321,32 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         }
 
         $urlId = mt_rand();
+
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+          ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+          ->method('getConnection')
+          ->willReturn($connection);
+
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $messageData->failedTestRuns = $dismissal ? $dismissalFailedTestRuns : [];
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
 
         $url = new Url();
+
+        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $this->sut->setQueue($queue);
 
         $this->resultStorage->expects($this->atLeastOnce())
           ->method('getUrlById')
@@ -273,6 +380,22 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
             [false, false],
             [false, true],
         ];
+    }
+
+}
+
+/**
+ * Provides a worker with an injectable queue.
+ */
+class WorkerTestWorker extends Worker {
+
+    /**
+     * Sets the queue.
+     *
+     * @param \Triquanta\AccessibilityMonitor\Queue $queue
+     */
+    public function setQueue(Queue $queue) {
+        $this->queue = $queue;
     }
 
 }

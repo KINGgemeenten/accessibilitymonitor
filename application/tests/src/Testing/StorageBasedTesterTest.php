@@ -78,7 +78,6 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers ::run
-     * @covers ::preventFlooding
      *
      * @dataProvider providerTestRun
      */
@@ -112,7 +111,6 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers ::run
-     * @covers ::preventFlooding
      */
     public function testRunWithException()
     {

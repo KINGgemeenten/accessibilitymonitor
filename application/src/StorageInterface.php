@@ -47,4 +47,34 @@ interface StorageInterface extends TestingStatusInterface
      */
     public function countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($websiteTestResultsId, $start, $end);
 
+    /**
+     * Gets a queue by queue ID.
+     *
+     * @param string $id
+     *
+     * @return \Triquanta\AccessibilityMonitor\Queue|null
+     */
+    public function getQueueByName($id);
+
+    /**
+     * Saves a queue.
+     *
+     * @param \Triquanta\AccessibilityMonitor\Queue $queue
+     *
+     * @return bool
+     *   Whether saving the data was successful or not.
+     */
+    public function saveQueue(Queue $queue);
+
+    /**
+     * Gets the queue a worker must subscribe to.
+     *
+     * This method is not idempotent. This means that subsequent calls may
+     * return different queues.
+     *
+     * @return \Triquanta\AccessibilityMonitor\Queue|null
+     *   The queue or NULL in case no queue is available.
+     */
+    public function getQueueToSubscribeTo();
+
 }
