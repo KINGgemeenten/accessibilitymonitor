@@ -175,10 +175,25 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     {
         $urlId = mt_rand();
         $failedTestRuns = [time(), time()];
+
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+            ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+            ->method('getConnection')
+            ->willReturn($connection);
+
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $messageData->failedTestRuns = $failedTestRuns;
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
 
         $url = new Url();
 
@@ -209,10 +224,25 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         foreach (range(1, 3) as $i) {
             $failedTestRuns[] = time();
         }
+
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+          ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+          ->method('getConnection')
+          ->willReturn($connection);
+
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $messageData->failedTestRuns = $failedTestRuns;
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
 
         $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
           ->disableOriginalConstructor()
@@ -239,8 +269,22 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessageWithInvalidMessage()
     {
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+          ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+          ->method('getConnection')
+          ->willReturn($connection);
+
         $messageData = new \stdClass();
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
 
         $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
           ->disableOriginalConstructor()
@@ -277,10 +321,25 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         }
 
         $urlId = mt_rand();
+
+        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $connection->expects($this->once())
+          ->method('close');
+
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+          ->disableOriginalConstructor()
+          ->getMock();
+        $channel->expects($this->atLeastOnce())
+          ->method('getConnection')
+          ->willReturn($connection);
+
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $messageData->failedTestRuns = $dismissal ? $dismissalFailedTestRuns : [];
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['channel'] = $channel;
 
         $url = new Url();
 

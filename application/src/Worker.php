@@ -121,7 +121,7 @@ class Worker implements WorkerInterface {
             // Register the current script as a worker.
             $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
             $start = time();
-            $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds.', $this->ttl));
+            $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds or after processing one message.', $this->ttl));
             while (count($queueChannel->callbacks) && $start + $this->ttl > time()) {
                 $queueChannel->wait();
             }
