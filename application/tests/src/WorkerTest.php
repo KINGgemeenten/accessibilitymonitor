@@ -26,21 +26,6 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     protected $logger;
 
     /**
-     * The maximum number of failed test runs per URL.
-     *
-     * @var int
-     */
-    protected $maxFailedTestRunCount;
-
-    /**
-     * The maximum number of failed test runs per time period.
-     *
-     * @var int
-     *   A period in seconds.
-     */
-    protected $maxFailedTestRunPeriod;
-
-    /**
      * The queue.
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection|\PHPUnit_Framework_MockObject_MockObject
@@ -82,10 +67,6 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     {
         $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
 
-        $this->maxFailedTestRunCount = 3;
-
-        $this->maxFailedTestRunPeriod = 86400;
-
         $this->queue = $this->getMockBuilder('\PhpAmqpLib\Connection\AMQPStreamConnection')
           ->disableOriginalConstructor()
           ->getMock();
@@ -97,7 +78,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         $this->ttl = mt_rand(2, 5);
 
         $this->sut = $this->getMockBuilder('\Triquanta\Tests\AccessibilityMonitor\WorkerTestWorker')
-          ->setConstructorArgs([$this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl, $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod])
+          ->setConstructorArgs([$this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl])
           ->setMethods(['acknowledgeMessage', 'publishMessage'])
           ->getMock();
     }
@@ -107,7 +88,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new Worker($this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl, $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod);
+        $this->sut = new Worker($this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl);
     }
 
     /**
@@ -303,83 +284,6 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
           ->with($message);
 
         $this->sut->processMessage($message);
-    }
-
-    /**
-     * @covers ::processMessage
-     * @covers ::validateMessage
-     *
-     * @dataProvider providerTestProcessMessageWithNegativeTestOutcome
-     */
-    public function testProcessMessageWithNegativeTestOutcome($testRunThrowsException, $dismissal)
-    {
-        $dismissalFailedTestRuns = [
-          time() - $this->maxFailedTestRunPeriod - 3,
-        ];
-        for ($i = 0; $i < $this->maxFailedTestRunCount; $i++) {
-            $dismissalFailedTestRuns[] = time() - mt_rand(0, $this->maxFailedTestRunPeriod);
-        }
-
-        $urlId = mt_rand();
-
-        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
-          ->disableOriginalConstructor()
-          ->getMock();
-        $connection->expects($this->once())
-          ->method('close');
-
-        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
-          ->disableOriginalConstructor()
-          ->getMock();
-        $channel->expects($this->atLeastOnce())
-          ->method('getConnection')
-          ->willReturn($connection);
-
-        $messageData = new \stdClass();
-        $messageData->urlId = $urlId;
-        $messageData->failedTestRuns = $dismissal ? $dismissalFailedTestRuns : [];
-        $message = new AMQPMessage(json_encode($messageData));
-        $message->delivery_info['channel'] = $channel;
-
-        $url = new Url();
-
-        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
-          ->disableOriginalConstructor()
-          ->getMock();
-        $this->sut->setQueue($queue);
-
-        $this->resultStorage->expects($this->atLeastOnce())
-          ->method('getUrlById')
-          ->with($urlId)
-          ->willReturn($url);
-        $this->resultStorage->expects($dismissal ? $this->atLeastOnce() : $this->never())
-          ->method('saveUrl')
-          ->with($url);
-
-        $this->tester->expects($this->once())
-          ->method('run')
-          ->will($testRunThrowsException ? $this->throwException(new \Exception()) : $this->returnValue(false));
-
-        $this->sut->expects($this->once())
-          ->method('acknowledgeMessage')
-          ->with($message);
-
-        $this->sut->expects($dismissal ? $this->never() : $this->once())
-          ->method('publishMessage')
-          ->with($message);
-
-        $this->sut->processMessage($message);
-    }
-
-    /**
-     * Provides data to self::testProcessMessageWithNegativeTestOutcome().
-     */
-    public function providerTestProcessMessageWithNegativeTestOutcome() {
-        return [
-            [true, false],
-            [false, false],
-            [false, true],
-        ];
     }
 
 }

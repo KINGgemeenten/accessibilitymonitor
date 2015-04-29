@@ -90,7 +90,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
           ->with($url)
           ->willReturn($testSuccess);
 
-        $this->resultStorage->expects(is_bool($storageSuccess) ? $this->once() : $this->never())
+        $this->resultStorage->expects($this->once())
           ->method('saveUrl')
           ->with($url)
           ->willReturn($storageSuccess);
@@ -103,9 +103,9 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
      */
     public function providerTestRun() {
         return [
-          [TRUE, TRUE, TRUE],
-          [FALSE, TRUE, FALSE],
-          [FALSE, FALSE, NULL],
+          [true, true, true],
+          [false, true, false],
+          [false, false, false],
         ];
     }
 

@@ -29,21 +29,6 @@ class Worker implements WorkerInterface {
     protected $logger;
 
     /**
-     * The maximum number of failed test runs per URL.
-     *
-     * @var int
-     */
-    protected $minFailedTestRunCount;
-
-    /**
-     * The maximum number of failed test runs per time period.
-     *
-     * @var int
-     *   A period in seconds.
-     */
-    protected $minFailedTestRunPeriod;
-
-    /**
      * The AMQP queue.
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection
@@ -86,21 +71,15 @@ class Worker implements WorkerInterface {
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
      * @param \PhpAmqpLib\Connection\AMQPStreamConnection $queue
      * @param int $ttl
-     * @param int $maxFailedTestRunCount
-     * @param int $maxFailedTestRunPeriod
      */
     public function __construct(
       LoggerInterface $logger,
       TesterInterface $tester,
       StorageInterface $resultStorage,
       AMQPStreamConnection $queue,
-      $ttl,
-      $maxFailedTestRunCount,
-      $maxFailedTestRunPeriod
+      $ttl
     ) {
         $this->logger = $logger;
-        $this->minFailedTestRunCount = $maxFailedTestRunCount;
-        $this->minFailedTestRunPeriod = $maxFailedTestRunPeriod;
         $this->amqpQueue = $queue;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
@@ -168,34 +147,16 @@ class Worker implements WorkerInterface {
         $this->logger->info(sprintf('Testing %s.', $url->getUrl()));
         $start = microtime(true);
         try {
-            $outcome = $this->tester->run($url);
+            $this->tester->run($url);
         }
         catch (\Exception $e) {
             $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
-            $outcome = false;
         }
         $end = microtime(true);
         $duration = $end - $start;
         $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
 
         // Process the test outcome.
-        if (!$outcome) {
-            $messageData->failedTestRuns[] = time();
-            // The URL was tested often enough. Dismiss it.
-            if (count($messageData->failedTestRuns) >= $this->minFailedTestRunCount
-              && min($messageData->failedTestRuns) + $this->minFailedTestRunPeriod <= time()) {
-                $url->setTestingStatus(TestingStatusInterface::STATUS_ERROR);
-                $url->setAnalysis(time());
-                $this->resultStorage->saveUrl($url);
-                $this->logger->info(sprintf('Dismissed testing %s, because it has been tested at least %d times in the past %d seconds.', $url->getUrl(), $this->minFailedTestRunCount, $this->minFailedTestRunPeriod));
-            }
-            // Reschedule the URL for testing at a later time.
-            else {
-                $message->body = json_encode($messageData);
-                $this->publishMessage($message);
-                $this->logger->info(sprintf('Rescheduled %s for testing, because the current test failed or was not completed.', $url->getUrl()));
-            }
-        }
         $this->acknowledgeMessage($message);
         $message->delivery_info['channel']->getConnection()->close();
     }
@@ -207,15 +168,6 @@ class Worker implements WorkerInterface {
      */
     protected function acknowledgeMessage(AMQPMessage $message) {
         $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
-    }
-
-    /**
-     * Publishes a queue message.
-     *
-     * @param \PhpAmqpLib\Message\AMQPMessage $message
-     */
-    protected function publishMessage(AMQPMessage $message) {
-        $message->delivery_info['channel']->basic_publish($message, '', $this->queue->getName());
     }
 
     /**

@@ -61,12 +61,13 @@ class GroupedTester implements GroupedTesterInterface
 
         // The aggregated outcome is negative if at least one tester returns a
         // negative outcome.
+        $url->setAnalysis(time());
         if (in_array(false, $outcomes, true)) {
+            $url->setTestingStatus(Url::STATUS_ERROR);
             return false;
         }
         else {
             $url->setTestingStatus(Url::STATUS_TESTED);
-            $url->setAnalysis(time());
             return true;
         }
     }

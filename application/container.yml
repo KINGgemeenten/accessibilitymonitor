@@ -28,14 +28,12 @@ parameters:
   queue.password: guest
   testing.flooding_threshold: 5
   worker.ttl: 60
-  worker.min_failed_test_run_count: 2
-  worker.min_failed_test_run_period: 86400
   tmp_directory: /tmp/accessibilitymonitor
 
 services:
   worker:
     class: \Triquanta\AccessibilityMonitor\Worker
-    arguments: ['@logger', '@testing.tester', '@testing.result_storage', '@queue', '%worker.ttl%', '%worker.min_failed_test_run_count%', '%worker.min_failed_test_run_period%']
+    arguments: ['@logger', '@testing.tester', '@testing.result_storage', '@queue', '%worker.ttl%']
   queue:
     class: \PhpAmqpLib\Connection\AMQPStreamConnection
     arguments: ['%queue.host%', '%queue.port%', '%queue.user%', '%queue.password%']
