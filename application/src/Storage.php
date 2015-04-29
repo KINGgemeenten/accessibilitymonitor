@@ -99,7 +99,8 @@ class Storage implements StorageInterface
           ->setGooglePageSpeedResult($record->pagespeed_result)
           ->setAnalysis($record->analysis)
           ->setRoot((bool) $record->is_root)
-          ->setQueueName($record->queue_name);
+          ->setQueueName($record->queue_name)
+          ->setFailedTestCount($record->failed_test_count);
 
         return $url;
     }
@@ -126,11 +127,12 @@ class Storage implements StorageInterface
           'pagespeed_result' => $url->getGooglePageSpeedResult(),
           'analysis' => $url->getAnalysis(),
           'is_root' => (int) $url->isRoot(),
+          'failed_test_count' => $url->getFailedTestCount(),
         );
         if ($url->getId()) {
             $values['url_id'] = $url->getId();
             $query = $this->database->getConnection()
-              ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root WHERE url_id = :url_id");
+              ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root, failed_test_count = :failed_test_count WHERE url_id = :url_id");
             $dbSaveResult = $query->execute($values);
         } else {
             $values['url'] = $url->getUrl();

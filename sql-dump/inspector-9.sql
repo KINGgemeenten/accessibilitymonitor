@@ -7,7 +7,7 @@
 #
 # Host: 192.168.50.5 (MySQL 5.5.41-0ubuntu0.12.04.1)
 # Database: inspector
-# Generation Time: 2015-04-28 07:45:52 +0000
+# Generation Time: 2015-04-29 12:20:14 +0000
 # ************************************************************
 
 
@@ -26,8 +26,8 @@
 DROP TABLE IF EXISTS `queue`;
 
 CREATE TABLE `queue` (
-  `name` varchar(255) NOT NULL DEFAULT '',
   `priority` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL DEFAULT '',
   `created` int(11) DEFAULT NULL,
   `last_request` int(11) DEFAULT '0',
   PRIMARY KEY (`name`)
@@ -51,9 +51,12 @@ CREATE TABLE `url` (
   `analysis` int(11) DEFAULT NULL,
   `is_root` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `queue_name` varchar(255) NOT NULL DEFAULT '',
+  `failed_test_count` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`url_id`),
   KEY `website_test_results_id` (`website_test_results_id`),
-  KEY `status` (`status`)
+  KEY `status` (`status`),
+  KEY `failed_test_count` (`failed_test_count`),
+  KEY `analysis` (`analysis`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 

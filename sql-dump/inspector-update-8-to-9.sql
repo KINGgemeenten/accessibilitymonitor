@@ -7,8 +7,13 @@ CREATE TABLE `queue` (
   PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-# Add the "queue_name" field to the "url" table.
+# Add fields to the "url" table.
 ALTER TABLE url ADD queue_name varchar(255) NOT NULL DEFAULT '';
+ALTER TABLE url ADD failed_test_count int(11) NOT NULL DEFAULT '0';
 
 # Drop the "priority" field from the "url" table.
 ALTER TABLE url DROP COLUMN priority;
+
+# Add indices to improve performance.
+CREATE INDEX `failed_test_count` ON `url` (failed_test_count);
+CREATE INDEX `analysis` ON `url` (analysis);
