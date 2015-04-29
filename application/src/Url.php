@@ -66,6 +66,12 @@ class Url implements TestingStatusInterface
      * @var array[]
      */
     protected $quailResultCases = [];
+    /**
+     * The queue name.
+     *
+     * @var string
+     */
+    protected $queueName;
 
     /**
      * The Google PageSpeed test results.
@@ -379,6 +385,30 @@ class Url implements TestingStatusInterface
     public function isRoot()
     {
         return $this->isRoot;
+    }
+
+    /**
+     * Sets the queue name.
+     *
+     * @param string $name
+     *
+     * @return $this
+     */
+    public function setQueueName($name)
+    {
+        $this->queueName = $name;
+
+        return $this;
+    }
+
+    /**
+     * Returns the queue name.
+     *
+     * @return string
+     */
+    public function getQueueName()
+    {
+        return $this->queueName;
     }
 
 }

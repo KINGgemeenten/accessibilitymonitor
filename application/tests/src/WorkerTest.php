@@ -140,14 +140,14 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testRegisterWorkerWithAvailableQueue()
     {
-        $queueId = 'foo_bar_' . mt_rand();
+        $queueName = 'foo_bar_' . mt_rand();
 
         $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
           ->disableOriginalConstructor()
           ->getMock();
         $queue->expects($this->atLeastOnce())
-            ->method('getId')
-            ->willReturn($queueId);
+            ->method('getName')
+            ->willReturn($queueName);
 
         $this->resultStorage->expects($this->atLeastOnce())
             ->method('getQueueToSubscribeTo')
@@ -158,7 +158,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
           ->getMock();
         $channel->expects($this->atLeastOnce())
           ->method('queue_declare')
-          ->with($queueId);
+          ->with($queueName);
 
         $this->queue->expects($this->atLeastOnce())
           ->method('channel')

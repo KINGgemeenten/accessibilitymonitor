@@ -54,7 +54,7 @@ interface StorageInterface extends TestingStatusInterface
      *
      * @return \Triquanta\AccessibilityMonitor\Queue|null
      */
-    public function getQueueById($id);
+    public function getQueueByName($id);
 
     /**
      * Saves a queue.

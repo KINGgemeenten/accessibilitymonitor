@@ -26,12 +26,11 @@
 DROP TABLE IF EXISTS `queue`;
 
 CREATE TABLE `queue` (
-  `id` varchar(255) NOT NULL DEFAULT '',
-  `website_test_results_id` int(10) unsigned NOT NULL,
+  `name` varchar(255) NOT NULL DEFAULT '',
   `priority` int(11) NOT NULL,
   `created` int(11) DEFAULT NULL,
   `last_request` int(11) DEFAULT '0',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -46,12 +45,12 @@ CREATE TABLE `url` (
   `website_test_results_id` int(10) unsigned NOT NULL,
   `url` varchar(1024) NOT NULL,
   `status` int(11) NOT NULL,
-  `priority` int(11) DEFAULT NULL,
   `cms` varchar(1024) DEFAULT NULL,
   `quail_result` text,
   `pagespeed_result` longtext,
   `analysis` int(11) DEFAULT NULL,
   `is_root` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `queue_name` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`url_id`),
   KEY `website_test_results_id` (`website_test_results_id`),
   KEY `status` (`status`)

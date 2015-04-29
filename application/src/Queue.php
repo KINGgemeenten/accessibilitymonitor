@@ -18,7 +18,7 @@ class Queue
      *
      * @var int
      */
-    protected $id;
+    protected $name;
 
     /**
      * The time the queue was created.
@@ -52,28 +52,28 @@ class Queue
     protected $priority = 0;
 
     /**
-     * Returns the queue ID.
+     * Returns the queue's name.
      *
-     * @return int
+     * @return string
      */
-    public function getId()
+    public function getName()
     {
-        return $this->id;
+        return $this->name;
     }
 
     /**
-     * Sets the queue ID.
+     * Sets the queue's name.
      *
-     * @param int $id
+     * @param string $name
      *
      * @return $this
      */
-    public function setId($id)
+    public function setName($name)
     {
-        if ($this->id) {
-            throw new \BadMethodCallException('This queue already has an ID.');
+        if ($this->name) {
+            throw new \BadMethodCallException('This queue already has a name.');
         } else {
-            $this->id = $id;
+            $this->name = $name;
         }
 
         return $this;

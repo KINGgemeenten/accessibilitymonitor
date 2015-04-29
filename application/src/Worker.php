@@ -12,7 +12,6 @@ use JsonSchema\Uri\UriRetriever;
 use JsonSchema\Validator as SchemaValidator;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
-use PhpAmqpLib\Wire\AMQPTable;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
 use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
@@ -116,13 +115,11 @@ class Worker implements WorkerInterface {
 
             // Declare the queue.
             $queueChannel = $this->amqpQueue->channel();
-            $properties = new AMQPTable();
-            $properties->set('x-max-priority', 9);
-            $queueChannel->queue_declare($this->queue->getId(), false, true, false, false, false, $properties);
+            $queueChannel->queue_declare($this->queue->getName(), false, true, false, false);
             $queueChannel->basic_qos(null, 1, null);
 
             // Register the current script as a worker.
-            $queueChannel->basic_consume($this->queue->getId(), '', false, false, false, false, [$this, 'processMessage']);
+            $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
             $start = time();
             $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds.', $this->ttl));
             while (count($queueChannel->callbacks) && $start + $this->ttl > time()) {
@@ -216,7 +213,7 @@ class Worker implements WorkerInterface {
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     protected function publishMessage(AMQPMessage $message) {
-        $message->delivery_info['channel']->basic_publish($message, '', $this->queue->getId());
+        $message->delivery_info['channel']->basic_publish($message, '', $this->queue->getName());
     }
 
     /**

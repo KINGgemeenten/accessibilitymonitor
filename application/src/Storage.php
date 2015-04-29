@@ -98,7 +98,8 @@ class Storage implements StorageInterface
           ->setQuailResult(json_decode($record->quail_result))
           ->setGooglePageSpeedResult($record->pagespeed_result)
           ->setAnalysis($record->analysis)
-          ->setRoot((bool) $record->is_root);
+          ->setRoot((bool) $record->is_root)
+          ->setQueueName($record->queue_name);
 
         return $url;
     }
@@ -304,8 +305,7 @@ class Storage implements StorageInterface
     protected function createQueueFromStorageRecord($record)
     {
         $queue = new Queue();
-        $queue->setId($record->id)
-          ->setWebsiteTestResultsId($record->website_test_results_id)
+        $queue->setName($record->name)
           ->setPriority($record->priority)
           ->setCreated($record->created)
           ->setLastRequest($record->last_request);
@@ -313,11 +313,11 @@ class Storage implements StorageInterface
         return $queue;
     }
 
-    public function getQueueById($id) {
+    public function getQueueByName($name) {
         $query = $this->database->getConnection()
-          ->prepare("SELECT * FROM queue WHERE id = :id");
+          ->prepare("SELECT * FROM queue WHERE name = :name");
         $query->execute(array(
-          'id' => $id,
+          'name' => $name,
         ));
 
         $record = $query->fetch(\PDO::FETCH_OBJ);
@@ -327,19 +327,18 @@ class Storage implements StorageInterface
 
     public function saveQueue(Queue $queue) {
         $values = array(
-          'id' => $queue->getId(),
+          'name' => $queue->getName(),
           'priority' => $queue->getPriority(),
           'created' => $queue->getCreated(),
           'last_request' => $queue->getLastRequest(),
-          'website_test_results_id' => $queue->getWebsiteTestResultsId(),
         );
-        if ($queue->getId()) {
+        if ($queue->getName()) {
             $query = $this->database->getConnection()
-              ->prepare("UPDATE queue SET id = :id, priority = :priority, created = :created, last_request = :last_request, website_test_results_id = :website_test_results_id WHERE id = :id");
+              ->prepare("UPDATE queue SET name = :name, priority = :priority, created = :created, last_request = :last_request WHERE name = :name");
             $dbSaveResult = $query->execute($values);
         } else {
             $insert = $this->database->getConnection()
-              ->prepare("INSERT INTO queue (id, priority, created, last_request, website_test_results_id) VALUES (:d, :priority, :created, :last_request, :website_test_results_id)");
+              ->prepare("INSERT INTO queue (id, priority, created, last_request) VALUES (:d, :priority, :created, :last_request)");
             $dbSaveResult = $insert->execute($values);
         }
 
@@ -364,17 +363,17 @@ class Storage implements StorageInterface
      * @return $this
      */
     protected function deleteEmptyQueues() {
-        $selectQuery = $this->database->getConnection()->prepare("SELECT q.id FROM queue q WHERE q.id NOT IN (SELECT q.id FROM queue q INNER JOIN url u ON u.website_test_results_id = q.website_test_results_id WHERE u.status = :status GROUP BY id)");
+        $selectQuery = $this->database->getConnection()->prepare("SELECT q.name FROM queue q WHERE q.name NOT IN (SELECT q.name FROM queue q INNER JOIN url u ON u.queue_name = q.name WHERE u.status = :status GROUP BY q.name)");
         $selectQuery->execute([
             'status' => TestingStatusInterface::STATUS_SCHEDULED,
         ]);
-        while ($queueId = $selectQuery->fetchColumn()) {
-            $deleteQuery = $this->database->getConnection()->prepare("DELETE FROM queue WHERE queue.id = :queue_id");
+        while ($queueName = $selectQuery->fetchColumn()) {
+            $deleteQuery = $this->database->getConnection()->prepare("DELETE FROM queue WHERE queue.name = :queue_name");
             $deleteQuery->execute([
-              'queue_id' => $queueId,
+              'queue_name' => $queueName,
             ]);
 
-            $this->amqpQueue->channel()->queue_delete($queueId);
+            $this->amqpQueue->channel()->queue_delete($queueName);
         }
 
         return $this;
