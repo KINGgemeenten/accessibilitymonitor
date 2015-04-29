@@ -13,6 +13,8 @@ use Triquanta\AccessibilityMonitor\Url;
 
 /**
  * Provides a storage-based tester.
+ *
+ * Decorates another tester in order to save the results.
  */
 class StorageBasedTester implements TesterInterface
 {

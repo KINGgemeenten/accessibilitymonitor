@@ -109,9 +109,14 @@ class Worker implements WorkerInterface {
 
     public function registerWorker()
     {
-        $this->queue = $this->resultStorage->getQueueToSubscribeTo();
-        if ($this->queue) {
-            $this->logger->info('Starting worker.');
+        $start = time();
+        $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds or when no queues are available.', $this->ttl));
+
+        // Register the worker only if there is a queue to process messages from
+        // and if the TTL has not been exceeded yet.
+        while (($this->queue = $this->resultStorage->getQueueToSubscribeTo())
+          && $start + $this->ttl > time()) {
+            $this->logger->info(sprintf('Registering with queue %s.', $this->queue->getName()));
 
             // Declare the queue.
             $queueChannel = $this->amqpQueue->channel();
@@ -120,17 +125,12 @@ class Worker implements WorkerInterface {
 
             // Register the current script as a worker.
             $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
-            $start = time();
-            $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds or after processing one message.', $this->ttl));
-            while (count($queueChannel->callbacks) && $start + $this->ttl > time()) {
+            while (count($queueChannel->callbacks)) {
                 $queueChannel->wait();
             }
+        }
 
-            $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached.', $this->ttl));
-        }
-        else {
-            $this->logger->info('Not starting worker, because no queues were available.');
-        }
+        $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached or there are no available queues.', $this->ttl));
     }
 
     /**
@@ -139,9 +139,11 @@ class Worker implements WorkerInterface {
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     public function processMessage(AMQPMessage $message) {
+        // Register this test run.
         $this->queue->setLastRequest(time());
         $this->resultStorage->saveQueue($this->queue);
 
+        // Check message integrity.
         if (!$this->validateMessage($message)) {
             $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
             $this->acknowledgeMessage($message);
@@ -154,6 +156,7 @@ class Worker implements WorkerInterface {
         $urlId = $messageData->urlId;
         $url = $this->resultStorage->getUrlById($urlId);
 
+        // Check if the message referenced an existing URL.
         if (!$url) {
             $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
             $this->acknowledgeMessage($message);
@@ -161,9 +164,8 @@ class Worker implements WorkerInterface {
             return;
         }
 
-        $this->logger->info(sprintf('Testing %s.',
-          $url->getUrl()));
-
+        // Run the actual tests.
+        $this->logger->info(sprintf('Testing %s.', $url->getUrl()));
         $start = microtime(true);
         try {
             $outcome = $this->tester->run($url);

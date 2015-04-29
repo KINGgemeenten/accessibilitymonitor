@@ -94,7 +94,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->ttl = mt_rand();
+        $this->ttl = mt_rand(2, 5);
 
         $this->sut = $this->getMockBuilder('\Triquanta\Tests\AccessibilityMonitor\WorkerTestWorker')
           ->setConstructorArgs([$this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl, $this->maxFailedTestRunCount, $this->maxFailedTestRunPeriod])
