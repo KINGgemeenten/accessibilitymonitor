@@ -80,34 +80,6 @@ class Queue
     }
 
     /**
-     * Returns the ID of the website test results this queue is for.
-     *
-     * @return int
-     */
-    public function getWebsiteTestResultsId()
-    {
-        return $this->websiteTestResultsId;
-    }
-
-    /**
-     * Sets the queue's website test results ID.
-     *
-     * @param int $websiteTestResultsId
-     *
-     * @return $this
-     */
-    public function setWebsiteTestResultsId($websiteTestResultsId)
-    {
-        if ($this->websiteTestResultsId) {
-            throw new \BadMethodCallException('This queue already has a website test results ID.');
-        } else {
-            $this->websiteTestResultsId = $websiteTestResultsId;
-        }
-
-        return $this;
-    }
-
-    /**
      * Returns the testing priority.
      *
      * @return int

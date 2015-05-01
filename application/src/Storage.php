@@ -99,7 +99,8 @@ class Storage implements StorageInterface
           ->setGooglePageSpeedResult($record->pagespeed_result)
           ->setAnalysis($record->analysis)
           ->setRoot((bool) $record->is_root)
-          ->setQueueName($record->queue_name);
+          ->setQueueName($record->queue_name)
+          ->setFailedTestCount($record->failed_test_count);
 
         return $url;
     }
@@ -117,6 +118,24 @@ class Storage implements StorageInterface
         return $record ? $this->createUrlFromStorageRecord($record) : NULL;
     }
 
+    public function getUrlsByStatusAndAnalysisDateTime($status, $startAnalysis, $endAnalysis)
+    {
+        $query = $this->database->getConnection()
+          ->prepare("SELECT * FROM url WHERE status = :status AND analysis >= :analysis_start AND analysis <= :analysis_end");
+        $query->execute(array(
+          'status' => $status,
+          'analysis_start' => $startAnalysis,
+          'analysis_end' => $endAnalysis,
+        ));
+
+        $urls = [];
+        while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
+            $urls[] = $this->createUrlFromStorageRecord($record);
+        }
+
+        return $urls;
+    }
+
     public function saveUrl(Url $url)
     {
         $values = array(
@@ -126,11 +145,12 @@ class Storage implements StorageInterface
           'pagespeed_result' => $url->getGooglePageSpeedResult(),
           'analysis' => $url->getAnalysis(),
           'is_root' => (int) $url->isRoot(),
+          'failed_test_count' => $url->getFailedTestCount(),
         );
         if ($url->getId()) {
             $values['url_id'] = $url->getId();
             $query = $this->database->getConnection()
-              ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root WHERE url_id = :url_id");
+              ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root, failed_test_count = :failed_test_count WHERE url_id = :url_id");
             $dbSaveResult = $query->execute($values);
         } else {
             $values['url'] = $url->getUrl();
@@ -348,9 +368,10 @@ class Storage implements StorageInterface
     public function getQueueToSubscribeTo() {
         $this->deleteEmptyQueues();
 
-        $query = $this->database->getConnection()->prepare("SELECT * FROM queue WHERE last_request < :last_request ORDER BY priority ASC, created ASC LIMIT 1");
+        $query = $this->database->getConnection()->prepare("SELECT q.* FROM queue q INNER JOIN url u ON q.name = u.queue_name WHERE q.last_request < :last_request AND u.status = :status ORDER BY priority ASC, created ASC LIMIT 1");
         $query->execute([
           'last_request' => time() - $this->floodingThreshold,
+          'status' => TestingStatusInterface::STATUS_SCHEDULED,
         ]);
         $record = $query->fetch(\PDO::FETCH_OBJ);
 
@@ -363,9 +384,10 @@ class Storage implements StorageInterface
      * @return $this
      */
     protected function deleteEmptyQueues() {
-        $selectQuery = $this->database->getConnection()->prepare("SELECT q.name FROM queue q WHERE q.name NOT IN (SELECT q.name FROM queue q INNER JOIN url u ON u.queue_name = q.name WHERE u.status = :status GROUP BY q.name)");
+        $selectQuery = $this->database->getConnection()->prepare("SELECT q.name FROM queue q WHERE q.name NOT IN (SELECT q.name FROM queue q INNER JOIN url u ON u.queue_name = q.name WHERE u.status IN (:status_scheduled, :status_scheduled_for_retest) GROUP BY q.name)");
         $selectQuery->execute([
-            'status' => TestingStatusInterface::STATUS_SCHEDULED,
+          'status_scheduled' => TestingStatusInterface::STATUS_SCHEDULED,
+          'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,
         ]);
         while ($queueName = $selectQuery->fetchColumn()) {
             $deleteQuery = $this->database->getConnection()->prepare("DELETE FROM queue WHERE queue.name = :queue_name");

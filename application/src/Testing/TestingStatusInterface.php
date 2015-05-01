@@ -28,4 +28,9 @@ interface TestingStatusInterface
      */
     const STATUS_ERROR = 3;
 
+    /**
+     * A URL that is scheduled for re-testing.
+     */
+    const STATUS_SCHEDULED_FOR_RETEST = 4;
+
 }

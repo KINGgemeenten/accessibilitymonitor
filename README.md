@@ -27,6 +27,7 @@ Worker manager
 * `echo $MAX > /etc/accessibilitymonitor/max_worker_count`, where `$MAX` is the maximum number of concurrent workers for
  the machine.
 * `` echo `pwd`/application/bin/tam start-worker > /etc/accessibilitymonitor/worker ``
+* `` echo `pwd`/application/bin/tam retest > /etc/accessibilitymonitor/retest ``
 * `cp ./application/scripts/accessibilitymonitor.conf /etc/init/`
 * `start accessibilitymonitor`
 

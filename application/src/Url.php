@@ -95,6 +95,13 @@ class Url implements TestingStatusInterface
     protected $isRoot = false;
 
     /**
+     * How many times testing failed for this URL.
+     *
+     * @var int
+     */
+    protected $failedTestCount = 0;
+
+    /**
      * Returns the URL ID.
      *
      * @return int
@@ -169,14 +176,13 @@ class Url implements TestingStatusInterface
      */
     public function setUrl($url)
     {
-        $url = Validator::validateUrl($url);
+        $validatedUrl = Validator::validateUrl($url);
         if ($this->url) {
             throw new \BadMethodCallException('This URL already has a URL.');
-        } elseif ($url === false) {
-            throw new \InvalidArgumentException(sprintf('%s is not a valid URL.',
-              $url));
+        } elseif ($validatedUrl === false) {
+            throw new \InvalidArgumentException(sprintf('%s is not a valid URL.', $url));
         } else {
-            $this->url = $url;
+            $this->url = $validatedUrl;
         }
 
         return $this;
@@ -409,6 +415,30 @@ class Url implements TestingStatusInterface
     public function getQueueName()
     {
         return $this->queueName;
+    }
+
+    /**
+     * Sets the number of times this URL failed testing.
+     *
+     * @param int $count
+     *
+     * @return $this
+     */
+    public function setFailedTestCount($count)
+    {
+        $this->failedTestCount = $count;
+
+        return $this;
+    }
+
+    /**
+     * Returns the number of times this URL failed testing.
+     *
+     * @return int
+     */
+    public function getFailedTestCount()
+    {
+        return $this->failedTestCount;
     }
 
 }
