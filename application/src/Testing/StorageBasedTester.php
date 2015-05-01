@@ -79,9 +79,6 @@ class StorageBasedTester implements TesterInterface
         }
 
         // Process the test outcome.
-        $this->logger->error(var_export($outcome, true));
-        $this->logger->error($this->maxFailedTestRuns);
-        $this->logger->error($url->getFailedTestCount());
         if ($outcome) {
             $url->setTestingStatus(TestingStatusInterface::STATUS_TESTED);
         }
