@@ -14,7 +14,6 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
-use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
 
 /**
  * Provides a queue worker.
@@ -97,12 +96,9 @@ class Worker implements WorkerInterface {
           && $start + $this->ttl > time()) {
             $this->logger->info(sprintf('Registering with queue %s.', $this->queue->getName()));
 
-            // Declare the queue.
-            $queueChannel = $this->amqpQueue->channel();
-            $queueChannel->queue_declare($this->queue->getName(), false, true, false, false);
-            $queueChannel->basic_qos(null, 1, null);
-
             // Register the current script as a worker.
+            $queueChannel = $this->amqpQueue->channel();
+            AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
             $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
             while (count($queueChannel->callbacks)) {
                 $queueChannel->wait();
@@ -156,7 +152,6 @@ class Worker implements WorkerInterface {
         $duration = $end - $start;
         $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
 
-        // Process the test outcome.
         $this->acknowledgeMessage($message);
         $message->delivery_info['channel']->getConnection()->close();
     }

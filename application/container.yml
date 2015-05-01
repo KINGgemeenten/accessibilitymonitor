@@ -29,6 +29,8 @@ parameters:
   testing.flooding_threshold: 5
   worker.ttl: 60
   tmp_directory: /tmp/accessibilitymonitor
+  testing.retest_threshold: 21600
+  testing.max_failed_test_runs: 2
 
 services:
   worker:
@@ -51,9 +53,12 @@ services:
   phantomjs:
     class: \Triquanta\AccessibilityMonitor\PhantomJs
     arguments: ['@logger', '%phantomjs.executable%', '%phantomjs.timeout%', '%root_directory%', '%tmp_directory%']
+  testing.retester:
+    class: \Triquanta\AccessibilityMonitor\Testing\ReTester
+    arguments: ['@logger', '@testing.result_storage', '@queue', '%testing.retest_threshold%']
   testing.tester:
     class: \Triquanta\AccessibilityMonitor\Testing\StorageBasedTester
-    arguments: ['@logger', '@testing.tester.grouped', '@testing.result_storage']
+    arguments: ['@logger', '@testing.tester.grouped', '@testing.result_storage', '%testing.max_failed_test_runs%']
   testing.tester.grouped:
     class: \Triquanta\AccessibilityMonitor\Testing\GroupedTester
     arguments: ['@logger']

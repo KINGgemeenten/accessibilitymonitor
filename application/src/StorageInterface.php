@@ -77,4 +77,20 @@ interface StorageInterface extends TestingStatusInterface
      */
     public function getQueueToSubscribeTo();
 
+    /**
+     * Gets URLs based on their status and analysis date/time.
+     *
+     * @param $status
+     *   One of the
+     *   \Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface::STATUS_*
+     *   constants.
+     * @param $startAnalysis
+     *   A Unix timestamp.
+     * @param $endAnalysis
+     *   A Unix timestamp.
+     *
+     * @return \Triquanta\AccessibilityMonitor\Url[]
+     */
+    public function getUrlsByStatusAndAnalysisDateTime($status, $startAnalysis, $endAnalysis);
+
 }

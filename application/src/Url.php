@@ -176,14 +176,13 @@ class Url implements TestingStatusInterface
      */
     public function setUrl($url)
     {
-        $url = Validator::validateUrl($url);
+        $validatedUrl = Validator::validateUrl($url);
         if ($this->url) {
             throw new \BadMethodCallException('This URL already has a URL.');
-        } elseif ($url === false) {
-            throw new \InvalidArgumentException(sprintf('%s is not a valid URL.',
-              $url));
+        } elseif ($validatedUrl === false) {
+            throw new \InvalidArgumentException(sprintf('%s is not a valid URL.', $url));
         } else {
-            $this->url = $url;
+            $this->url = $validatedUrl;
         }
 
         return $this;
