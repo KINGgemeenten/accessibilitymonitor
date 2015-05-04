@@ -2,7 +2,7 @@
 # container_overrides_example.yml.
 
 parameters:
-  log.recipients: ['bart@triquanta.nl', 'gerben@triquanta.nl', 'monitoring@triquanta.nl']
+  log.recipients: ['bart@triquanta.nl', 'gerben@triquanta.nl', 'monitoring@triquanta.nl', 'beheer@triquanta.nl']
   log.sender: 'support@triquanta.nl'
   log.file: '/var/log/tam.log'
   solr.phantom:
