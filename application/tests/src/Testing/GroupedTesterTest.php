@@ -50,6 +50,14 @@ class GroupedTesterTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers ::__construct
+     */
+    public function testConstruct()
+    {
+        $this->sut = new GroupedTester($this->logger);
+    }
+
+    /**
      * @covers ::run
      * @covers ::addTester
      */

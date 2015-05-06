@@ -7,9 +7,11 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use PhpAmqpLib\Connection\AMQPStreamConnection;
 use Psr\Log\LoggerInterface;
 use Solarium\Core\Client\Client;
 use Solarium\QueryType\Update\Query\Query;
+use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
 
 /**
  * Provides a database- and Solr-based storage manager.
@@ -18,11 +20,26 @@ class Storage implements StorageInterface
 {
 
     /**
+     * The AMQP queue.
+     *
+     * @var \PhpAmqpLib\Connection\AMQPStreamConnection
+     */
+    protected $amqpQueue;
+
+    /**
      * The database manager.
      *
      * @var \Triquanta\AccessibilityMonitor\DatabaseInterface
      */
     protected $database;
+
+    /**
+     * The flooding threshold.
+     *
+     * @var int
+     *   How long to wait between processing two items from the same queue.
+     */
+    protected $floodingThreshold;
 
     /**
      * The logger.
@@ -43,14 +60,21 @@ class Storage implements StorageInterface
      *
      * @param \Triquanta\AccessibilityMonitor\DatabaseInterface $database
      * @param \Solarium\Core\Client\Client $solrClient
+     * @param \PhpAmqpLib\Connection\AMQPStreamConnection $amqpQueue
      * @param \Psr\Log\LoggerInterface $logger
+     * @param int $floodingThreshold
+     *   How long to wait between processing two items from the same queue.
      */
     public function __construct(
       DatabaseInterface $database,
       Client $solrClient,
-      LoggerInterface $logger
+      AMQPStreamConnection $amqpQueue,
+      LoggerInterface $logger,
+      $floodingThreshold
     ) {
+        $this->amqpQueue = $amqpQueue;
         $this->database = $database;
+        $this->floodingThreshold = $floodingThreshold;
         $this->logger = $logger;
         $this->solrClient = $solrClient;
     }
@@ -70,12 +94,13 @@ class Storage implements StorageInterface
           ->setWebsiteTestResultsId($record->website_test_results_id)
           ->setUrl($record->url)
           ->setTestingStatus($record->status)
-          ->setPriority($record->priority)
           ->setCms($record->cms)
           ->setQuailResult(json_decode($record->quail_result))
           ->setGooglePageSpeedResult($record->pagespeed_result)
           ->setAnalysis($record->analysis)
-          ->setRoot((bool) $record->is_root);
+          ->setRoot((bool) $record->is_root)
+          ->setQueueName($record->queue_name)
+          ->setFailedTestCount($record->failed_test_count);
 
         return $url;
     }
@@ -93,27 +118,45 @@ class Storage implements StorageInterface
         return $record ? $this->createUrlFromStorageRecord($record) : NULL;
     }
 
+    public function getUrlsByStatusAndAnalysisDateTime($status, $startAnalysis, $endAnalysis)
+    {
+        $query = $this->database->getConnection()
+          ->prepare("SELECT * FROM url WHERE status = :status AND analysis >= :analysis_start AND analysis <= :analysis_end");
+        $query->execute(array(
+          'status' => $status,
+          'analysis_start' => $startAnalysis,
+          'analysis_end' => $endAnalysis,
+        ));
+
+        $urls = [];
+        while ($record = $query->fetch(\PDO::FETCH_OBJ)) {
+            $urls[] = $this->createUrlFromStorageRecord($record);
+        }
+
+        return $urls;
+    }
+
     public function saveUrl(Url $url)
     {
         $values = array(
           'status' => $url->getTestingStatus(),
-          'priority' => $url->getPriority(),
           'cms' => $url->getCms(),
           'quail_result' => json_encode($url->getQuailResult()),
           'pagespeed_result' => $url->getGooglePageSpeedResult(),
           'analysis' => $url->getAnalysis(),
           'is_root' => (int) $url->isRoot(),
+          'failed_test_count' => $url->getFailedTestCount(),
         );
         if ($url->getId()) {
             $values['url_id'] = $url->getId();
             $query = $this->database->getConnection()
-              ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, priority = :priority, analysis = :analysis, is_root = :is_root WHERE url_id = :url_id");
+              ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root, failed_test_count = :failed_test_count WHERE url_id = :url_id");
             $dbSaveResult = $query->execute($values);
         } else {
             $values['url'] = $url->getUrl();
             $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
             $insert = $this->database->getConnection()
-              ->prepare("INSERT INTO url (website_test_results_id, url, status, priority, cms, quail_result, pagespeed_result, analysis, is_root) VALUES (:website_test_results_id, :url, :status, :priority, :cms, :quail_result, :pagespeed_result, :analysis, :is_root)");
+              ->prepare("INSERT INTO url (website_test_results_id, url, status, cms, quail_result, pagespeed_result, analysis, is_root) VALUES (:website_test_results_id, :url, :status, :cms, :quail_result, :pagespeed_result, :analysis, :is_root)");
             $dbSaveResult = $insert->execute($values);
             $url->setId($this->database->getConnection()->lastInsertId());
         }
@@ -269,6 +312,93 @@ class Storage implements StorageInterface
         );
 
         return str_replace($special_characters, '_', $string);
+    }
+
+    /**
+     * Creates a queue from a storage record.
+     *
+     * @param \stdClass $record
+     *   A record from the queue table.
+     *
+     * @return \Triquanta\AccessibilityMonitor\Queue
+     */
+    protected function createQueueFromStorageRecord($record)
+    {
+        $queue = new Queue();
+        $queue->setName($record->name)
+          ->setPriority($record->priority)
+          ->setCreated($record->created)
+          ->setLastRequest($record->last_request);
+
+        return $queue;
+    }
+
+    public function getQueueByName($name) {
+        $query = $this->database->getConnection()
+          ->prepare("SELECT * FROM queue WHERE name = :name");
+        $query->execute(array(
+          'name' => $name,
+        ));
+
+        $record = $query->fetch(\PDO::FETCH_OBJ);
+
+        return $record ? $this->createQueueFromStorageRecord($record) : NULL;
+    }
+
+    public function saveQueue(Queue $queue) {
+        $values = array(
+          'name' => $queue->getName(),
+          'priority' => $queue->getPriority(),
+          'created' => $queue->getCreated(),
+          'last_request' => $queue->getLastRequest(),
+        );
+        if ($queue->getName()) {
+            $query = $this->database->getConnection()
+              ->prepare("UPDATE queue SET name = :name, priority = :priority, created = :created, last_request = :last_request WHERE name = :name");
+            $dbSaveResult = $query->execute($values);
+        } else {
+            $insert = $this->database->getConnection()
+              ->prepare("INSERT INTO queue (id, priority, created, last_request) VALUES (:d, :priority, :created, :last_request)");
+            $dbSaveResult = $insert->execute($values);
+        }
+
+        return $dbSaveResult;
+    }
+
+    public function getQueueToSubscribeTo() {
+        $this->deleteEmptyQueues();
+
+        $query = $this->database->getConnection()->prepare("SELECT q.* FROM queue q INNER JOIN url u ON q.name = u.queue_name WHERE q.last_request < :last_request AND u.status = :status ORDER BY priority ASC, created ASC LIMIT 1");
+        $query->execute([
+          'last_request' => time() - $this->floodingThreshold,
+          'status' => TestingStatusInterface::STATUS_SCHEDULED,
+        ]);
+        $record = $query->fetch(\PDO::FETCH_OBJ);
+
+        return $record ? $this->createQueueFromStorageRecord($record) : NULL;
+    }
+
+    /**
+     * Deletes empty queues.
+     *
+     * @return $this
+     */
+    protected function deleteEmptyQueues() {
+        $selectQuery = $this->database->getConnection()->prepare("SELECT q.name FROM queue q WHERE q.name NOT IN (SELECT q.name FROM queue q INNER JOIN url u ON u.queue_name = q.name WHERE u.status IN (:status_scheduled, :status_scheduled_for_retest) GROUP BY q.name)");
+        $selectQuery->execute([
+          'status_scheduled' => TestingStatusInterface::STATUS_SCHEDULED,
+          'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,
+        ]);
+        while ($queueName = $selectQuery->fetchColumn()) {
+            $deleteQuery = $this->database->getConnection()->prepare("DELETE FROM queue WHERE queue.name = :queue_name");
+            $deleteQuery->execute([
+              'queue_name' => $queueName,
+            ]);
+
+            $this->amqpQueue->channel()->queue_delete($queueName);
+        }
+
+        return $this;
     }
 
 }

@@ -53,14 +53,6 @@ class Url implements TestingStatusInterface
     protected $testingStatus;
 
     /**
-     * The current testing priority.
-     *
-     * @var int
-     *   A lower value means a higher priority.
-     */
-    protected $priority = 0;
-
-    /**
      * The Quail test results.
      *
      * @var string
@@ -74,6 +66,12 @@ class Url implements TestingStatusInterface
      * @var array[]
      */
     protected $quailResultCases = [];
+    /**
+     * The queue name.
+     *
+     * @var string
+     */
+    protected $queueName;
 
     /**
      * The Google PageSpeed test results.
@@ -95,6 +93,13 @@ class Url implements TestingStatusInterface
      * @var bool
      */
     protected $isRoot = false;
+
+    /**
+     * How many times testing failed for this URL.
+     *
+     * @var int
+     */
+    protected $failedTestCount = 0;
 
     /**
      * Returns the URL ID.
@@ -171,14 +176,13 @@ class Url implements TestingStatusInterface
      */
     public function setUrl($url)
     {
-        $url = Validator::validateUrl($url);
+        $validatedUrl = Validator::validateUrl($url);
         if ($this->url) {
             throw new \BadMethodCallException('This URL already has a URL.');
-        } elseif ($url === false) {
-            throw new \InvalidArgumentException(sprintf('%s is not a valid URL.',
-              $url));
+        } elseif ($validatedUrl === false) {
+            throw new \InvalidArgumentException(sprintf('%s is not a valid URL.', $url));
         } else {
-            $this->url = $url;
+            $this->url = $validatedUrl;
         }
 
         return $this;
@@ -237,32 +241,6 @@ class Url implements TestingStatusInterface
     public function setTestingStatus($testing_status)
     {
         $this->testingStatus = $testing_status;
-
-        return $this;
-    }
-
-    /**
-     * Returns the testing priority.
-     *
-     * @return int
-     *   A lower value means a higher priority.
-     */
-    public function getPriority()
-    {
-        return $this->priority;
-    }
-
-    /**
-     * Sets the testing priority.
-     *
-     * @param int $priority
-     *   A lower value means a higher priority.
-     *
-     * @return $this
-     */
-    public function setPriority($priority)
-    {
-        $this->priority = $priority;
 
         return $this;
     }
@@ -413,6 +391,54 @@ class Url implements TestingStatusInterface
     public function isRoot()
     {
         return $this->isRoot;
+    }
+
+    /**
+     * Sets the queue name.
+     *
+     * @param string $name
+     *
+     * @return $this
+     */
+    public function setQueueName($name)
+    {
+        $this->queueName = $name;
+
+        return $this;
+    }
+
+    /**
+     * Returns the queue name.
+     *
+     * @return string
+     */
+    public function getQueueName()
+    {
+        return $this->queueName;
+    }
+
+    /**
+     * Sets the number of times this URL failed testing.
+     *
+     * @param int $count
+     *
+     * @return $this
+     */
+    public function setFailedTestCount($count)
+    {
+        $this->failedTestCount = $count;
+
+        return $this;
+    }
+
+    /**
+     * Returns the number of times this URL failed testing.
+     *
+     * @return int
+     */
+    public function getFailedTestCount()
+    {
+        return $this->failedTestCount;
     }
 
 }

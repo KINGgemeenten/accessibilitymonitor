@@ -16,21 +16,18 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
-     * The flooding thresholds.
-     *
-     * @var int[]
-     *   Keys are periods in seconds, values are maximum number of requests.
-     *   They represent the maximum number of requests that can be made to a
-     *   host in the past period.
-     */
-    protected $floodingThresholds = [];
-
-    /**
      * The logger.
      *
      * @var \Psr\Log\LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $logger;
+
+    /**
+     * The maximum number of failed test runs per URL.
+     *
+     * @var int
+     */
+    protected $maxFailedTestRuns;
 
     /**
      * The result storage.
@@ -55,7 +52,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->floodingThresholds[mt_rand()] = mt_rand();
+        $this->maxFailedTestRuns = mt_rand(2, 5);
 
         $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
 
@@ -63,8 +60,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->sut = new StorageBasedTester($this->logger, $this->tester,
-          $this->resultStorage, $this->floodingThresholds);
+        $this->sut = new StorageBasedTester($this->logger, $this->tester, $this->resultStorage, $this->maxFailedTestRuns);
     }
 
     /**
@@ -72,61 +68,49 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new StorageBasedTester($this->logger, $this->tester,
-          $this->resultStorage, $this->floodingThresholds);
+        $this->sut = new StorageBasedTester($this->logger, $this->tester, $this->resultStorage, $this->maxFailedTestRuns);
     }
 
     /**
      * @covers ::run
-     * @covers ::preventFlooding
      *
-     * @dataProvider providerTestRun
+     * @dataProvider providerRunWithNegativeOutcomeOrException
      */
-    public function testRun($expected, $testSuccess, $storageSuccess = NULL)
+    public function testRun($expectedOutcome, \PHPUnit_Framework_MockObject_Stub $testRunStub, $storageResult, $expectedTestingStatus)
     {
         $url = new Url();
-
-        $this->tester->expects($this->once())
-          ->method('run')
-          ->with($url)
-          ->willReturn($testSuccess);
-
-        $this->resultStorage->expects(is_bool($storageSuccess) ? $this->once() : $this->never())
-          ->method('saveUrl')
-          ->with($url)
-          ->willReturn($storageSuccess);
-
-        $this->assertSame($expected, $this->sut->run($url));
-    }
-
-    /**
-     * Provides data to self::testRun().
-     */
-    public function providerTestRun() {
-        return [
-          [TRUE, TRUE, TRUE],
-          [FALSE, TRUE, FALSE],
-          [FALSE, FALSE, NULL],
-        ];
-    }
-
-    /**
-     * @covers ::run
-     * @covers ::preventFlooding
-     */
-    public function testRunWithException()
-    {
-        $url = new Url();
+        $url->setFailedTestCount($expectedTestingStatus === TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST ? $this->maxFailedTestRuns - 2: $this->maxFailedTestRuns);
 
         $this->tester->expects($this->once())
             ->method('run')
             ->with($url)
-            ->willThrowException(new \Exception());
+            ->will($testRunStub);
 
-        $this->resultStorage->expects($this->never())
-          ->method('saveUrl');
+        $this->resultStorage->expects($this->once())
+          ->method('saveUrl')
+          ->with($url)
+          ->willReturn($storageResult);
 
-        $this->assertFalse($this->sut->run($url));
+        $this->assertSame($expectedOutcome, $this->sut->run($url));
+        $this->assertSame($expectedTestingStatus, $url->getTestingStatus());
+    }
+
+    /**
+     * Provides data to self::testRunWithNegativeOutcomeOrException().
+     */
+    public function providerRunWithNegativeOutcomeOrException() {
+        return [
+          [true, $this->returnValue(true), true, TestingStatusInterface::STATUS_TESTED],
+          [false, $this->returnValue(true), false, TestingStatusInterface::STATUS_TESTED],
+          [false, $this->returnValue(false), true, TestingStatusInterface::STATUS_ERROR],
+          [false, $this->returnValue(false), true, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
+          [false, $this->returnValue(false), false, TestingStatusInterface::STATUS_ERROR],
+          [false, $this->returnValue(false), false, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
+          [false, $this->throwException(new \Exception()), true, TestingStatusInterface::STATUS_ERROR],
+          [false, $this->throwException(new \Exception()), true, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
+          [false, $this->throwException(new \Exception()), false, TestingStatusInterface::STATUS_ERROR],
+          [false, $this->throwException(new \Exception()), false, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
+        ];
     }
 
 }

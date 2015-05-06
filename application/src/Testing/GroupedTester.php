@@ -12,6 +12,8 @@ use Triquanta\AccessibilityMonitor\Url;
 
 /**
  * Provides a grouped tester.
+ *
+ * Decorates multiple other testers and aggregates test outcomes.
  */
 class GroupedTester implements GroupedTesterInterface
 {
@@ -48,21 +50,24 @@ class GroupedTester implements GroupedTesterInterface
 
     public function run(Url $url)
     {
-        $results = [];
+        $outcomes = [];
         foreach ($this->testers as $tester) {
             $start = microtime(true);
-            $results[] = $tester->run($url);
+            $outcomes[] = $tester->run($url);
             $end = microtime(true);
             $duration = $end - $start;
             $this->logger->debug(sprintf('Done running tests for %s (%s seconds using %s)', $url->getUrl(), $duration, get_class($tester)));
         }
 
-        if (in_array(false, $results, true)) {
+        // The aggregated outcome is negative if at least one tester returns a
+        // negative outcome.
+        $url->setAnalysis(time());
+        if (in_array(false, $outcomes)) {
+            $url->setTestingStatus(Url::STATUS_ERROR);
             return false;
         }
         else {
             $url->setTestingStatus(Url::STATUS_TESTED);
-            $url->setAnalysis(time());
             return true;
         }
     }

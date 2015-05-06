@@ -13,19 +13,18 @@ use Triquanta\AccessibilityMonitor\Url;
 
 /**
  * Provides a storage-based tester.
+ *
+ * Decorates another tester in order to save the results.
  */
 class StorageBasedTester implements TesterInterface
 {
 
     /**
-     * The flooding thresholds.
+     * The maximum number of failed test runs per URL.
      *
-     * @var int[]
-     *   Keys are periods in seconds, values are maximum number of requests.
-     *   They represent the maximum number of requests that can be made to a
-     *   host in the past period.
+     * @var int
      */
-    protected $floodingThresholds = [];
+    protected $maxFailedTestRuns;
 
     /**
      * The result storage.
@@ -51,71 +50,65 @@ class StorageBasedTester implements TesterInterface
     /**
      * Creates a new instance.
      *
+     * @param \Psr\Log\LoggerInterface $logger
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
-     * @param int[] $floodingThresholds
-     *   Keys are periods in seconds, values are maximum number of requests.
-     *   They represent the maximum number of requests that can be made to a
-     *   host in the past period.
+     * @param int $maxFailedTestRuns
+     *   The maximum number of failed test runs for any URL.
      */
     public function __construct(
       LoggerInterface $logger,
       TesterInterface $tester,
       StorageInterface $resultStorage,
-      array $floodingThresholds
+      $maxFailedTestRuns
     ) {
-        $this->floodingThresholds = $floodingThresholds;
         $this->logger = $logger;
+        $this->maxFailedTestRuns = $maxFailedTestRuns;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
     }
 
     public function run(Url $url)
     {
-        if (!$this->preventFlooding($url)) {
-            $this->logger->info(sprintf('Skipped testing of %s to prevent flooding.',
-              $url->getUrl()));
-
-            return false;
-        }
-
         try {
             $outcome = $this->tester->run($url);
-            if (!$outcome) {
-                $this->logger->debug(sprintf('The results for %s were not saved, because testing failed or was not completed.', $url->getUrl()));
-                return false;
-            }
-
-            $storageResult = $this->resultStorage->saveUrl($url);
-            if ($storageResult) {
-                $this->logger->debug(sprintf('The results for %s were saved.', $url->getUrl()));
-            }
-            else {
-                $this->logger->emergency(sprintf('The results for %s were not properly saved, because of a storage error.', $url->getUrl()));
-            }
-            return $storageResult;
         }
         catch (\Exception $e) {
             $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
-            return false;
+            $outcome = false;
         }
-    }
 
-    /**
-     * Prevents flooding of hosts with requests (DOS attack).
-     *
-     * @param \Triquanta\AccessibilityMonitor\Url $url
-     *
-     * @return bool
-     *   Whether the URL can be tested.
-     */
-    protected function preventFlooding(Url $url) {
-        foreach ($this->floodingThresholds as $period => $maximum) {
-            if ($this->resultStorage->countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($url->getWebsiteTestResultsId(), time() - $period, time()) >= $maximum) {
-                return FALSE;
+        // Process the test outcome.
+        if ($outcome) {
+            $url->setTestingStatus(TestingStatusInterface::STATUS_TESTED);
+        }
+        else {
+            $url->setFailedTestCount($url->getFailedTestCount() + 1);
+            // The URL was tested often enough. Dismiss it.
+            if ($url->getFailedTestCount() >= $this->maxFailedTestRuns) {
+                $url->setTestingStatus(TestingStatusInterface::STATUS_ERROR);
+                $this->logger->info(sprintf('Dismissed testing %s, because it has been tested at least %d times and still failed.', $url->getUrl(), $this->maxFailedTestRuns));
+            }
+            // Reschedule the URL for testing at a later time.
+            else {
+                $url->setTestingStatus(TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST);
+                $this->logger->info(sprintf('Rescheduled %s for testing, because the current test failed or was not completed.', $url->getUrl()));
             }
         }
-        return TRUE;
+        $url->setAnalysis(time());
+
+        // Save the URL.
+        $storageResult = $this->resultStorage->saveUrl($url);
+        if ($storageResult) {
+            $this->logger->debug(sprintf('The results for %s were saved.', $url->getUrl()));
+        }
+        else {
+            $this->logger->emergency(sprintf('The results for %s were not properly saved, because of a storage error.', $url->getUrl()));
+        }
+
+        // This test run's outcome depends on the decorated tester's outcome
+        // and whether the URL was successfully saved.
+        return $storageResult && $outcome;
     }
 
 }
