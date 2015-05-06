@@ -31,6 +31,7 @@ parameters:
   tmp_directory: /tmp/accessibilitymonitor
   testing.retest_threshold: 21600
   testing.max_failed_test_runs: 2
+  logger.mail.subject: 'Log messages for Gewoon Toegankelijk'
 
 services:
   worker:
@@ -86,7 +87,7 @@ services:
     class: \Symfony\Bridge\Monolog\Handler\ConsoleHandler
   monolog.handler.mail:
     class: \Monolog\Handler\NativeMailerHandler
-    arguments: ['%log.recipients%', 'Log messages for Gewoon Toegankelijk', '%log.sender%', 500]
+    arguments: ['%log.recipients%', '%logger.mail.subject%', '%log.sender%', 500]
   monolog.handler.file:
     class: \Monolog\Handler\StreamHandler
     arguments: ['%log.file%', 100]
