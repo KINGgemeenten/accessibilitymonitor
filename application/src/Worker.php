@@ -11,6 +11,7 @@ use JsonSchema\RefResolver;
 use JsonSchema\Uri\UriRetriever;
 use JsonSchema\Validator as SchemaValidator;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Exception\AMQPBasicCancelException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
@@ -90,19 +91,28 @@ class Worker implements WorkerInterface {
         $start = time();
         $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds or when no queues are available.', $this->ttl));
 
-        // Register the worker only if there is a queue to process messages from
-        // and if the TTL has not been exceeded yet.
-        while (($this->queue = $this->resultStorage->getQueueToSubscribeTo())
-          && $start + $this->ttl > time()) {
+        // Find a queue to register the worker for.
+        $this->queue = $this->resultStorage->getQueueToSubscribeTo();
+        if ($this->queue) {
             $this->logger->info(sprintf('Registering with queue %s.', $this->queue->getName()));
 
             // Register the current script as a worker.
             $queueChannel = $this->amqpQueue->channel();
             AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
-            $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
-            while (count($queueChannel->callbacks)) {
-                $queueChannel->wait();
+            $consumerTag = $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
+            // Wait for push messages, but only until the TTL.
+            while (count($queueChannel->callbacks) && $start + $this->ttl > time()) {
+                try {
+                    $queueChannel->wait();
+                }
+                // The queue can be deleted while the worker is still listening
+                // to it. This is expected application behavior, so prevent the
+                // exception from bubbling up and stop waiting for messages.
+                catch (AMQPBasicCancelException $e) {
+                    break;
+                }
             }
+            $queueChannel->basic_cancel($consumerTag);
         }
 
         $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached or there are no available queues.', $this->ttl));
