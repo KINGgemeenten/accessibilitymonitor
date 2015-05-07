@@ -99,7 +99,7 @@ class Worker implements WorkerInterface {
             // Register the current script as a worker.
             $queueChannel = $this->amqpQueue->channel();
             AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
-            $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
+            $consumerTag = $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
             // Wait for push messages, but only until the TTL.
             while (count($queueChannel->callbacks) && $start + $this->ttl > time()) {
                 try {
@@ -107,10 +107,12 @@ class Worker implements WorkerInterface {
                 }
                 // The queue can be deleted while the worker is still listening
                 // to it. This is expected application behavior, so prevent the
-                // exception from bubbling up.
+                // exception from bubbling up and stop waiting for messages.
                 catch (AMQPBasicCancelException $e) {
+                    break;
                 }
             }
+            $queueChannel->basic_cancel($consumerTag);
         }
 
         $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached or there are no available queues.', $this->ttl));
