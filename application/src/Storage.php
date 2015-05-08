@@ -390,12 +390,27 @@ class Storage implements StorageInterface
           'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,
         ]);
         while ($queueName = $selectQuery->fetchColumn()) {
+            $this->logger->debug(sprintf('Preparing to delete queue %s.', $queueName));
+
+            // Delete the queue from RabbitMQ.
+            $this->amqpQueue->channel()->queue_delete($queueName);
+            $this->logger->debug(sprintf('Successfully removed queue %s from RabbitMQ.', $queueName));
+
+            // Delete the queue from the database.
             $deleteQuery = $this->database->getConnection()->prepare("DELETE FROM queue WHERE queue.name = :queue_name");
-            $deleteQuery->execute([
+            $result = $deleteQuery->execute([
               'queue_name' => $queueName,
             ]);
-
-            $this->amqpQueue->channel()->queue_delete($queueName);
+            if ($result) {
+                $this->logger->debug(sprintf('Successfully removed queue %s from the database.', $queueName));
+            }
+            else {
+                $errorInfo = $this->database->getConnection()->errorInfo();;
+                $pdoCode = $errorInfo[0];
+                $driverCode = array_key_exists(1, $errorInfo) ? $errorInfo[1] : null;
+                $driverMessage = array_key_exists(2, $errorInfo) ? $errorInfo[2] : null;
+                throw new \RuntimeException(sprintf('Failed to remove queue %s from the database. The PDO error was %s: %s (%s).', $queueName, $pdoCode, $driverMessage, $driverCode));
+            }
         }
 
         return $this;
