@@ -368,7 +368,7 @@ class Storage implements StorageInterface
     public function getQueueToSubscribeTo() {
         $this->deleteEmptyQueues();
 
-        $query = $this->database->getConnection()->prepare("SELECT q.* FROM queue q INNER JOIN url u ON q.name = u.queue_name WHERE q.last_request < :last_request AND u.status = :status ORDER BY priority ASC, created ASC LIMIT 1");
+        $query = $this->database->getConnection()->prepare("SELECT q.* FROM queue q INNER JOIN url u ON q.name = u.queue_name WHERE q.last_request < :last_request AND u.status = :status ORDER BY last_request ASC, priority ASC, created ASC LIMIT 1");
         $query->execute([
           'last_request' => time() - $this->floodingThreshold,
           'status' => TestingStatusInterface::STATUS_SCHEDULED,
