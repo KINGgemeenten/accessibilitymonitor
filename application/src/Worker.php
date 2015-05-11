@@ -114,6 +114,9 @@ class Worker implements WorkerInterface {
             }
             $queueChannel->basic_cancel($consumerTag);
         }
+        else {
+          $this->logger->info(sprintf('Not registered with queue. Being idle for 60 seconds....'));
+        }
 
         $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached or there are no available queues.', $this->ttl));
     }
