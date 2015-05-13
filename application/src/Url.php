@@ -28,7 +28,7 @@ class Url implements TestingStatusInterface
      * @var int
      *   A Unix timestamp.
      */
-    protected $analysis;
+    protected $lastProcessedTime;
 
     /**
      * The ID of the website test results the URL is for.
@@ -343,27 +343,27 @@ class Url implements TestingStatusInterface
     }
 
     /**
-     * Returns the time of the analysis.
+     * Gets the time the URL was last processed (requested/tested).
      *
      * @return int
      *   A Unix timestamp.
      */
-    public function getAnalysis()
+    public function getLastProcessedTime()
     {
-        return $this->analysis;
+        return $this->lastProcessedTime;
     }
 
     /**
-     * Sets the time of the analysis.
+     * Sets the time the URL was last processed (requested/tested).
      *
-     * @param int $analysis
+     * @param int $lastProcessedTime
      *   A Unix timestamp.
      *
      * @return $this
      */
-    public function setAnalysis($analysis)
+    public function setLastProcessedTime($lastProcessedTime)
     {
-        $this->analysis = $analysis;
+        $this->lastProcessedTime = $lastProcessedTime;
 
         return $this;
     }

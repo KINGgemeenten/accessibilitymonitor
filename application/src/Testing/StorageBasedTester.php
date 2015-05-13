@@ -95,7 +95,7 @@ class StorageBasedTester implements TesterInterface
                 $this->logger->info(sprintf('Rescheduled %s for testing, because the current test failed or was not completed.', $url->getUrl()));
             }
         }
-        $url->setAnalysis(time());
+        $url->setLastProcessedTime(time());
 
         // Save the URL.
         $storageResult = $this->resultStorage->saveUrl($url);

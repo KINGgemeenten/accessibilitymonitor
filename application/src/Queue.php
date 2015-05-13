@@ -37,13 +37,6 @@ class Queue
     protected $lastRequest;
 
     /**
-     * The ID of the website test results the queue is for.
-     *
-     * @var int
-     */
-    protected $websiteTestResultsId;
-
-    /**
      * The current testing priority.
      *
      * @var int

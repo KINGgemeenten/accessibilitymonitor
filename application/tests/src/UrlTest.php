@@ -202,13 +202,13 @@ class UrlTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers ::setAnalysis
-     * @covers ::getAnalysis
+     * @covers ::setLastProcessedTime
+     * @covers ::getLastProcessedTime
      */
-    public function testGetAnalysis() {
-        $analysis = mt_rand();
-        $this->assertSame($this->sut, $this->sut->setAnalysis($analysis));
-        $this->assertSame($analysis, $this->sut->getAnalysis());
+    public function testGetLastProcessedTime() {
+        $time = mt_rand();
+        $this->assertSame($this->sut, $this->sut->setLastProcessedTime($time));
+        $this->assertSame($time, $this->sut->getLastProcessedTime());
     }
 
     /**
