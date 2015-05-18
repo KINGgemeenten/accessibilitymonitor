@@ -97,7 +97,7 @@ class Storage implements StorageInterface
           ->setCms($record->cms)
           ->setQuailResult(json_decode($record->quail_result))
           ->setGooglePageSpeedResult($record->pagespeed_result)
-          ->setAnalysis($record->analysis)
+          ->setLastProcessedTime($record->analysis)
           ->setRoot((bool) $record->is_root)
           ->setQueueName($record->queue_name)
           ->setFailedTestCount($record->failed_test_count);
@@ -143,7 +143,7 @@ class Storage implements StorageInterface
           'cms' => $url->getCms(),
           'quail_result' => json_encode($url->getQuailResult()),
           'pagespeed_result' => $url->getGooglePageSpeedResult(),
-          'analysis' => $url->getAnalysis(),
+          'analysis' => $url->getLastProcessedTime(),
           'is_root' => (int) $url->isRoot(),
           'failed_test_count' => $url->getFailedTestCount(),
         );
@@ -366,8 +366,20 @@ class Storage implements StorageInterface
     }
 
     public function getQueueToSubscribeTo() {
+        // No events are dispatched when queues are empty, so we cannot delete
+        // queues once all their items have been processed. Instead we delete
+        // empty queues here, because this is the only moment where it matters
+        // to have no empty queues at all.
         $this->deleteEmptyQueues();
 
+        // 1) Select a complete queue row.
+        // 2) Join queues with their URLs and select only queues for which URLs
+        //    are scheduled for testing.
+        // 3) Select only queues of which a URL was last processed longer ago
+        //    than the threshold.
+        // 4) Of all available queues, pick the one with the highest priority
+        //    (lowest priority value), that is the oldest, and of which a URL
+        //    was tested last.
         $query = $this->database->getConnection()->prepare("SELECT q.* FROM queue q INNER JOIN url u ON q.name = u.queue_name WHERE q.last_request < :last_request AND u.status = :status ORDER BY last_request ASC, priority ASC, created ASC LIMIT 1");
         $query->execute([
           'last_request' => time() - $this->floodingThreshold,
@@ -384,7 +396,22 @@ class Storage implements StorageInterface
      * @return $this
      */
     protected function deleteEmptyQueues() {
-        $selectQuery = $this->database->getConnection()->prepare("SELECT q.name FROM queue q WHERE q.name NOT IN (SELECT q.name FROM queue q INNER JOIN url u ON u.queue_name = q.name WHERE u.status IN (:status_scheduled, :status_scheduled_for_retest) GROUP BY q.name)");
+        // 1) Select queue names.
+        // 2) Join queues with their URLs and select only queues for which URLs
+        //    are scheduled for testing or re-testing.
+        // 3) In the outer query, select queue names that do not match the
+        //    previously selected names, resulting in the names of queues for
+        //    which no URLs are scheduled for testing or re-testing.
+        $selectQuery = $this->database->getConnection()->prepare("
+SELECT q.name
+FROM queue q
+WHERE q.name NOT IN
+    (SELECT q.name
+     FROM queue q
+     INNER JOIN url u ON u.queue_name = q.name
+     WHERE u.status IN (:status_scheduled,
+                        :status_scheduled_for_retest)
+     GROUP BY q.name)");
         $selectQuery->execute([
           'status_scheduled' => TestingStatusInterface::STATUS_SCHEDULED,
           'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,

@@ -105,7 +105,7 @@ php55_cli_add_mongo: false
 rabbitmq_users:
   - name: inspector
     password: z31lb00t
-    write_priv: ^inspector.*
-    read_priv: ^inspector.*
-    configure_priv: ^inspector.*
+    write_priv: .*
+    read_priv: .*
+    configure_priv: .*
     tags: administrator

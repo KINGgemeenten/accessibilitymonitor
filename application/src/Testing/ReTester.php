@@ -15,6 +15,15 @@ use Triquanta\AccessibilityMonitor\StorageInterface;
 
 /**
  * Re-tests URLs.
+ *
+ * URLs can be scheduled for another test run, for instance when previous test
+ * runs were not completed successfully. They have the status
+ * \Triquanta\AccessibilityMonitor\TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST.
+ * An actual re-test is requested by simply changing the status back to
+ * \Triquanta\AccessibilityMonitor\TestingStatusInterface::STATUS_SCHEDULED
+ * and publishing the URL in the queue again.
+ * This class takes care of this change and publication and does so based on a
+ * configurable threshold to prevent re-tests from occurring too frequently.
  */
 class ReTester {
 
