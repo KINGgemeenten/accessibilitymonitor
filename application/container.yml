@@ -27,7 +27,7 @@ parameters:
   queue.user: guest
   queue.password: guest
   testing.flooding_threshold: 5
-  worker.ttl: 60
+  worker.ttl: 300
   tmp_directory: /tmp/accessibilitymonitor
   testing.retest_threshold: 21600
   testing.max_failed_test_runs: 2
