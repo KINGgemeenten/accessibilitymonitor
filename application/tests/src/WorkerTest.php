@@ -30,7 +30,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $queue;
+    protected $amqpQueue;
 
     /**
      * The result storage.
@@ -51,7 +51,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      *
      * @var int
      */
-    protected $ttl;
+    protected $workerTtl;
 
     /**
      * The class under test.
@@ -67,7 +67,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     {
         $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
 
-        $this->queue = $this->getMockBuilder('\PhpAmqpLib\Connection\AMQPStreamConnection')
+        $this->amqpQueue = $this->getMockBuilder('\PhpAmqpLib\Connection\AMQPStreamConnection')
           ->disableOriginalConstructor()
           ->getMock();
 
@@ -75,10 +75,15 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->ttl = mt_rand(2, 5);
+        $this->workerTtl = mt_rand(2, 5);
 
         $this->sut = $this->getMockBuilder('\Triquanta\Tests\AccessibilityMonitor\WorkerTestWorker')
-          ->setConstructorArgs([$this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl])
+          ->setConstructorArgs([
+            $this->logger,
+            $this->tester,
+            $this->resultStorage,
+            $this->amqpQueue,
+            $this->workerTtl])
           ->setMethods(['acknowledgeMessage', 'publishMessage'])
           ->getMock();
     }
@@ -88,7 +93,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new Worker($this->logger, $this->tester, $this->resultStorage, $this->queue, $this->ttl);
+        $this->sut = new Worker($this->logger, $this->tester,
+          $this->resultStorage, $this->amqpQueue, $this->workerTtl);
     }
 
     /**
@@ -108,8 +114,9 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         $channel->expects($this->never())
           ->method('queue_declare');
 
-        $this->queue->expects($this->never())
-          ->method('channel');
+        $this->amqpQueue->expects($this->atLeastOnce())
+          ->method('channel')
+          ->willReturn($channel);
 
         $this->sut->registerWorker();
     }
@@ -141,7 +148,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
           ->method('queue_declare')
           ->with($queueName);
 
-        $this->queue->expects($this->atLeastOnce())
+        $this->amqpQueue->expects($this->atLeastOnce())
           ->method('channel')
           ->willReturn($channel);
 
@@ -154,26 +161,20 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessage()
     {
+        $consumerTag = 'FooBar' . mt_rand();
         $urlId = mt_rand();
-        $failedTestRuns = [time(), time()];
 
-        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
           ->getMock();
-        $connection->expects($this->once())
-            ->method('close');
-
-        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
-          ->disableOriginalConstructor()
-          ->getMock();
-        $channel->expects($this->atLeastOnce())
-            ->method('getConnection')
-            ->willReturn($connection);
+        $channel->expects($this->once())
+          ->method('basic_cancel')
+          ->with($consumerTag);
 
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
-        $messageData->failedTestRuns = $failedTestRuns;
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['consumer_tag'] = $consumerTag;
         $message->delivery_info['channel'] = $channel;
 
         $url = new Url();
@@ -200,29 +201,20 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessageWithNonExistentUrl()
     {
+        $consumerTag = 'FooBar' . mt_rand();
         $urlId = mt_rand();
-        $failedTestRuns = [];
-        foreach (range(1, 3) as $i) {
-            $failedTestRuns[] = time();
-        }
 
-        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
-          ->disableOriginalConstructor()
-          ->getMock();
-        $connection->expects($this->once())
-          ->method('close');
-
-        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
           ->getMock();
         $channel->expects($this->atLeastOnce())
-          ->method('getConnection')
-          ->willReturn($connection);
+          ->method('basic_cancel')
+          ->with($consumerTag);
 
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
-        $messageData->failedTestRuns = $failedTestRuns;
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['consumer_tag'] = $consumerTag;
         $message->delivery_info['channel'] = $channel;
 
         $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
@@ -250,21 +242,15 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessageWithInvalidMessage()
     {
-        $connection = $this->getMockBuilder('\PhpAmqpLib\Connection\AbstractConnection')
-          ->disableOriginalConstructor()
-          ->getMock();
-        $connection->expects($this->once())
-          ->method('close');
+        $consumerTag = 'FooBar' . mt_rand();
 
-        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AbstractChannel')
+        $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
           ->getMock();
-        $channel->expects($this->atLeastOnce())
-          ->method('getConnection')
-          ->willReturn($connection);
 
         $messageData = new \stdClass();
         $message = new AMQPMessage(json_encode($messageData));
+        $message->delivery_info['consumer_tag'] = $consumerTag;
         $message->delivery_info['channel'] = $channel;
 
         $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')

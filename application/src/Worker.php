@@ -10,8 +10,10 @@ namespace Triquanta\AccessibilityMonitor;
 use JsonSchema\RefResolver;
 use JsonSchema\Uri\UriRetriever;
 use JsonSchema\Validator as SchemaValidator;
+use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Exception\AMQPBasicCancelException;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
@@ -112,14 +114,11 @@ class Worker implements WorkerInterface {
 
             // Wait for push messages, but only until the TTL.
             while (count($queueChannel->callbacks) && $consumerStart + $consumerTtl > time()) {
-                // @todo Remove this debugging logging message.
-                $this->logger->debug(time());
                 try {
                     // The wait must be non-blocking to allow us to reliably
                     // enforce the TTL. Blocking waits can exceed the TTL when
                     // no frames are received.
-                    // @todo It seems it can take a long time before the wait() method ends, effectively preventing the TTL from being enforced.
-                    $queueChannel->wait(null, true);
+                    $queueChannel->wait(null, true, $consumerTtl);
                 }
                 // The queue can be deleted while the consumer is still
                 // listening to it. This is expected application behavior, so
@@ -127,6 +126,15 @@ class Worker implements WorkerInterface {
                 // messages.
                 catch (AMQPBasicCancelException $e) {
                     break;
+                }
+                // The wait timeout was reached. This should not happen, but we
+                // want to fail gracefully.
+                // @todo Consider raising the log message's severity as a
+                //   timeout can indicate a connection error, among other
+                //   things.
+                catch (AMQPTimeoutException $e) {
+                    $this->logger->debug(sprintf('The consumer wait timeout of %d seconds was reached.', $consumerTtl));
+                    $this->cancelConsumer($queueChannel, $consumerStart);
                 }
             }
         }
@@ -151,7 +159,7 @@ class Worker implements WorkerInterface {
         if (!$this->validateMessage($message)) {
             $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
             $this->acknowledgeMessage($message);
-            $message->delivery_info['channel']->getConnection()->close();
+            $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
             return;
         }
 
@@ -164,7 +172,7 @@ class Worker implements WorkerInterface {
         if (!$url) {
             $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
             $this->acknowledgeMessage($message);
-            $message->delivery_info['channel']->getConnection()->close();
+            $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
             return;
         }
 
@@ -183,9 +191,18 @@ class Worker implements WorkerInterface {
 
         $this->acknowledgeMessage($message);
 
-        // Cancel the consumer.
+        $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
+    }
+
+    /**
+     * Cancels a consumer.
+     *
+     * @param \PhpAmqpLib\Channel\AMQPChannel $queueChannel
+     * @param string $consumerTag
+     */
+    protected function cancelConsumer(AMQPChannel $queueChannel, $consumerTag) {
         $this->logger->info(sprintf('Cancelling the consumer for queue %s.', $this->queue->getName()));
-        $message->delivery_info['channel']->basic_cancel($message->delivery_info['consumer_tag']);
+        $queueChannel->basic_cancel($consumerTag);
     }
 
     /**
