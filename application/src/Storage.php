@@ -372,20 +372,33 @@ class Storage implements StorageInterface
         // to have no empty queues at all.
         $this->deleteEmptyQueues();
 
-        // 1) Select a complete queue row.
-        // 2) Join queues with their URLs and select only queues for which URLs
-        //    are scheduled for testing.
-        // 3) Select only queues of which a URL was last processed longer ago
-        //    than the threshold.
-        // 4) Of all available queues, pick the one with the highest priority
-        //    (lowest priority value), that is the oldest, and of which a URL
-        //    was tested last.
-        $query = $this->database->getConnection()->prepare("SELECT q.* FROM queue q INNER JOIN url u ON q.name = u.queue_name WHERE q.last_request < :last_request AND u.status = :status ORDER BY last_request ASC, priority ASC, created ASC LIMIT 1");
-        $query->execute([
-          'last_request' => time() - $this->floodingThreshold,
+        // Get the names of all active queues.
+        $activeQueueNamesSelectQuery = $this->database->getConnection()->prepare("
+SELECT u.queue_name
+     FROM url u
+     WHERE u.status = :status
+     GROUP BY u.queue_name");
+        $activeQueueNamesSelectQuery->execute([
           'status' => TestingStatusInterface::STATUS_SCHEDULED,
         ]);
-        $record = $query->fetch(\PDO::FETCH_OBJ);
+        $activeQueueNames = $activeQueueNamesSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
+
+        // Of all the active queues, load one that is available.
+        $parameters = [];
+        foreach ($activeQueueNames as $i => $activeQueueName) {
+            $parameters[':queue_' . $i] = $activeQueueName;
+        }
+        $placeholders = implode(', ', array_keys($parameters));
+        $availableQueueSelectQuery = $this->database->getConnection()->prepare(sprintf("
+SELECT q.*
+     FROM queue q
+     WHERE q.name IN (%s)
+          AND q.last_request < :last_request
+     ORDER BY last_request ASC, priority ASC, created ASC
+     LIMIT 1", $placeholders));
+        $parameters['last_request'] = time() - $this->floodingThreshold;
+        $availableQueueSelectQuery->execute($parameters);
+        $record = $availableQueueSelectQuery->fetch(\PDO::FETCH_OBJ);
 
         return $record ? $this->createQueueFromStorageRecord($record) : NULL;
     }
