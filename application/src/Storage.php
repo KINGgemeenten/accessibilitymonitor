@@ -395,49 +395,80 @@ class Storage implements StorageInterface
      *
      * @return $this
      */
-    protected function deleteEmptyQueues() {
-        // 1) Select queue names.
-        // 2) Join queues with their URLs and select only queues for which URLs
-        //    are scheduled for testing or re-testing.
-        // 3) In the outer query, select queue names that do not match the
-        //    previously selected names, resulting in the names of queues for
-        //    which no URLs are scheduled for testing or re-testing.
-        $selectQuery = $this->database->getConnection()->prepare("
-SELECT q.name
-FROM queue q
-WHERE q.name NOT IN
-    (SELECT q.name
-     FROM queue q
-     INNER JOIN url u ON u.queue_name = q.name
+    protected function deleteEmptyQueues()
+    {
+        $this->logger->info('Collecting empty queues.');
+
+        // Get the names of the queues for which URLs must still be tested.
+        $activeQueueSelectQuery = $this->database->getConnection()->prepare("
+SELECT u.queue_name
+     FROM url u
      WHERE u.status IN (:status_scheduled,
                         :status_scheduled_for_retest)
-     GROUP BY q.name)");
-        $selectQuery->execute([
+     GROUP BY u.queue_name");
+        $activeQueueSelectQuery->execute([
           'status_scheduled' => TestingStatusInterface::STATUS_SCHEDULED,
           'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,
         ]);
-        while ($queueName = $selectQuery->fetchColumn()) {
-            $this->logger->debug(sprintf('Preparing to delete queue %s.', $queueName));
+        $activeQueueNames = $activeQueueSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
 
-            // Delete the queue from RabbitMQ.
-            $this->amqpQueue->channel()->queue_delete($queueName);
-            $this->logger->debug(sprintf('Successfully removed queue %s from RabbitMQ.', $queueName));
+        // Get the names of the queues for which all URLs have been tested.
+        if ($activeQueueNames) {
+            $parameters = [];
+            foreach ($activeQueueNames as $i => $activeQueueName) {
+                $parameters[':queue_' . $i] = $activeQueueName;
+            }
+            $placeholders = implode(', ', array_keys($parameters));
+            $inactiveQueueSelectQuery = $this->database->getConnection()
+              ->prepare(sprintf("
+    SELECT q.name
+    FROM queue q
+    WHERE q.name NOT IN (%s)", $placeholders));
+            $inactiveQueueSelectQuery->execute($parameters);
+        } else {
+            $inactiveQueueSelectQuery = $this->database->getConnection()
+              ->prepare("
+    SELECT q.name
+    FROM queue q");
+            $inactiveQueueSelectQuery->execute();
+        }
+        $inactiveQueueNames = $inactiveQueueSelectQuery->fetchAll(\PDO::FETCH_COLUMN,
+          0);
 
-            // Delete the queue from the database.
-            $deleteQuery = $this->database->getConnection()->prepare("DELETE FROM queue WHERE queue.name = :queue_name");
-            $result = $deleteQuery->execute([
-              'queue_name' => $queueName,
-            ]);
-            if ($result) {
-                $this->logger->debug(sprintf('Successfully removed queue %s from the database.', $queueName));
+        if ($inactiveQueueNames) {
+            $this->logger->info(sprintf('Preparing to delete empty queues: %s',
+              implode(', ', $inactiveQueueNames)));
+            foreach ($inactiveQueueNames as $queueName) {
+                $this->logger->debug(sprintf('Preparing to delete queue %s.',
+                  $queueName));
+
+                // Delete the queue from RabbitMQ.
+                $this->amqpQueue->channel()->queue_delete($queueName);
+                $this->logger->debug(sprintf('Successfully removed queue %s from RabbitMQ.',
+                  $queueName));
+
+                // Delete the queue from the database.
+                $deleteQuery = $this->database->getConnection()
+                  ->prepare("DELETE FROM queue WHERE queue.name = :queue_name");
+                $result = $deleteQuery->execute([
+                  'queue_name' => $queueName,
+                ]);
+                if ($result) {
+                    $this->logger->debug(sprintf('Successfully removed queue %s from the database.',
+                      $queueName));
+                } else {
+                    $errorInfo = $this->database->getConnection()->errorInfo();;
+                    $pdoCode = $errorInfo[0];
+                    $driverCode = array_key_exists(1,
+                      $errorInfo) ? $errorInfo[1] : null;
+                    $driverMessage = array_key_exists(2,
+                      $errorInfo) ? $errorInfo[2] : null;
+                    throw new \RuntimeException(sprintf('Failed to remove queue %s from the database. The PDO error was %s: %s (%s).',
+                      $queueName, $pdoCode, $driverMessage, $driverCode));
+                }
             }
-            else {
-                $errorInfo = $this->database->getConnection()->errorInfo();;
-                $pdoCode = $errorInfo[0];
-                $driverCode = array_key_exists(1, $errorInfo) ? $errorInfo[1] : null;
-                $driverMessage = array_key_exists(2, $errorInfo) ? $errorInfo[2] : null;
-                throw new \RuntimeException(sprintf('Failed to remove queue %s from the database. The PDO error was %s: %s (%s).', $queueName, $pdoCode, $driverMessage, $driverCode));
-            }
+        } else {
+            $this->logger->info('No empty queues found.');
         }
 
         return $this;
