@@ -107,10 +107,10 @@ class Worker implements WorkerInterface {
             }
 
             // Register the current script as a consumer.
-            $this->logger->info(sprintf('Registering consumer with queue %s.', $this->queue->getName()));
             $consumerStart = time();
             AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
             $consumerTag = $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
+            $this->logger->info(sprintf('Registered consumer %s with queue %s.', $consumerTag, $this->queue->getName()));
 
             // Wait for push messages, but only until the TTL.
             while (count($queueChannel->callbacks) && $consumerStart + $consumerTtl > time()) {
@@ -211,6 +211,7 @@ class Worker implements WorkerInterface {
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     protected function acknowledgeMessage(AMQPMessage $message) {
+        $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
         $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
     }
 
