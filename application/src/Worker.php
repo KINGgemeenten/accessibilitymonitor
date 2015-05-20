@@ -159,7 +159,6 @@ class Worker implements WorkerInterface {
         if (!$this->validateMessage($message)) {
             $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
             $this->acknowledgeMessage($message);
-            $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
             return;
         }
 
@@ -172,7 +171,6 @@ class Worker implements WorkerInterface {
         if (!$url) {
             $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
             $this->acknowledgeMessage($message);
-            $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
             return;
         }
 
@@ -190,8 +188,6 @@ class Worker implements WorkerInterface {
         $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
 
         $this->acknowledgeMessage($message);
-
-        $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
     }
 
     /**
