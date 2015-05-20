@@ -110,7 +110,7 @@ class Worker implements WorkerInterface {
             $this->logger->info(sprintf('Registering consumer with queue %s.', $this->queue->getName()));
             $consumerStart = time();
             AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
-            $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
+            $consumerTag = $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
 
             // Wait for push messages, but only until the TTL.
             while (count($queueChannel->callbacks) && $consumerStart + $consumerTtl > time()) {
@@ -134,7 +134,7 @@ class Worker implements WorkerInterface {
                 //   things.
                 catch (AMQPTimeoutException $e) {
                     $this->logger->debug(sprintf('The consumer wait timeout of %d seconds was reached.', $consumerTtl));
-                    $this->cancelConsumer($queueChannel, $consumerStart);
+                    $this->cancelConsumer($queueChannel, $consumerTag);
                 }
             }
         }
@@ -201,7 +201,7 @@ class Worker implements WorkerInterface {
      * @param string $consumerTag
      */
     protected function cancelConsumer(AMQPChannel $queueChannel, $consumerTag) {
-        $this->logger->info(sprintf('Cancelling the consumer for queue %s.', $this->queue->getName()));
+        $this->logger->info(sprintf('Cancelling consumer %s for queue %s.', $consumerTag, $this->queue->getName()));
         $queueChannel->basic_cancel($consumerTag);
     }
 
