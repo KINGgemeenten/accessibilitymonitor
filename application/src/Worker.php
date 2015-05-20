@@ -12,16 +12,12 @@ use JsonSchema\Uri\UriRetriever;
 use JsonSchema\Validator as SchemaValidator;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Exception\AMQPBasicCancelException;
-use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
 
 /**
- * Provides a queue worker.
- *
- * This worker spins up AMQP consumers as needed.
+ * Provides a queue worker that tests URLs contained in AMQP messages.
  */
 class Worker implements WorkerInterface {
 
@@ -90,67 +86,43 @@ class Worker implements WorkerInterface {
         $this->workerTtl = $workerTtl;
     }
 
-    public function registerWorker()
+    public function run()
     {
-        $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds or when no queues are available.', $this->workerTtl));
+        $this->logger->debug(sprintf('Starting worker. It will be shut down in %d seconds.', $this->workerTtl));
         $queueChannel = $this->amqpQueue->channel();
         $workerStart = time();
+        $failureWait = 3;
 
         while ($workerStart + $this->workerTtl > time()) {
-            $consumerTtl = 3;
-
+            // Try to find a queue to process messages from.
             $this->queue = $this->resultStorage->getQueueToSubscribeTo();
             if (!$this->queue) {
-                // Wait before trying to find a queue again.
-                sleep($consumerTtl);
+                sleep($failureWait);
                 break;
             }
 
-            // Register the current script as a consumer.
-            $consumerStart = time();
+            // Try to retrieve a message from the queue.
             AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
-            $consumerTag = $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
-            $this->logger->info(sprintf('Registered consumer %s with queue %s.', $consumerTag, $this->queue->getName()));
-
-            // Wait for push messages, but only until the TTL.
-            while (count($queueChannel->callbacks) && $consumerStart + $consumerTtl > time()) {
-                try {
-                    // The wait must be non-blocking to allow us to reliably
-                    // enforce the TTL. Blocking waits can exceed the TTL when
-                    // no frames are received.
-                    $queueChannel->wait(null, true, $consumerTtl);
-                }
-                // The queue can be deleted while the consumer is still
-                // listening to it. This is expected application behavior, so
-                // prevent the exception from bubbling up and stop waiting for
-                // messages.
-                catch (AMQPBasicCancelException $e) {
-                    break;
-                }
-                // The wait timeout was reached. This should not happen, but we
-                // want to fail gracefully.
-                // @todo Consider raising the log message's severity as a
-                //   timeout can indicate a connection error, among other
-                //   things.
-                catch (AMQPTimeoutException $e) {
-                    $this->logger->debug(sprintf('The consumer wait timeout of %d seconds was reached.', $consumerTtl));
-                    $this->cancelConsumer($queueChannel, $consumerTag);
-                }
+            $message = $queueChannel->basic_get($this->queue->getName());
+            if (!($message instanceof AMQPMessage)) {
+                sleep($failureWait);
+                break;
             }
+
+            $this->processMessage($queueChannel, $message);
         }
 
-        $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached or there are no available queues.', $this->workerTtl));
+        $this->logger->debug(sprintf('Shutting down worker, because its TTL of %d seconds was reached.', $this->workerTtl));
         $queueChannel->close();
     }
 
     /**
      * Processes a queue message.
      *
-     * This is the actual AMQP consumer.
-     *
+     * @param \PhpAmqpLib\Channel\AMQPChannel $channel
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
-    public function processMessage(AMQPMessage $message) {
+    public function processMessage(AMQPChannel $channel, AMQPMessage $message) {
         // Register this test run.
         $this->queue->setLastRequest(time());
         $this->resultStorage->saveQueue($this->queue);
@@ -158,7 +130,7 @@ class Worker implements WorkerInterface {
         // Check message integrity.
         if (!$this->validateMessage($message)) {
             $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
-            $this->acknowledgeMessage($message);
+            $channel->basic_ack($message->delivery_info['delivery_tag']);
             return;
         }
 
@@ -170,7 +142,7 @@ class Worker implements WorkerInterface {
         // Check if the message referenced an existing URL.
         if (!$url) {
             $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
-            $this->acknowledgeMessage($message);
+            $channel->basic_ack($message->delivery_info['delivery_tag']);
             return;
         }
 
@@ -187,28 +159,7 @@ class Worker implements WorkerInterface {
         $duration = $end - $start;
         $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
 
-        $this->acknowledgeMessage($message);
-    }
-
-    /**
-     * Cancels a consumer.
-     *
-     * @param \PhpAmqpLib\Channel\AMQPChannel $queueChannel
-     * @param string $consumerTag
-     */
-    protected function cancelConsumer(AMQPChannel $queueChannel, $consumerTag) {
-        $this->logger->info(sprintf('Cancelling consumer %s for queue %s.', $consumerTag, $this->queue->getName()));
-        $queueChannel->basic_cancel($consumerTag);
-    }
-
-    /**
-     * Acknowledges a queue message.
-     *
-     * @param \PhpAmqpLib\Message\AMQPMessage $message
-     */
-    protected function acknowledgeMessage(AMQPMessage $message) {
-        $this->cancelConsumer($message->delivery_info['channel'], $message->delivery_info['consumer_tag']);
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
+        $channel->basic_ack($message->delivery_info['delivery_tag']);
     }
 
     /**

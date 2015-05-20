@@ -10,14 +10,14 @@ namespace Triquanta\AccessibilityMonitor;
 /**
  * Defines a queue worker.
  *
- * For the structure messages that can be processed, see
+ * For the structure of messages that can be processed, see
  * queue_message_schema.json.
  */
 interface WorkerInterface {
 
     /**
-     * Registers the worker with the queue.
+     * Runs the worker.
      */
-    public function registerWorker();
+    public function run();
 
 }

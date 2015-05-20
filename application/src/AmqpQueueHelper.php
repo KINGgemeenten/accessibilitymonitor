@@ -24,7 +24,6 @@ class AmqpQueueHelper {
      */
     public static function declareQueue(AMQPChannel $channel, $queueName) {
         $channel->queue_declare($queueName, false, true, false, false);
-        $channel->basic_qos(null, 1, null);
     }
 
 }

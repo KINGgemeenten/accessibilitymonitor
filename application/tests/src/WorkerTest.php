@@ -118,7 +118,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
           ->method('channel')
           ->willReturn($channel);
 
-        $this->sut->registerWorker();
+        $this->sut->run();
     }
 
     /**
@@ -152,7 +152,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
           ->method('channel')
           ->willReturn($channel);
 
-        $this->sut->registerWorker();
+        $this->sut->run();
     }
 
     /**
