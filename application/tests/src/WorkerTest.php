@@ -77,15 +77,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
 
         $this->workerTtl = mt_rand(2, 5);
 
-        $this->sut = $this->getMockBuilder('\Triquanta\Tests\AccessibilityMonitor\WorkerTestWorker')
-          ->setConstructorArgs([
-            $this->logger,
-            $this->tester,
-            $this->resultStorage,
-            $this->amqpQueue,
-            $this->workerTtl])
-          ->setMethods(['acknowledgeMessage', 'publishMessage'])
-          ->getMock();
+        $this->sut = new WorkerTestWorker($this->logger, $this->tester,
+          $this->resultStorage, $this->amqpQueue, $this->workerTtl);
     }
 
     /**
@@ -98,11 +91,11 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers ::registerWorker
+     * @covers ::run
      *
      * @todo Extend this with some proper assertions.
      */
-    public function testRegisterWorkerWithoutAvailableQueues()
+    public function testrunWithoutAvailableQueues()
     {
         $this->resultStorage->expects($this->atLeastOnce())
           ->method('getQueueToSubscribeTo')
@@ -122,11 +115,11 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers ::registerWorker
+     * @covers ::run
      *
      * @todo Extend this with some proper assertions.
      */
-    public function testRegisterWorkerWithAvailableQueue()
+    public function testrunWithAvailableQueue()
     {
         $queueName = 'foo_bar_' . mt_rand();
 
@@ -161,20 +154,20 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessage()
     {
-        $consumerTag = 'FooBar' . mt_rand();
+        $deliveryTag = 'FooBar' . mt_rand();
         $urlId = mt_rand();
 
         $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
           ->getMock();
         $channel->expects($this->once())
-          ->method('basic_cancel')
-          ->with($consumerTag);
+          ->method('basic_ack')
+          ->with($deliveryTag);
 
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $message = new AMQPMessage(json_encode($messageData));
-        $message->delivery_info['consumer_tag'] = $consumerTag;
+        $message->delivery_info['delivery_tag'] = $deliveryTag;
         $message->delivery_info['channel'] = $channel;
 
         $url = new Url();
@@ -192,7 +185,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         $this->tester->expects($this->once())
           ->method('run');
 
-        $this->sut->processMessage($message);
+        $this->sut->processMessage($channel, $message);
     }
 
     /**
@@ -201,20 +194,20 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessageWithNonExistentUrl()
     {
-        $consumerTag = 'FooBar' . mt_rand();
+        $deliveryTag = 'FooBar' . mt_rand();
         $urlId = mt_rand();
 
         $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
           ->getMock();
         $channel->expects($this->atLeastOnce())
-          ->method('basic_cancel')
-          ->with($consumerTag);
+          ->method('basic_ack')
+          ->with($deliveryTag);
 
         $messageData = new \stdClass();
         $messageData->urlId = $urlId;
         $message = new AMQPMessage(json_encode($messageData));
-        $message->delivery_info['consumer_tag'] = $consumerTag;
+        $message->delivery_info['delivery_tag'] = $deliveryTag;
         $message->delivery_info['channel'] = $channel;
 
         $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
@@ -227,13 +220,9 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
           ->with($urlId);
 
         $this->tester->expects($this->never())
-          ->method('run');
+          ->method('run');;
 
-        $this->sut->expects($this->never())
-          ->method('publishMessage')
-          ->with($message);
-
-        $this->sut->processMessage($message);
+        $this->sut->processMessage($channel, $message);
     }
 
     /**
@@ -242,7 +231,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testProcessMessageWithInvalidMessage()
     {
-        $consumerTag = 'FooBar' . mt_rand();
+        $deliveryTag = 'FooBar' . mt_rand();
 
         $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
@@ -250,7 +239,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
 
         $messageData = new \stdClass();
         $message = new AMQPMessage(json_encode($messageData));
-        $message->delivery_info['consumer_tag'] = $consumerTag;
+        $message->delivery_info['delivery_tag'] = $deliveryTag;
         $message->delivery_info['channel'] = $channel;
 
         $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
@@ -261,15 +250,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         $this->tester->expects($this->never())
             ->method('run');
 
-        $this->sut->expects($this->once())
-          ->method('acknowledgeMessage')
-          ->with($message);
-
-        $this->sut->expects($this->never())
-          ->method('publishMessage')
-          ->with($message);
-
-        $this->sut->processMessage($message);
+        $this->sut->processMessage($channel, $message);
     }
 
 }

@@ -74,7 +74,7 @@ class StartWorkerTest extends \PHPUnit_Framework_TestCase
         $output = $this->getMock('\Symfony\Component\Console\Output\OutputInterface');
 
         $this->worker->expects($this->once())
-          ->method('registerWorker');
+          ->method('run');
 
 
         $this->sut->run($input, $output);
