@@ -21,8 +21,14 @@ class AmqpQueueHelper {
      *   The channel to declare the queue for.
      * @param $queueName
      *   The name of the queue to declare.
+     *
+     * @throws \InvalidArgumentException
      */
     public static function declareQueue(AMQPChannel $channel, $queueName) {
+        if (empty($queueName)) {
+            throw new \InvalidArgumentException('Invalid queue name given.');
+        }
+
         $channel->queue_declare($queueName, false, true, false, false);
     }
 
