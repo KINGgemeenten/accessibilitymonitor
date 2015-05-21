@@ -98,7 +98,7 @@ class Worker implements WorkerInterface {
             $this->queue = $this->resultStorage->getQueueToSubscribeTo();
             if (!$this->queue) {
                 sleep($failureWait);
-                break;
+                continue;
             }
 
             // Try to retrieve a message from the queue.
@@ -106,7 +106,7 @@ class Worker implements WorkerInterface {
             $message = $queueChannel->basic_get($this->queue->getName());
             if (!($message instanceof AMQPMessage)) {
                 sleep($failureWait);
-                break;
+                continue;
             }
 
             $this->processMessage($queueChannel, $message);
