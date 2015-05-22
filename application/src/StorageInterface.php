@@ -29,8 +29,8 @@ interface StorageInterface extends TestingStatusInterface
      *
      * @param \Triquanta\AccessibilityMonitor\Url $url
      *
-     * @return bool
-     *   Whether saving the data was successful or not.
+     * @throws \Triquanta\AccessibilityMonitor\StorageException
+     *   Thrown when storage fails.
      */
     public function saveUrl(Url $url);
 
@@ -61,8 +61,8 @@ interface StorageInterface extends TestingStatusInterface
      *
      * @param \Triquanta\AccessibilityMonitor\Queue $queue
      *
-     * @return bool
-     *   Whether saving the data was successful or not.
+     * @throws \Triquanta\AccessibilityMonitor\StorageException
+     *   Thrown when storage fails.
      */
     public function saveQueue(Queue $queue);
 
