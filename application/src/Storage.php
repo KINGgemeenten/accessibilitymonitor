@@ -387,6 +387,10 @@ SELECT u.queue_name
         ]);
         $activeQueueNames = $activeQueueNamesSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
 
+        if (empty($activeQueueNames)) {
+            return null;
+        }
+
         // Of all the active queues, load one that is available.
         $parameters = [];
         foreach ($activeQueueNames as $i => $activeQueueName) {
@@ -404,7 +408,7 @@ SELECT q.*
         $availableQueueSelectQuery->execute($parameters);
         $record = $availableQueueSelectQuery->fetch(\PDO::FETCH_OBJ);
 
-        return $record ? $this->createQueueFromStorageRecord($record) : NULL;
+        return $record ? $this->createQueueFromStorageRecord($record) : null;
     }
 
     /**

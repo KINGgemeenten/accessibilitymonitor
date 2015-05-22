@@ -10,14 +10,14 @@ namespace Triquanta\AccessibilityMonitor;
 use JsonSchema\RefResolver;
 use JsonSchema\Uri\UriRetriever;
 use JsonSchema\Validator as SchemaValidator;
+use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Exception\AMQPBasicCancelException;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
 
 /**
- * Provides a queue worker.
+ * Provides a queue worker that tests URLs contained in AMQP messages.
  */
 class Worker implements WorkerInterface {
 
@@ -61,7 +61,7 @@ class Worker implements WorkerInterface {
      *
      * @var int
      */
-    protected $ttl;
+    protected $workerTtl;
 
     /**
      * Constructs a new instance.
@@ -70,62 +70,59 @@ class Worker implements WorkerInterface {
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
      * @param \PhpAmqpLib\Connection\AMQPStreamConnection $queue
-     * @param int $ttl
+     * @param int $workerTtl
      */
     public function __construct(
       LoggerInterface $logger,
       TesterInterface $tester,
       StorageInterface $resultStorage,
       AMQPStreamConnection $queue,
-      $ttl
+      $workerTtl
     ) {
         $this->logger = $logger;
         $this->amqpQueue = $queue;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
-        $this->ttl = $ttl;
+        $this->workerTtl = $workerTtl;
     }
 
-    public function registerWorker()
+    public function run()
     {
-        $start = time();
-        $this->logger->info(sprintf('Starting worker. It will be shut down in %d seconds or when no queues are available.', $this->ttl));
+        $this->logger->debug(sprintf('Starting worker. It will be shut down in %d seconds.', $this->workerTtl));
+        $queueChannel = $this->amqpQueue->channel();
+        $workerStart = time();
+        $failureWait = 3;
 
-        // Find a queue to register the worker for.
-        $this->queue = $this->resultStorage->getQueueToSubscribeTo();
-        if ($this->queue) {
-            $this->logger->info(sprintf('Registering with queue %s.', $this->queue->getName()));
-
-            // Register the current script as a worker.
-            $queueChannel = $this->amqpQueue->channel();
-            AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
-            $consumerTag = $queueChannel->basic_consume($this->queue->getName(), '', false, false, false, false, [$this, 'processMessage']);
-            // Wait for push messages, but only until the TTL.
-            while (count($queueChannel->callbacks) && $start + $this->ttl > time()) {
-                try {
-                    $queueChannel->wait();
-                }
-                // The queue can be deleted while the worker is still listening
-                // to it. This is expected application behavior, so prevent the
-                // exception from bubbling up and stop waiting for messages.
-                catch (AMQPBasicCancelException $e) {
-                    break;
-                }
+        while ($workerStart + $this->workerTtl > time()) {
+            // Try to find a queue to process messages from.
+            $this->queue = $this->resultStorage->getQueueToSubscribeTo();
+            if (!$this->queue) {
+                sleep($failureWait);
+                continue;
             }
-            $queueChannel->basic_cancel($consumerTag);
+
+            // Try to retrieve a message from the queue.
+            AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
+            $message = $queueChannel->basic_get($this->queue->getName());
+            if (!($message instanceof AMQPMessage)) {
+                sleep($failureWait);
+                continue;
+            }
+
+            $this->processMessage($queueChannel, $message);
         }
 
-        $this->logger->info(sprintf('Shutting down worker, because its TTL of %d seconds has been reached or there are no available queues.', $this->ttl));
+        $this->logger->debug(sprintf('Shutting down worker, because its TTL of %d seconds was reached.', $this->workerTtl));
+        $queueChannel->close();
     }
 
     /**
      * Processes a queue message.
      *
+     * @param \PhpAmqpLib\Channel\AMQPChannel $channel
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
-    public function processMessage(AMQPMessage $message) {
-        $queueChannel = $message->delivery_info['channel'];
-
+    public function processMessage(AMQPChannel $channel, AMQPMessage $message) {
         try {
             // Register this test run.
             $this->queue->setLastRequest(time());
@@ -134,8 +131,7 @@ class Worker implements WorkerInterface {
             // Check message integrity.
             if (!$this->validateMessage($message)) {
                 $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
-                $this->acknowledgeMessage($message);
-                $queueChannel->getConnection()->close();
+                $channel->basic_ack($message->delivery_info['delivery_tag']);
                 return;
             }
 
@@ -147,8 +143,7 @@ class Worker implements WorkerInterface {
             // Check if the message referenced an existing URL.
             if (!$url) {
                 $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
-                $this->acknowledgeMessage($message);
-                $queueChannel->getConnection()->close();
+                $channel->basic_ack($message->delivery_info['delivery_tag']);
                 return;
             }
 
@@ -166,23 +161,13 @@ class Worker implements WorkerInterface {
             // re-tester relies on this metadata, publishing the URL to the
             // queue again is the only way to be certain it will be re-tested
             // again in the future.
-            $queueChannel->basic_publish($message, '', $this->queue->getName());
+            $channel->basic_publish($message, '', $this->queue->getName());
         }
         catch (\Exception $e) {
-            $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
+            $this->logger->emergency(sprintf('%s on line %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));
         }
 
-        $this->acknowledgeMessage($message);
-        $queueChannel->getConnection()->close();
-    }
-
-    /**
-     * Acknowledges a queue message.
-     *
-     * @param \PhpAmqpLib\Message\AMQPMessage $message
-     */
-    protected function acknowledgeMessage(AMQPMessage $message) {
-        $message->delivery_info['channel']->basic_ack($message->delivery_info['delivery_tag']);
+        $channel->basic_ack($message->delivery_info['delivery_tag']);
     }
 
     /**

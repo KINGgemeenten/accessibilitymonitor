@@ -51,7 +51,7 @@ class StartWorker extends Command implements ContainerFactoryInterface
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->worker->registerWorker();
+        $this->worker->run();
     }
 
 }
