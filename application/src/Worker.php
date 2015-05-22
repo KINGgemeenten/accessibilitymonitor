@@ -123,41 +123,49 @@ class Worker implements WorkerInterface {
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     public function processMessage(AMQPChannel $channel, AMQPMessage $message) {
-        // Register this test run.
-        $this->queue->setLastRequest(time());
-        $this->resultStorage->saveQueue($this->queue);
-
-        // Check message integrity.
-        if (!$this->validateMessage($message)) {
-            $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
-            $channel->basic_ack($message->delivery_info['delivery_tag']);
-            return;
-        }
-
-        // For $messageData's structure, see queue_message_schema.json.
-        $messageData = json_decode($message->body);
-        $urlId = $messageData->urlId;
-        $url = $this->resultStorage->getUrlById($urlId);
-
-        // Check if the message referenced an existing URL.
-        if (!$url) {
-            $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
-            $channel->basic_ack($message->delivery_info['delivery_tag']);
-            return;
-        }
-
-        // Run the actual tests.
-        $this->logger->info(sprintf('Testing %s.', $url->getUrl()));
-        $start = microtime(true);
         try {
+            // Register this test run.
+            $this->queue->setLastRequest(time());
+            $this->resultStorage->saveQueue($this->queue);
+
+            // Check message integrity.
+            if (!$this->validateMessage($message)) {
+                $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
+                $channel->basic_ack($message->delivery_info['delivery_tag']);
+                return;
+            }
+
+            // For $messageData's structure, see queue_message_schema.json.
+            $messageData = json_decode($message->body);
+            $urlId = $messageData->urlId;
+            $url = $this->resultStorage->getUrlById($urlId);
+
+            // Check if the message referenced an existing URL.
+            if (!$url) {
+                $this->logger->emergency(sprintf('URL %s does not exist.', $urlId));
+                $channel->basic_ack($message->delivery_info['delivery_tag']);
+                return;
+            }
+
+            // Run the actual tests.
+            $this->logger->info(sprintf('Testing %s.', $url->getUrl()));
+            $start = microtime(true);
             $this->tester->run($url);
+            $end = microtime(true);
+            $duration = $end - $start;
+            $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
+        }
+        catch (StorageException $e) {
+            // If saving the URL or queue failed, the metadata that was set on
+            // it during the test run may have been lost as well. Because the
+            // re-tester relies on this metadata, publishing the URL to the
+            // queue again is the only way to be certain it will be re-tested
+            // again in the future.
+            $channel->basic_publish($message, '', $this->queue->getName());
         }
         catch (\Exception $e) {
-            $this->logger->emergency(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
+            $this->logger->emergency(sprintf('%s on line %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));
         }
-        $end = microtime(true);
-        $duration = $end - $start;
-        $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
 
         $channel->basic_ack($message->delivery_info['delivery_tag']);
     }
