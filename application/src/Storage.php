@@ -138,31 +138,34 @@ class Storage implements StorageInterface
 
     public function saveUrl(Url $url)
     {
-        $values = array(
-          'status' => $url->getTestingStatus(),
-          'cms' => $url->getCms(),
-          'quail_result' => json_encode($url->getQuailResult()),
-          'pagespeed_result' => $url->getGooglePageSpeedResult(),
-          'analysis' => $url->getLastProcessedTime(),
-          'is_root' => (int) $url->isRoot(),
-          'failed_test_count' => $url->getFailedTestCount(),
-        );
-        if ($url->getId()) {
-            $values['url_id'] = $url->getId();
-            $query = $this->database->getConnection()
-              ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root, failed_test_count = :failed_test_count WHERE url_id = :url_id");
-            $dbSaveResult = $query->execute($values);
-        } else {
-            $values['url'] = $url->getUrl();
-            $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
-            $insert = $this->database->getConnection()
-              ->prepare("INSERT INTO url (website_test_results_id, url, status, cms, quail_result, pagespeed_result, analysis, is_root) VALUES (:website_test_results_id, :url, :status, :cms, :quail_result, :pagespeed_result, :analysis, :is_root)");
-            $dbSaveResult = $insert->execute($values);
-            $url->setId($this->database->getConnection()->lastInsertId());
+        try {
+            $values = array(
+              'status' => $url->getTestingStatus(),
+              'cms' => $url->getCms(),
+              'quail_result' => json_encode($url->getQuailResult()),
+              'pagespeed_result' => $url->getGooglePageSpeedResult(),
+              'analysis' => $url->getLastProcessedTime(),
+              'is_root' => (int) $url->isRoot(),
+              'failed_test_count' => $url->getFailedTestCount(),
+            );
+            if ($url->getId()) {
+                $values['url_id'] = $url->getId();
+                $query = $this->database->getConnection()
+                  ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root, failed_test_count = :failed_test_count WHERE url_id = :url_id");
+                $query->execute($values);
+            } else {
+                $values['url'] = $url->getUrl();
+                $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
+                $insert = $this->database->getConnection()
+                  ->prepare("INSERT INTO url (website_test_results_id, url, status, cms, quail_result, pagespeed_result, analysis, is_root) VALUES (:website_test_results_id, :url, :status, :cms, :quail_result, :pagespeed_result, :analysis, :is_root)");
+                $insert->execute($values);
+                $url->setId($this->database->getConnection()->lastInsertId());
+            }
+            $this->sendCaseResultsToSolr($url);
         }
-        $solrSaveResult = $this->sendCaseResultsToSolr($url);
-
-        return $dbSaveResult && $solrSaveResult;
+        catch (\Exception $e) {
+            throw new StorageException('A storage error occurred.', 0, $e);
+        }
     }
 
     public function countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($websiteTestResultsId, $start, $end) {
@@ -182,8 +185,7 @@ class Storage implements StorageInterface
      *
      * @param \Triquanta\AccessibilityMonitor\Url $url
      *
-     * @return bool
-     *   Whether saving the data was successful or not.
+     * @throws \Triquanta\AccessibilityMonitor\StorageException
      */
     protected function sendCaseResultsToSolr(Url $url)
     {
@@ -210,11 +212,10 @@ class Storage implements StorageInterface
                 $this->solrClient->execute($updateQuery);
             } catch (\Exception $e) {
                 $this->logger->emergency(sprintf('Error sending cases for %s to Solr. Solr responded with an exception: %s', $url->getUrl(), $e->getMessage()));
-                return false;
+                throw $e;
             }
         }
         $this->logger->debug(sprintf('Results for %s sent to Solr.', $url->getUrl()));
-        return true;
     }
 
     /**
@@ -346,23 +347,26 @@ class Storage implements StorageInterface
     }
 
     public function saveQueue(Queue $queue) {
-        $values = array(
-          'name' => $queue->getName(),
-          'priority' => $queue->getPriority(),
-          'created' => $queue->getCreated(),
-          'last_request' => $queue->getLastRequest(),
-        );
-        if ($queue->getName()) {
-            $query = $this->database->getConnection()
-              ->prepare("UPDATE queue SET name = :name, priority = :priority, created = :created, last_request = :last_request WHERE name = :name");
-            $dbSaveResult = $query->execute($values);
-        } else {
-            $insert = $this->database->getConnection()
-              ->prepare("INSERT INTO queue (id, priority, created, last_request) VALUES (:d, :priority, :created, :last_request)");
-            $dbSaveResult = $insert->execute($values);
+        try {
+            $values = array(
+              'name' => $queue->getName(),
+              'priority' => $queue->getPriority(),
+              'created' => $queue->getCreated(),
+              'last_request' => $queue->getLastRequest(),
+            );
+            if ($queue->getName()) {
+                $query = $this->database->getConnection()
+                  ->prepare("UPDATE queue SET name = :name, priority = :priority, created = :created, last_request = :last_request WHERE name = :name");
+                $query->execute($values);
+            } else {
+                $insert = $this->database->getConnection()
+                  ->prepare("INSERT INTO queue (id, priority, created, last_request) VALUES (:d, :priority, :created, :last_request)");
+                $insert->execute($values);
+            }
         }
-
-        return $dbSaveResult;
+        catch (\Exception $e) {
+            throw new StorageException('A storage error occurred.', 0, $e);
+        }
     }
 
     public function getQueueToSubscribeTo() {
@@ -383,6 +387,10 @@ SELECT u.queue_name
         ]);
         $activeQueueNames = $activeQueueNamesSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
 
+        if (empty($activeQueueNames)) {
+            return null;
+        }
+
         // Of all the active queues, load one that is available.
         $parameters = [];
         foreach ($activeQueueNames as $i => $activeQueueName) {
@@ -400,7 +408,7 @@ SELECT q.*
         $availableQueueSelectQuery->execute($parameters);
         $record = $availableQueueSelectQuery->fetch(\PDO::FETCH_OBJ);
 
-        return $record ? $this->createQueueFromStorageRecord($record) : NULL;
+        return $record ? $this->createQueueFromStorageRecord($record) : null;
     }
 
     /**

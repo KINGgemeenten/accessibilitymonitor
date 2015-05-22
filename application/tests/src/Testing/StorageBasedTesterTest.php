@@ -7,6 +7,7 @@
 
 namespace Triquanta\AccessibilityMonitor\Testing;
 
+use Triquanta\AccessibilityMonitor\StorageException;
 use Triquanta\AccessibilityMonitor\Url;
 
 /**
@@ -76,7 +77,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
      *
      * @dataProvider providerRunWithNegativeOutcomeOrException
      */
-    public function testRun($expectedOutcome, \PHPUnit_Framework_MockObject_Stub $testRunStub, $storageResult, $expectedTestingStatus)
+    public function testRun($expectedOutcome, \PHPUnit_Framework_MockObject_Stub $testRunStub, $expectedTestingStatus)
     {
         $url = new Url();
         $url->setFailedTestCount($expectedTestingStatus === TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST ? $this->maxFailedTestRuns - 2: $this->maxFailedTestRuns);
@@ -85,11 +86,6 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
             ->method('run')
             ->with($url)
             ->will($testRunStub);
-
-        $this->resultStorage->expects($this->once())
-          ->method('saveUrl')
-          ->with($url)
-          ->willReturn($storageResult);
 
         $this->assertSame($expectedOutcome, $this->sut->run($url));
         $this->assertSame($expectedTestingStatus, $url->getTestingStatus());
@@ -100,16 +96,11 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
      */
     public function providerRunWithNegativeOutcomeOrException() {
         return [
-          [true, $this->returnValue(true), true, TestingStatusInterface::STATUS_TESTED],
-          [false, $this->returnValue(true), false, TestingStatusInterface::STATUS_TESTED],
-          [false, $this->returnValue(false), true, TestingStatusInterface::STATUS_ERROR],
-          [false, $this->returnValue(false), true, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
-          [false, $this->returnValue(false), false, TestingStatusInterface::STATUS_ERROR],
-          [false, $this->returnValue(false), false, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
-          [false, $this->throwException(new \Exception()), true, TestingStatusInterface::STATUS_ERROR],
-          [false, $this->throwException(new \Exception()), true, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
-          [false, $this->throwException(new \Exception()), false, TestingStatusInterface::STATUS_ERROR],
-          [false, $this->throwException(new \Exception()), false, TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
+          [true, $this->returnValue(true), TestingStatusInterface::STATUS_TESTED],
+          [false, $this->returnValue(false), TestingStatusInterface::STATUS_ERROR],
+          [false, $this->returnValue(false), TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
+          [false, $this->throwException(new \Exception()), TestingStatusInterface::STATUS_ERROR],
+          [false, $this->throwException(new \Exception()), TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST],
         ];
     }
 
