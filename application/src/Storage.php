@@ -378,10 +378,9 @@ class Storage implements StorageInterface
 
         // Get the names of all active queues.
         $activeQueueNamesSelectQuery = $this->database->getConnection()->prepare("
-SELECT u.queue_name
+SELECT DISTINCT u.queue_name
      FROM url u
-     WHERE u.status = :status
-     GROUP BY u.queue_name");
+     WHERE u.status = :status");
         $activeQueueNamesSelectQuery->execute([
           'status' => TestingStatusInterface::STATUS_SCHEDULED,
         ]);
@@ -422,11 +421,10 @@ SELECT q.*
 
         // Get the names of the queues for which URLs must still be tested.
         $activeQueueSelectQuery = $this->database->getConnection()->prepare("
-SELECT u.queue_name
+SELECT DISTINCT u.queue_name
      FROM url u
      WHERE u.status IN (:status_scheduled,
-                        :status_scheduled_for_retest)
-     GROUP BY u.queue_name");
+                        :status_scheduled_for_retest)");
         $activeQueueSelectQuery->execute([
           'status_scheduled' => TestingStatusInterface::STATUS_SCHEDULED,
           'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,
