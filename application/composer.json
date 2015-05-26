@@ -3,6 +3,7 @@
     "guzzlehttp/guzzle": "~5.2",
     "justinrainbow/json-schema": "~1.4",
     "monolog/monolog": "~1.9",
+    "php": "~5.5",
     "solarium/solarium": "~3.2",
     "symfony/config": "~2.5",
     "symfony/console": "~2.5",

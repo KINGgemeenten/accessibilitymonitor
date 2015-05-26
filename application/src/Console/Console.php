@@ -45,22 +45,28 @@ class Console extends ConsoleApplication
       LoggerInterface $logger,
       EventDispatcherInterface $event_dispatcher
     ) {
-        parent::__construct('Triquanta Accessibility Monitor',
-          Application::VERSION);
-        $this->setDispatcher($event_dispatcher);
+        try {
+            parent::__construct('Triquanta Accessibility Monitor',
+              Application::VERSION);
+            $this->setDispatcher($event_dispatcher);
 
-        $this->container = $container;
-        $this->logger = $logger;
+            $this->container = $container;
+            $this->logger = $logger;
 
-        foreach ($command_discovery->getCommands() as $class_name) {
-            if (in_array('Triquanta\AccessibilityMonitor\ContainerFactoryInterface',
-              class_implements($class_name))) {
-                /** @var \Triquanta\AccessibilityMonitor\ContainerFactoryInterface $class_name */
-                $command = $class_name::create($this->container);
-            } else {
-                $command = new $class_name();
+            foreach ($command_discovery->getCommands() as $class_name) {
+                if (in_array('Triquanta\AccessibilityMonitor\ContainerFactoryInterface',
+                  class_implements($class_name))) {
+                    /** @var \Triquanta\AccessibilityMonitor\ContainerFactoryInterface $class_name */
+                    $command = $class_name::create($this->container);
+                } else {
+                    $command = new $class_name();
+                }
+                $this->add($command);
             }
-            $this->add($command);
+        } catch (\Exception $e) {
+            $this->logger->emergency(sprintf('%s on line %d in %s.',
+              $e->getMessage(), $e->getLine(), $e->getFile()));
+            throw $e;
         }
     }
 
