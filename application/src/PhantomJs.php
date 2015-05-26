@@ -170,7 +170,6 @@ class PhantomJs implements PhantomJsInterface
      */
     protected function execTimeout($cmd, $timeout)
     {
-        $timeout = 1;
         $timedOut = true;
         // File descriptors passed to the process.
         $descriptors = array(
