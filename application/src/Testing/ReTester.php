@@ -79,7 +79,7 @@ class ReTester {
      * Re-tests URLs.
      */
     public function retest() {
-        $urls = $this->storage->getUrlsByStatusAndAnalysisDateTime(TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST, 0, time() - $this->threshold);
+        $urls = $this->storage->getUrlsByStatusAndLastProcessedDateTime(TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST, 0, time() - $this->threshold);
         foreach ($urls as $url) {
             // Update the URL in storage.
             $url->setTestingStatus(TestingStatusInterface::STATUS_SCHEDULED);

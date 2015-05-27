@@ -45,17 +45,18 @@ CREATE TABLE `url` (
   `website_test_results_id` int(10) unsigned NOT NULL,
   `url` varchar(1024) NOT NULL,
   `status` int(11) NOT NULL,
-  `analysis` int(11) DEFAULT NULL,
+  `last_processed` int(11) DEFAULT NULL,
   `is_root` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `queue_name` varchar(255) NOT NULL DEFAULT '',
   `failed_test_count` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`url_id`),
   KEY `status` (`status`),
   KEY `failed_test_count` (`failed_test_count`),
-  KEY `analysis` (`analysis`),
+  KEY `last_processed` (`last_processed`),
   KEY `website_test_results_id` (`website_test_results_id`),
-  KEY `queue_name` (`queue_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  KEY `queue_name` (`queue_name`),
+  KEY `status_queue_name` (`status`,`queue_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 
