@@ -130,19 +130,27 @@ class PhantomJs implements PhantomJsInterface
 
         $command = sprintf('/opt/quail/bin/quail -R wcag2 -u "%s" -o %s', $url, $testResultsDirectory);
         $this->logger->debug('Starting phantomjs');
-        $this->execTimeout($command, $this->timeout);
-        $this->logger->debug('Phantomjs executed succesfully.');
+        try {
+            $this->execTimeout($command, $this->timeout);
+            $this->logger->debug('Phantomjs executed succesfully.');
 
-        $files = glob($testResultsDirectory . '/*.js');
-        if ($files) {
-            $file = reset($files);
-            $results = file_get_contents($file);
+            $files = glob($testResultsDirectory . '/*.js');
+            if ($files) {
+                $file = reset($files);
+                $results = file_get_contents($file);
+            }
+            else {
+                $results = json_encode(new \stdClass());
+            }
+            return $results;
         }
-        else {
-            $results = json_encode(new \stdClass());
+        finally {
+            $files = glob($testResultsDirectory . '/*.js');
+            foreach ($files as $file) {
+                unlink($file);
+            }
+            rmdir($testResultsDirectory);
         }
-        rmdir($testResultsDirectory);
-        return $results;
     }
 
     /**
