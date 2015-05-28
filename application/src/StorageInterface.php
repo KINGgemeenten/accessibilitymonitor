@@ -35,7 +35,7 @@ interface StorageInterface extends TestingStatusInterface
     public function saveUrl(Url $url);
 
     /**
-     * Counts the number of URLs that was tested in a specific period.
+     * Counts the number of URLs that was last tested in a specific period.
      *
      * @param int $websiteTestResultsId
      * @param $start
@@ -45,7 +45,7 @@ interface StorageInterface extends TestingStatusInterface
      *
      * @return int
      */
-    public function countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($websiteTestResultsId, $start, $end);
+    public function countUrlsByWebsiteTestResultsIdAndLastProcessedDateTimePeriod($websiteTestResultsId, $start, $end);
 
     /**
      * Gets a queue by queue ID.
@@ -78,19 +78,19 @@ interface StorageInterface extends TestingStatusInterface
     public function getQueueToSubscribeTo();
 
     /**
-     * Gets URLs based on their status and analysis date/time.
+     * Gets URLs based on their status and last processed date/time.
      *
      * @param $status
      *   One of the
      *   \Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface::STATUS_*
      *   constants.
-     * @param $startAnalysis
+     * @param $start
      *   A Unix timestamp.
-     * @param $endAnalysis
+     * @param $end
      *   A Unix timestamp.
      *
      * @return \Triquanta\AccessibilityMonitor\Url[]
      */
-    public function getUrlsByStatusAndAnalysisDateTime($status, $startAnalysis, $endAnalysis);
+    public function getUrlsByStatusAndLastProcessedDateTime($status, $start, $end);
 
 }
