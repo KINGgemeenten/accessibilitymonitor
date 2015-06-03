@@ -8,6 +8,7 @@
 namespace Triquanta\AccessibilityMonitor\Testing;
 
 use Triquanta\AccessibilityMonitor\PhantomJsInterface;
+use Triquanta\AccessibilityMonitor\StatsDInterface;
 use Triquanta\AccessibilityMonitor\Url;
 
 /**
@@ -15,6 +16,12 @@ use Triquanta\AccessibilityMonitor\Url;
  */
 class WappalyzerTester implements TesterInterface
 {
+    /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
 
     /**
      * The Phantom JS manager.
@@ -26,17 +33,34 @@ class WappalyzerTester implements TesterInterface
     /**
      * Constructs a new instance.
      *
+     * @param \Triquanta\AccessibilityMonitor\StatsDInterface $statsD
      * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface
      */
-    public function __construct(PhantomJsInterface $phantomJs)
+    public function __construct(
+      StatsDInterface $statsD,
+      PhantomJsInterface $phantomJs
+    )
     {
+        $this->statsD = $statsD;
         $this->phantomJs = $phantomJs;
     }
 
     public function run(Url $url)
     {
         if ($url->isRoot()) {
-            $url->setCms(implode('|', array_filter($this->phantomJs->getDetectedApps($url->getUrl()))));
+            $this->statsD->startTiming("tests.wappalyzer.duration");
+
+            try {
+                $url->setCms(implode('|',
+                    array_filter($this->phantomJs->getDetectedApps($url->getUrl()))));
+            }
+            catch (\Exception $e) {
+                throw $e;
+            }
+            finally {
+                $this->statsD->increment("tests.wappalyzer.count");
+                $this->statsD->endTiming("tests.wappalyzer.duration");
+            }
         }
         return true;
     }

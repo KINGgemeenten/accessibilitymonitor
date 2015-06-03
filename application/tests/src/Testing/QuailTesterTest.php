@@ -23,6 +23,13 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase
     protected $logger;
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * The Phantom JS manager.
      *
      * @var \Triquanta\AccessibilityMonitor\PhantomJsInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -40,9 +47,11 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase
     {
         $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
 
+        $this->statsD = $this->getMock('\Triquanta\AccessibilityMonitor\StatsDInterface');
+
         $this->phantomJs = $this->getMock('\Triquanta\AccessibilityMonitor\PhantomJsInterface');
 
-        $this->sut = new QuailTester($this->phantomJs, $this->logger);
+        $this->sut = new QuailTester($this->phantomJs, $this->logger, $this->statsD);
     }
 
     /**
@@ -50,7 +59,7 @@ class QuailTesterTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new QuailTester($this->phantomJs, $this->logger);
+        $this->sut = new QuailTester($this->phantomJs, $this->logger, $this->statsD);
     }
 
     /**

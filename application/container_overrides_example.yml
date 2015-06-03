@@ -18,3 +18,6 @@ parameters:
   database.password: z31lb00t
 
   google_pagespeed.api_key: $$$EXAMPLE$$$
+
+  statsd.namespace: 'gt.inspector-<no>-<env>.statsd.workers'
+  statsd.connection: Blackhole

@@ -29,6 +29,13 @@ class Worker implements WorkerInterface {
     protected $logger;
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * The AMQP queue.
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection
@@ -68,18 +75,21 @@ class Worker implements WorkerInterface {
      *
      * @param \Psr\Log\LoggerInterface
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
+     * @param \Triquanta\AccessibilityMonitor\StatsDInterface $statsD
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
      * @param \PhpAmqpLib\Connection\AMQPStreamConnection $queue
      * @param int $workerTtl
      */
     public function __construct(
       LoggerInterface $logger,
+      StatsDInterface $statsD,
       TesterInterface $tester,
       StorageInterface $resultStorage,
       AMQPStreamConnection $queue,
       $workerTtl
     ) {
         $this->logger = $logger;
+        $this->statsD = $statsD;
         $this->amqpQueue = $queue;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
@@ -89,6 +99,7 @@ class Worker implements WorkerInterface {
     public function run()
     {
         $this->logger->debug(sprintf('Starting worker. It will be shut down in %d seconds.', $this->workerTtl));
+        $this->statsD->startTiming("lifetime");
         $queueChannel = $this->amqpQueue->channel();
         $workerStart = time();
         $failureWait = 3;
@@ -105,6 +116,7 @@ class Worker implements WorkerInterface {
             AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
             $message = $queueChannel->basic_get($this->queue->getName());
             if (!($message instanceof AMQPMessage)) {
+                $this->logger->debug(sprintf('No message retrieved from RabbitMQ queue %s.', $this->queue->getName()));
                 sleep($failureWait);
                 continue;
             }
@@ -113,6 +125,7 @@ class Worker implements WorkerInterface {
         }
 
         $this->logger->debug(sprintf('Shutting down worker, because its TTL of %d seconds was reached.', $this->workerTtl));
+        $this->statsD->endTiming("lifetime");
         $queueChannel->close();
     }
 
@@ -149,11 +162,13 @@ class Worker implements WorkerInterface {
 
             // Run the actual tests.
             $this->logger->info(sprintf('Testing %s.', $url->getUrl()));
+            $this->statsD->startTiming("tests.all.duration");
             $start = microtime(true);
             $this->tester->run($url);
             $end = microtime(true);
             $duration = $end - $start;
             $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
+            $this->statsD->endTiming("tests.all.duration");
         }
         catch (StorageException $e) {
             // If saving the URL or queue failed, the metadata that was set on
