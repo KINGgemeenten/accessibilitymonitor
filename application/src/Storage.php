@@ -97,7 +97,7 @@ class Storage implements StorageInterface
           ->setCms($record->cms)
           ->setQuailResult(json_decode($record->quail_result))
           ->setGooglePageSpeedResult($record->pagespeed_result)
-          ->setLastProcessedTime($record->analysis)
+          ->setLastProcessedTime($record->last_processed)
           ->setRoot((bool) $record->is_root)
           ->setQueueName($record->queue_name)
           ->setFailedTestCount($record->failed_test_count);
@@ -108,7 +108,7 @@ class Storage implements StorageInterface
     public function getUrlById($id)
     {
         $query = $this->database->getConnection()
-          ->prepare("SELECT * FROM url WHERE url_id = :url_id");
+          ->prepare("SELECT u.*, ur.cms, ur.quail_result, ur.pagespeed_result FROM url u INNER JOIN url_result ur ON u.url_id = ur.url_id WHERE u.url_id = :url_id");
         $query->execute(array(
           'url_id' => $id,
         ));
@@ -118,14 +118,14 @@ class Storage implements StorageInterface
         return $record ? $this->createUrlFromStorageRecord($record) : NULL;
     }
 
-    public function getUrlsByStatusAndAnalysisDateTime($status, $startAnalysis, $endAnalysis)
+    public function getUrlsByStatusAndLastProcessedDateTime($status, $start, $end)
     {
         $query = $this->database->getConnection()
-          ->prepare("SELECT * FROM url WHERE status = :status AND analysis >= :analysis_start AND analysis <= :analysis_end");
+          ->prepare("SELECT u.*, ur.cms, ur.quail_result, ur.pagespeed_result FROM url u INNER JOIN url_result ur ON u.url_id = ur.url_id WHERE status = :status AND last_processed >= :last_processed_start AND last_processed <= :last_processed_end");
         $query->execute(array(
           'status' => $status,
-          'analysis_start' => $startAnalysis,
-          'analysis_end' => $endAnalysis,
+          'last_processed_start' => $start,
+          'last_processed_end' => $end,
         ));
 
         $urls = [];
@@ -139,27 +139,57 @@ class Storage implements StorageInterface
     public function saveUrl(Url $url)
     {
         try {
-            $values = array(
-              'status' => $url->getTestingStatus(),
-              'cms' => $url->getCms(),
-              'quail_result' => json_encode($url->getQuailResult()),
-              'pagespeed_result' => $url->getGooglePageSpeedResult(),
-              'analysis' => $url->getLastProcessedTime(),
-              'is_root' => (int) $url->isRoot(),
-              'failed_test_count' => $url->getFailedTestCount(),
-            );
             if ($url->getId()) {
-                $values['url_id'] = $url->getId();
-                $query = $this->database->getConnection()
-                  ->prepare("UPDATE url SET status = :status, cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result, analysis = :analysis, is_root = :is_root, failed_test_count = :failed_test_count WHERE url_id = :url_id");
-                $query->execute($values);
+                // Save the URL to the `url` table.
+                $updateUrlValues = [
+                  'url_id' => $url->getId(),
+                  'status' => $url->getTestingStatus(),
+                  'last_processed' => $url->getLastProcessedTime(),
+                  'is_root' => (int) $url->isRoot(),
+                  'failed_test_count' => $url->getFailedTestCount(),
+                ];
+                $updateUrlQuery = $this->database->getConnection()
+                  ->prepare("UPDATE url SET status = :status, last_processed = :last_processed, is_root = :is_root, failed_test_count = :failed_test_count WHERE url_id = :url_id");
+                $updateUrlQuery->execute($updateUrlValues);
+
+                // Save the URL to the `url_result` table.
+                $updateUrlResultValues = [
+                  'url_id' => $url->getId(),
+                  'cms' => $url->getCms(),
+                  'quail_result' => json_encode($url->getQuailResult()),
+                  'pagespeed_result' => $url->getGooglePageSpeedResult(),
+                ];
+                $updateUrlResultQuery = $this->database->getConnection()
+                  ->prepare("UPDATE url_result SET cms = :cms, quail_result = :quail_result, pagespeed_result = :pagespeed_result WHERE url_id = :url_id");
+                $updateUrlResultQuery->execute($updateUrlResultValues);
             } else {
-                $values['url'] = $url->getUrl();
-                $values['website_test_results_id'] = $url->getWebsiteTestResultsId();
-                $insert = $this->database->getConnection()
-                  ->prepare("INSERT INTO url (website_test_results_id, url, status, cms, quail_result, pagespeed_result, analysis, is_root) VALUES (:website_test_results_id, :url, :status, :cms, :quail_result, :pagespeed_result, :analysis, :is_root)");
-                $insert->execute($values);
+                // Save the URL to the `url` table.
+                $insertUrlValues = [
+                  'url_id' => $url->getId(),
+                  'status' => $url->getTestingStatus(),
+                  'last_processed' => $url->getLastProcessedTime(),
+                  'is_root' => (int) $url->isRoot(),
+                  'failed_test_count' => $url->getFailedTestCount(),
+                  'url' => $url->getUrl(),
+                  'website_test_results_id' => $url->getWebsiteTestResultsId(),
+                ];
+                $insertUrlQuery = $this->database->getConnection()
+                  ->prepare("INSERT INTO url (website_test_results_id, url, status, last_processed, is_root) VALUES (:website_test_results_id, :url, :status, :last_processed, :is_root)");
+                $insertUrlQuery->execute($insertUrlValues);
+
+                // Get the URL's ID.
                 $url->setId($this->database->getConnection()->lastInsertId());
+
+                // Save the URL to the `url_result` table.
+                $insertUrlResultValues = [
+                  'url_id' => $url->getId(),
+                  'cms' => $url->getCms(),
+                  'quail_result' => json_encode($url->getQuailResult()),
+                  'pagespeed_result' => $url->getGooglePageSpeedResult(),
+                ];
+                $insertUrlResultQuery = $this->database->getConnection()
+                  ->prepare("INSERT INTO url_result (cms, quail_result, pagespeed_result) VALUES (:cms, :quail_result, :pagespeed_result)");
+                $insertUrlResultQuery->execute($insertUrlResultValues);
             }
             $this->sendCaseResultsToSolr($url);
         }
@@ -168,9 +198,9 @@ class Storage implements StorageInterface
         }
     }
 
-    public function countUrlsByWebsiteTestResultsIdAndAnalysisDateTimePeriod($websiteTestResultsId, $start, $end) {
+    public function countUrlsByWebsiteTestResultsIdAndLastProcessedDateTimePeriod($websiteTestResultsId, $start, $end) {
         $query = $this->database->getConnection()
-          ->prepare("SELECT COUNT(1) FROM url WHERE website_test_results_id = :website_test_results_id AND analysis > :start AND analysis < :end");
+          ->prepare("SELECT COUNT(1) FROM url WHERE website_test_results_id = :website_test_results_id AND last_processed > :start AND last_processed < :end");
         $query->execute(array(
           'website_test_results_id' => $websiteTestResultsId,
           'start' => $start,
@@ -378,10 +408,9 @@ class Storage implements StorageInterface
 
         // Get the names of all active queues.
         $activeQueueNamesSelectQuery = $this->database->getConnection()->prepare("
-SELECT u.queue_name
+SELECT DISTINCT u.queue_name
      FROM url u
-     WHERE u.status = :status
-     GROUP BY u.queue_name");
+     WHERE u.status = :status");
         $activeQueueNamesSelectQuery->execute([
           'status' => TestingStatusInterface::STATUS_SCHEDULED,
         ]);
@@ -422,11 +451,10 @@ SELECT q.*
 
         // Get the names of the queues for which URLs must still be tested.
         $activeQueueSelectQuery = $this->database->getConnection()->prepare("
-SELECT u.queue_name
+SELECT DISTINCT u.queue_name
      FROM url u
      WHERE u.status IN (:status_scheduled,
-                        :status_scheduled_for_retest)
-     GROUP BY u.queue_name");
+                        :status_scheduled_for_retest)");
         $activeQueueSelectQuery->execute([
           'status_scheduled' => TestingStatusInterface::STATUS_SCHEDULED,
           'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,

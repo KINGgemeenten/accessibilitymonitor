@@ -24,6 +24,13 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
     protected $logger;
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * The maximum number of failed test runs per URL.
      *
      * @var int
@@ -57,11 +64,13 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
 
         $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
 
+        $this->statsD = $this->getMock('\Triquanta\AccessibilityMonitor\StatsDInterface');
+
         $this->resultStorage = $this->getMock('\Triquanta\AccessibilityMonitor\StorageInterface');
 
         $this->tester = $this->getMock('\Triquanta\AccessibilityMonitor\Testing\TesterInterface');
 
-        $this->sut = new StorageBasedTester($this->logger, $this->tester, $this->resultStorage, $this->maxFailedTestRuns);
+        $this->sut = new StorageBasedTester($this->logger, $this->statsD, $this->tester, $this->resultStorage, $this->maxFailedTestRuns);
     }
 
     /**
@@ -69,7 +78,7 @@ class StorageBasedTesterTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new StorageBasedTester($this->logger, $this->tester, $this->resultStorage, $this->maxFailedTestRuns);
+        $this->sut = new StorageBasedTester($this->logger, $this->statsD, $this->tester, $this->resultStorage, $this->maxFailedTestRuns);
     }
 
     /**

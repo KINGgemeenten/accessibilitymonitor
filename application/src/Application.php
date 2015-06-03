@@ -7,6 +7,8 @@
 
 namespace Triquanta\AccessibilityMonitor;
 
+use Monolog\ErrorHandler;
+use Psr\Log\LogLevel;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -46,6 +48,9 @@ class Application
         $container->setParameter('root_directory', dirname(__DIR__));
         $container->compile();
         static::setContainer($container);
+
+        // @todo: Cleanup, possibly create own service, the bootstrap should be as clean as possible, but we need the errorhandler for testing at the earliest moment
+        ErrorHandler::register($container->get('logger'), [], LogLevel::ERROR, LogLevel::ALERT);
     }
 
     /**

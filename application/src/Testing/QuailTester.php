@@ -9,6 +9,7 @@ namespace Triquanta\AccessibilityMonitor\Testing;
 
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\PhantomJsInterface;
+use Triquanta\AccessibilityMonitor\StatsDInterface;
 use Triquanta\AccessibilityMonitor\Url;
 
 /**
@@ -25,6 +26,13 @@ class QuailTester implements TesterInterface
     protected $logger;
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * The Phantom JS manager.
      *
      * @var \Triquanta\AccessibilityMonitor\PhantomJsInterface
@@ -36,18 +44,23 @@ class QuailTester implements TesterInterface
      *
      * @param \Triquanta\AccessibilityMonitor\PhantomJsInterface $phantomJs
      * @param \Psr\Log\LoggerInterface $logger
+     * @param \Triquanta\AccessibilityMonitor\StatsDInterface $statsD
      */
     public function __construct(
       PhantomJsInterface $phantomJs,
-      LoggerInterface $logger
+      LoggerInterface $logger,
+      StatsDInterface $statsD
     ) {
         $this->logger = $logger;
+        $this->statsD = $statsD;
         $this->phantomJs = $phantomJs;
     }
 
     public function run(Url $url)
     {
         try {
+            $this->statsD->startTiming("tests.quail.duration");
+
             // Run Quail.
             $quailStart = microtime(true);
             $result = $this->phantomJs->getQuailResult($url->getUrl());
@@ -62,6 +75,7 @@ class QuailTester implements TesterInterface
             $processResultsDuration = $processResultsEnd - $processResultsStart;
             $this->logger->debug(sprintf('Done processing Quail results for %s (%s seconds)', $url->getUrl(), $processResultsDuration));
 
+
             // Handle the outcome.
             if ($url->getQuailResult()) {
                 return true;
@@ -73,6 +87,9 @@ class QuailTester implements TesterInterface
         } catch (\Exception $e) {
             $this->logger->error(sprintf('%s on line %d in %s when testing %s.', $e->getMessage(), $e->getLine(), $e->getFile(), $url->getUrl()));
             return false;
+        }
+        finally {
+            $this->statsD->endTiming("tests.quail.duration");
         }
     }
 
