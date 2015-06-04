@@ -65,8 +65,15 @@ class StatsD implements StatsDInterface
         return $this->client->endTiming($this->decorateMetricName($key, $group), $sampleRate);
     }
 
+    public function gauge($key, $value, $group = '')
+    {
+        $this->client->gauge($this->decorateMetricName($key, $group), $value);
+    }
+
     /**
      * Helper function to cleanup metric names
+     * Replace non alphanumeric characters for an underscore
+     * (except for underscores and dashes)
      *
      * @param string $metric_name
      *  The group name
@@ -74,7 +81,7 @@ class StatsD implements StatsDInterface
      *  Sanatized metric name
      */
     protected function sanitizeMetricName($metric_name) {
-        return str_replace('.', '_', $metric_name);
+        return preg_replace('/[^\da-z_-]/i', '_', $metric_name);
     }
 
     /**

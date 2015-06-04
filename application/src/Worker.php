@@ -15,6 +15,7 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
+use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
 
 /**
  * Provides a queue worker that tests URLs contained in AMQP messages.
@@ -168,6 +169,22 @@ class Worker implements WorkerInterface {
             $end = microtime(true);
             $duration = $end - $start;
             $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
+
+            switch ($url->getTestingStatus()) {
+                case TestingStatusInterface::STATUS_TESTED:
+                    $this->statsD->increment("tests.all.status.tested");
+                    $this->statsD->increment("tests.all.status.tested", $url->getQueueName());
+                    break;
+                case TestingStatusInterface::STATUS_ERROR:
+                    $this->statsD->increment("tests.all.status.error");
+                    $this->statsD->increment("tests.all.status.error", $url->getQueueName());
+                    break;
+                case TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST:
+                    $this->statsD->increment("tests.all.status.scheduled_for_retest");
+                    $this->statsD->increment("tests.all.status.scheduled_for_retest", $url->getQueueName());
+                    break;
+            }
+
             $this->statsD->endTiming("tests.all.duration");
         }
         catch (StorageException $e) {
