@@ -103,7 +103,7 @@ class Worker implements WorkerInterface {
         $this->statsD->startTiming("lifetime");
         $queueChannel = $this->amqpQueue->channel();
         $workerStart = time();
-        $failureWait = 3;
+        $failureWait = 10;
 
         while ($workerStart + $this->workerTtl > time()) {
             // Try to find a queue to process messages from.
