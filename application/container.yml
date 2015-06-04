@@ -26,7 +26,7 @@ parameters:
   queue.port: 5672
   queue.user: guest
   queue.password: guest
-  testing.flooding_threshold: 3
+  testing.test_run_group_flooding_threshold: 3
   worker.ttl: 300
   tmp_directory: /tmp/accessibilitymonitor
   testing.retest_threshold: 21600
@@ -45,7 +45,7 @@ services:
     arguments: ['%database.host_name%', '%database.database_name%', '%database.user_name%', '%database.password%']
   testing.result_storage:
     class: \Triquanta\AccessibilityMonitor\Storage
-    arguments: ['@database', '@solr.client.phantom', '@queue', '@logger', '%testing.flooding_threshold%']
+    arguments: ['@database', '@solr.client.phantom', '@queue', '@logger', '%testing.test_run_group_flooding_threshold%']
   solr.client.phantom:
     class: \Triquanta\AccessibilityMonitor\SolariumClient
     arguments: ['%solr.phantom%']

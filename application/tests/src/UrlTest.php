@@ -55,29 +55,6 @@ class UrlTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers ::setWebsiteTestResultsId
-     * @covers ::getWebsiteTestResultsId
-     */
-    public function testGetWebsiteTestResultsId() {
-        $id = mt_rand();
-        $this->assertSame($this->sut, $this->sut->setWebsiteTestResultsId($id));
-        $this->assertSame($id, $this->sut->getWebsiteTestResultsId());
-    }
-
-    /**
-     * @covers ::setWebsiteTestResultsId
-     *
-     * @depends testGetWebsiteTestResultsId
-     *
-     * @expectedException \BadMethodCallException
-     */
-    public function testChangeWebsiteTestResultsId() {
-        $id = mt_rand();
-        $this->sut->setWebsiteTestResultsId($id);
-        $this->sut->setWebsiteTestResultsId($id);
-    }
-
-    /**
      * @covers ::setUrl
      * @covers ::getUrl
      */
@@ -222,13 +199,13 @@ class UrlTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers ::setQueueName
-     * @covers ::getQueueName
+     * @covers ::setTestRunId
+     * @covers ::getTestRunId
      */
-    public function testGetQueueName() {
-        $name = 'foo_bar_' . mt_rand();
-        $this->assertSame($this->sut, $this->sut->setQueueName($name));
-        $this->assertSame($name, $this->sut->getQueueName());
+    public function testGetTestRunId() {
+        $id = mt_rand();
+        $this->assertSame($this->sut, $this->sut->setTestRunId($id));
+        $this->assertSame($id, $this->sut->getTestRunId());
     }
 
     /**

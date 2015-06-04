@@ -20,11 +20,11 @@ class Storage implements StorageInterface
 {
 
     /**
-     * The AMQP queue.
+     * The AMQP queue connection.
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection
      */
-    protected $amqpQueue;
+    protected $queueConnection;
 
     /**
      * The database manager.
@@ -34,12 +34,13 @@ class Storage implements StorageInterface
     protected $database;
 
     /**
-     * The flooding threshold.
+     * The test group flooding threshold.
      *
      * @var int
-     *   How long to wait between processing two items from the same queue.
+     *   How long to wait between processing two URLs from the same test run
+     *   group.
      */
-    protected $floodingThreshold;
+    protected $testRunGroupFloodingThreshold;
 
     /**
      * The logger.
@@ -62,19 +63,20 @@ class Storage implements StorageInterface
      * @param \Solarium\Core\Client\Client $solrClient
      * @param \PhpAmqpLib\Connection\AMQPStreamConnection $amqpQueue
      * @param \Psr\Log\LoggerInterface $logger
-     * @param int $floodingThreshold
-     *   How long to wait between processing two items from the same queue.
+     * @param int $testRunGroupFloodingThreshold
+     *   How long to wait between processing two URLs from the same test run
+     *   group.
      */
     public function __construct(
       DatabaseInterface $database,
       Client $solrClient,
       AMQPStreamConnection $amqpQueue,
       LoggerInterface $logger,
-      $floodingThreshold
+      $testRunGroupFloodingThreshold
     ) {
-        $this->amqpQueue = $amqpQueue;
+        $this->queueConnection = $amqpQueue;
         $this->database = $database;
-        $this->floodingThreshold = $floodingThreshold;
+        $this->testRunGroupFloodingThreshold = $testRunGroupFloodingThreshold;
         $this->logger = $logger;
         $this->solrClient = $solrClient;
     }
@@ -87,11 +89,10 @@ class Storage implements StorageInterface
      *
      * @return \Triquanta\AccessibilityMonitor\Url
      */
-    protected function createUrlFromStorageRecord($record)
+    protected function createUrlFromStorageRecord(\stdClass $record)
     {
         $url = new Url();
         $url->setId($record->url_id)
-          ->setWebsiteTestResultsId($record->website_test_results_id)
           ->setUrl($record->url)
           ->setTestingStatus($record->status)
           ->setCms($record->cms)
@@ -99,7 +100,7 @@ class Storage implements StorageInterface
           ->setGooglePageSpeedResult($record->pagespeed_result)
           ->setLastProcessedTime($record->last_processed)
           ->setRoot((bool) $record->is_root)
-          ->setQueueName($record->queue_name)
+          ->setTestRunId($record->test_run_id)
           ->setFailedTestCount($record->failed_test_count);
 
         return $url;
@@ -192,6 +193,18 @@ class Storage implements StorageInterface
                 $insertUrlResultQuery->execute($insertUrlResultValues);
             }
             $this->sendCaseResultsToSolr($url);
+
+            // Update the test run's last processed time. The DB column is only
+            // used for querying and MUST remain in sync with the most recent
+            // last processed time of the test run's URLs.
+            if ($url->getLastProcessedTime()) {
+                $updateUrlResultQuery = $this->database->getConnection()
+                  ->prepare("UPDATE test_run SET last_processed = GREATEST(:url_last_processed, last_processed) WHERE id = :test_run_id");
+                $updateUrlResultQuery->execute([
+                  'test_run_id' => $url->getTestRunId(),
+                  'url_last_processed' => $url->getLastProcessedTime(),
+                ]);
+            }
         }
         catch (\Exception $e) {
             throw new StorageException('A storage error occurred.', 0, $e);
@@ -222,6 +235,8 @@ class Storage implements StorageInterface
         $this->logger->debug(sprintf('Sending results for %s to Solr.', $url->getUrl()));
         // First check if there are results to send.
         if ($url->getQuailResultCases()) {
+            $testRun = $this->getTestRunById($url->getTestRunId());
+
             // Create an update query.
             $updateQuery = $this->solrClient->createUpdate();
 
@@ -229,7 +244,7 @@ class Storage implements StorageInterface
             $docs = array();
             // Now start adding the cases.
             foreach ($url->getQuailResultCases() as $case) {
-                $doc = $this->caseToSolrDocument($url, $updateQuery, $case);
+                $doc = $this->caseToSolrDocument($url, $testRun, $updateQuery, $case);
                 if ($doc) {
                     $docs[] = $doc;
                 }
@@ -252,6 +267,7 @@ class Storage implements StorageInterface
      * Create a solr document from a case.
      *
      * @param \Triquanta\AccessibilityMonitor\Url $url
+     * @param \Triquanta\AccessibilityMonitor\TestRun $testRun
      * @param \Solarium\QueryType\Update\Query\Query $updateQuery
      * @param \stdClass $case
      *
@@ -260,6 +276,7 @@ class Storage implements StorageInterface
      */
     protected function caseToSolrDocument(
       Url $url,
+      TestRun $testRun,
       Query $updateQuery,
       \stdClass $case
     ) {
@@ -286,7 +303,7 @@ class Storage implements StorageInterface
             // Add document type.
             $doc->setField('document_type', 'case');
             $doc->setField('website_test_results_id',
-              $url->getWebsiteTestResultsId());
+              $testRun->getWebsiteTestResultsId());
 
             return $doc;
         }
@@ -346,51 +363,53 @@ class Storage implements StorageInterface
     }
 
     /**
-     * Creates a queue from a storage record.
+     * Creates a test run from a storage record.
      *
      * @param \stdClass $record
-     *   A record from the queue table.
+     *   A record from the test_run table.
      *
-     * @return \Triquanta\AccessibilityMonitor\Queue
+     * @return \Triquanta\AccessibilityMonitor\TestRun
      */
-    protected function createQueueFromStorageRecord($record)
+    protected function createTestRunFromStorageRecord(\stdClass $record)
     {
-        $queue = new Queue();
-        $queue->setName($record->name)
+        $testRun = new TestRun();
+        $testRun->setId($record->id)
+          ->setGroup($record->group)
           ->setPriority($record->priority)
           ->setCreated($record->created)
-          ->setLastRequest($record->last_request);
+          ->setWebsiteTestResultsId($record->website_test_results_id);
 
-        return $queue;
+        return $testRun;
     }
 
-    public function getQueueByName($name) {
+    public function getTestRunById($id) {
         $query = $this->database->getConnection()
-          ->prepare("SELECT * FROM queue WHERE name = :name");
+          ->prepare("SELECT * FROM test_run WHERE id = :id");
         $query->execute(array(
-          'name' => $name,
+          'ud' => $id,
         ));
 
         $record = $query->fetch(\PDO::FETCH_OBJ);
 
-        return $record ? $this->createQueueFromStorageRecord($record) : NULL;
+        return $record ? $this->createTestRunFromStorageRecord($record) : NULL;
     }
 
-    public function saveQueue(Queue $queue) {
+    public function saveTestRun(TestRun $testRun) {
         try {
             $values = array(
-              'name' => $queue->getName(),
-              'priority' => $queue->getPriority(),
-              'created' => $queue->getCreated(),
-              'last_request' => $queue->getLastRequest(),
+              'id' => $testRun->getId(),
+              'priority' => $testRun->getPriority(),
+              'created' => $testRun->getCreated(),
+              'group' => $testRun->getGroup(),
+              'queue' => $testRun->getQueue(),
             );
-            if ($queue->getName()) {
+            if ($testRun->getId()) {
                 $query = $this->database->getConnection()
-                  ->prepare("UPDATE queue SET name = :name, priority = :priority, created = :created, last_request = :last_request WHERE name = :name");
+                  ->prepare("UPDATE test_run SET queue = :queue, priority = :priority, created = :created, `group` = :group WHERE id = :id");
                 $query->execute($values);
             } else {
                 $insert = $this->database->getConnection()
-                  ->prepare("INSERT INTO queue (id, priority, created, last_request) VALUES (:d, :priority, :created, :last_request)");
+                  ->prepare("INSERT INTO test_run (id, queue, priority, created, `group`) VALUES (:id, :queue, :priority, :created, :group)");
                 $insert->execute($values);
             }
         }
@@ -399,128 +418,41 @@ class Storage implements StorageInterface
         }
     }
 
-    public function getQueueToSubscribeTo() {
-        // No events are dispatched when queues are empty, so we cannot delete
-        // queues once all their items have been processed. Instead we delete
-        // empty queues here, because this is the only moment where it matters
-        // to have no empty queues at all.
-        $this->deleteEmptyQueues();
-
-        // Get the names of all active queues.
-        $activeQueueNamesSelectQuery = $this->database->getConnection()->prepare("
-SELECT DISTINCT u.queue_name
+    public function getTestRunToProcess() {
+        // Get the names of all active test runs.
+        $activeTestRunIdsSelectQuery = $this->database->getConnection()->prepare("
+SELECT DISTINCT u.test_run_id
      FROM url u
      WHERE u.status = :status");
-        $activeQueueNamesSelectQuery->execute([
+        $activeTestRunIdsSelectQuery->execute([
           'status' => TestingStatusInterface::STATUS_SCHEDULED,
         ]);
-        $activeQueueNames = $activeQueueNamesSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
+        $activeTestRunIds = $activeTestRunIdsSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
 
-        if (empty($activeQueueNames)) {
+        if (empty($activeTestRunIds)) {
             return null;
         }
 
-        // Of all the active queues, load one that is available.
+        // Of all the active test runs, load one that is available.
         $parameters = [];
-        foreach ($activeQueueNames as $i => $activeQueueName) {
-            $parameters[':queue_' . $i] = $activeQueueName;
+        foreach ($activeTestRunIds as $i => $activeTestRunId) {
+            $parameters[':test_run_' . $i] = $activeTestRunId;
         }
         $placeholders = implode(', ', array_keys($parameters));
-        $availableQueueSelectQuery = $this->database->getConnection()->prepare(sprintf("
-SELECT q.*
-     FROM queue q
-     WHERE q.name IN (%s)
-          AND q.last_request < :last_request
-     ORDER BY last_request ASC, priority ASC, created ASC
+        // @todo Apply the flooding threshold to the groups rather than the test
+        //   runs themselves.
+        $availableTestRunSelectQuery = $this->database->getConnection()->prepare(sprintf("
+SELECT tr.*
+     FROM test_run tr
+     WHERE tr.id IN (%s)
+          AND q.last_processed < :last_processed
+     ORDER BY priority ASC, created ASC
      LIMIT 1", $placeholders));
-        $parameters['last_request'] = time() - $this->floodingThreshold;
-        $availableQueueSelectQuery->execute($parameters);
-        $record = $availableQueueSelectQuery->fetch(\PDO::FETCH_OBJ);
+        $parameters['last_request'] = time() - $this->testRunGroupFloodingThreshold;
+        $availableTestRunSelectQuery->execute($parameters);
+        $record = $availableTestRunSelectQuery->fetch(\PDO::FETCH_OBJ);
 
-        return $record ? $this->createQueueFromStorageRecord($record) : null;
-    }
-
-    /**
-     * Deletes empty queues.
-     *
-     * @return $this
-     */
-    protected function deleteEmptyQueues()
-    {
-        $this->logger->info('Collecting empty queues.');
-
-        // Get the names of the queues for which URLs must still be tested.
-        $activeQueueSelectQuery = $this->database->getConnection()->prepare("
-SELECT DISTINCT u.queue_name
-     FROM url u
-     WHERE u.status IN (:status_scheduled,
-                        :status_scheduled_for_retest)");
-        $activeQueueSelectQuery->execute([
-          'status_scheduled' => TestingStatusInterface::STATUS_SCHEDULED,
-          'status_scheduled_for_retest' => TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST,
-        ]);
-        $activeQueueNames = $activeQueueSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
-
-        // Get the names of the queues for which all URLs have been tested.
-        if ($activeQueueNames) {
-            $parameters = [];
-            foreach ($activeQueueNames as $i => $activeQueueName) {
-                $parameters[':queue_' . $i] = $activeQueueName;
-            }
-            $placeholders = implode(', ', array_keys($parameters));
-            $inactiveQueueSelectQuery = $this->database->getConnection()
-              ->prepare(sprintf("
-    SELECT q.name
-    FROM queue q
-    WHERE q.name NOT IN (%s)", $placeholders));
-            $inactiveQueueSelectQuery->execute($parameters);
-        } else {
-            $inactiveQueueSelectQuery = $this->database->getConnection()
-              ->prepare("
-    SELECT q.name
-    FROM queue q");
-            $inactiveQueueSelectQuery->execute();
-        }
-        $inactiveQueueNames = $inactiveQueueSelectQuery->fetchAll(\PDO::FETCH_COLUMN,
-          0);
-
-        if ($inactiveQueueNames) {
-            $this->logger->info(sprintf('Preparing to delete empty queues: %s',
-              implode(', ', $inactiveQueueNames)));
-            foreach ($inactiveQueueNames as $queueName) {
-                $this->logger->debug(sprintf('Preparing to delete queue %s.',
-                  $queueName));
-
-                // Delete the queue from RabbitMQ.
-                $this->amqpQueue->channel()->queue_delete($queueName);
-                $this->logger->debug(sprintf('Successfully removed queue %s from RabbitMQ.',
-                  $queueName));
-
-                // Delete the queue from the database.
-                $deleteQuery = $this->database->getConnection()
-                  ->prepare("DELETE FROM queue WHERE queue.name = :queue_name");
-                $result = $deleteQuery->execute([
-                  'queue_name' => $queueName,
-                ]);
-                if ($result) {
-                    $this->logger->debug(sprintf('Successfully removed queue %s from the database.',
-                      $queueName));
-                } else {
-                    $errorInfo = $this->database->getConnection()->errorInfo();;
-                    $pdoCode = $errorInfo[0];
-                    $driverCode = array_key_exists(1,
-                      $errorInfo) ? $errorInfo[1] : null;
-                    $driverMessage = array_key_exists(2,
-                      $errorInfo) ? $errorInfo[2] : null;
-                    throw new \RuntimeException(sprintf('Failed to remove queue %s from the database. The PDO error was %s: %s (%s).',
-                      $queueName, $pdoCode, $driverMessage, $driverCode));
-                }
-            }
-        } else {
-            $this->logger->info('No empty queues found.');
-        }
-
-        return $this;
+        return $record ? $this->createTestRunFromStorageRecord($record) : null;
     }
 
 }

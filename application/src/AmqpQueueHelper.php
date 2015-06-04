@@ -16,6 +16,11 @@ use PhpAmqpLib\Message\AMQPMessage;
 class AmqpQueueHelper {
 
     /**
+     * The queue name prefix for test runs.
+     */
+    const QUEUE_NAME_PREFIX = 'test-run-';
+
+    /**
      * Declares a queue for a queue channel.
      *
      * @param \PhpAmqpLib\Channel\AMQPChannel $channel
@@ -54,6 +59,18 @@ class AmqpQueueHelper {
         $messageData->urlId = $urlId;
 
         return new AMQPMessage(json_encode($messageData), $properties);
+    }
+
+    /**
+     * Creates the queue name for a test run.
+     *
+     * @param int $testRunId
+     *   The test run's ID.
+     *
+     * @return string
+     */
+    public static function createQueueName($testRunId) {
+        return static::QUEUE_NAME_PREFIX . $testRunId;
     }
 
 }

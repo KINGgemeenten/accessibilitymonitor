@@ -8,7 +8,9 @@
 namespace Triquanta\Tests\AccessibilityMonitor;
 
 use PhpAmqpLib\Message\AMQPMessage;
+use Triquanta\AccessibilityMonitor\AmqpQueueHelper;
 use Triquanta\AccessibilityMonitor\Queue;
+use Triquanta\AccessibilityMonitor\TestRun;
 use Triquanta\AccessibilityMonitor\Url;
 use Triquanta\AccessibilityMonitor\Worker;
 
@@ -98,7 +100,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     public function testrunWithoutAvailableQueues()
     {
         $this->resultStorage->expects($this->atLeastOnce())
-          ->method('getQueueToSubscribeTo')
+          ->method('getTestRunToProcess')
           ->willReturn(null);
 
         $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
@@ -119,27 +121,23 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      *
      * @todo Extend this with some proper assertions.
      */
-    public function testrunWithAvailableQueue()
+    public function testRunWithAvailableQueue()
     {
-        $queueName = 'foo_bar_' . mt_rand();
+        $testRunId = mt_rand();
 
-        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
-          ->disableOriginalConstructor()
-          ->getMock();
-        $queue->expects($this->atLeastOnce())
-            ->method('getName')
-            ->willReturn($queueName);
+        $testRun = new TestRun();
+        $testRun->setId($testRunId);
 
         $this->resultStorage->expects($this->atLeastOnce())
-            ->method('getQueueToSubscribeTo')
-            ->willReturn($queue);
+            ->method('getTestRunToProcess')
+            ->willReturn($testRun);
 
         $channel = $this->getMockBuilder('\PhpAmqpLib\Channel\AMQPChannel')
           ->disableOriginalConstructor()
           ->getMock();
         $channel->expects($this->atLeastOnce())
           ->method('queue_declare')
-          ->with($queueName);
+          ->with(AmqpQueueHelper::createQueueName($testRunId));
 
         $this->amqpQueue->expects($this->atLeastOnce())
           ->method('channel')
@@ -266,7 +264,7 @@ class WorkerTestWorker extends Worker {
      * @param \Triquanta\AccessibilityMonitor\Queue $queue
      */
     public function setQueue(Queue $queue) {
-        $this->queue = $queue;
+        $this->testRun = $queue;
     }
 
 }

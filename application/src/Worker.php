@@ -17,7 +17,7 @@ use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
 
 /**
- * Provides a queue worker that tests URLs contained in AMQP messages.
+ * Provides a test run worker that tests URLs.
  */
 class Worker implements WorkerInterface {
 
@@ -29,18 +29,18 @@ class Worker implements WorkerInterface {
     protected $logger;
 
     /**
-     * The AMQP queue.
+     * The AMQP queue connection.
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection
      */
-    protected $amqpQueue;
+    protected $queueConnection;
 
     /**
-     * The queue.
+     * The current test run to process.
      *
-     * @var \Triquanta\AccessibilityMonitor\Queue
+     * @var \Triquanta\AccessibilityMonitor\TestRun
      */
-    protected $queue;
+    protected $testRun;
 
     /**
      * The result storage.
@@ -80,7 +80,7 @@ class Worker implements WorkerInterface {
       $workerTtl
     ) {
         $this->logger = $logger;
-        $this->amqpQueue = $queue;
+        $this->queueConnection = $queue;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
         $this->workerTtl = $workerTtl;
@@ -89,21 +89,22 @@ class Worker implements WorkerInterface {
     public function run()
     {
         $this->logger->debug(sprintf('Starting worker. It will be shut down in %d seconds.', $this->workerTtl));
-        $queueChannel = $this->amqpQueue->channel();
+        $queueChannel = $this->queueConnection->channel();
         $workerStart = time();
         $failureWait = 3;
 
         while ($workerStart + $this->workerTtl > time()) {
-            // Try to find a queue to process messages from.
-            $this->queue = $this->resultStorage->getQueueToSubscribeTo();
-            if (!$this->queue) {
+            // Try to find a test run to process.
+            $this->testRun = $this->resultStorage->getTestRunToProcess();
+            if (!$this->testRun) {
                 sleep($failureWait);
                 continue;
             }
 
             // Try to retrieve a message from the queue.
-            AmqpQueueHelper::declareQueue($queueChannel, $this->queue->getName());
-            $message = $queueChannel->basic_get($this->queue->getName());
+            $queueName = AmqpQueueHelper::createQueueName($this->testRun->getId());
+            AmqpQueueHelper::declareQueue($queueChannel, $queueName);
+            $message = $queueChannel->basic_get($queueName);
             if (!($message instanceof AMQPMessage)) {
                 sleep($failureWait);
                 continue;
@@ -124,10 +125,6 @@ class Worker implements WorkerInterface {
      */
     public function processMessage(AMQPChannel $channel, AMQPMessage $message) {
         try {
-            // Register this test run.
-            $this->queue->setLastRequest(time());
-            $this->resultStorage->saveQueue($this->queue);
-
             // Check message integrity.
             if (!$this->validateMessage($message)) {
                 $this->logger->emergency(sprintf('"%s" is not a valid message.', $message->body));
@@ -156,12 +153,13 @@ class Worker implements WorkerInterface {
             $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
         }
         catch (StorageException $e) {
-            // If saving the URL or queue failed, the metadata that was set on
-            // it during the test run may have been lost as well. Because the
+            // If saving the URL or test run failed, the metadata that was set
+            // on it during the test run may have been lost as well. Because the
             // re-tester relies on this metadata, publishing the URL to the
             // queue again is the only way to be certain it will be re-tested
             // again in the future.
-            $channel->basic_publish($message, '', $this->queue->getName());
+            $queueName = AmqpQueueHelper::createQueueName($this->testRun->getId());
+            $channel->basic_publish($message, '', $queueName);
         }
         catch (\Exception $e) {
             $this->logger->emergency(sprintf('%s on line %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));

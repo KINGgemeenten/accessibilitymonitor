@@ -66,12 +66,13 @@ class Url implements TestingStatusInterface
      * @var array[]
      */
     protected $quailResultCases = [];
+
     /**
-     * The queue name.
+     * The test run ID.
      *
-     * @var string
+     * @var int
      */
-    protected $queueName;
+    protected $testRunId;
 
     /**
      * The Google PageSpeed test results.
@@ -124,34 +125,6 @@ class Url implements TestingStatusInterface
             throw new \BadMethodCallException('This URL already has an ID.');
         } else {
             $this->id = $id;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Returns the ID of the website test results this URL is for.
-     *
-     * @return int
-     */
-    public function getWebsiteTestResultsId()
-    {
-        return $this->websiteTestResultsId;
-    }
-
-    /**
-     * Sets the URL's website test results ID.
-     *
-     * @param int $website_test_results_id
-     *
-     * @return $this
-     */
-    public function setWebsiteTestResultsId($website_test_results_id)
-    {
-        if ($this->websiteTestResultsId) {
-            throw new \BadMethodCallException('This URL already has a website test results ID.');
-        } else {
-            $this->websiteTestResultsId = $website_test_results_id;
         }
 
         return $this;
@@ -400,9 +373,9 @@ class Url implements TestingStatusInterface
      *
      * @return $this
      */
-    public function setQueueName($name)
+    public function setTestRunId($name)
     {
-        $this->queueName = $name;
+        $this->testRunId = $name;
 
         return $this;
     }
@@ -412,9 +385,9 @@ class Url implements TestingStatusInterface
      *
      * @return string
      */
-    public function getQueueName()
+    public function getTestRunId()
     {
-        return $this->queueName;
+        return $this->testRunId;
     }
 
     /**

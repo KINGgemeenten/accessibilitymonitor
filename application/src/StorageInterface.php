@@ -48,34 +48,34 @@ interface StorageInterface extends TestingStatusInterface
     public function countUrlsByWebsiteTestResultsIdAndLastProcessedDateTimePeriod($websiteTestResultsId, $start, $end);
 
     /**
-     * Gets a queue by queue ID.
+     * Gets a test run by ID.
      *
      * @param string $id
      *
-     * @return \Triquanta\AccessibilityMonitor\Queue|null
+     * @return \Triquanta\AccessibilityMonitor\TestRun|null
      */
-    public function getQueueByName($id);
+    public function getTestRunById($id);
 
     /**
-     * Saves a queue.
+     * Saves a test run.
      *
-     * @param \Triquanta\AccessibilityMonitor\Queue $queue
+     * @param \Triquanta\AccessibilityMonitor\TestRun $testRun
      *
      * @throws \Triquanta\AccessibilityMonitor\StorageException
      *   Thrown when storage fails.
      */
-    public function saveQueue(Queue $queue);
+    public function saveTestRun(TestRun $testRun);
 
     /**
-     * Gets the queue a worker must subscribe to.
+     * Gets the test run a worker must process.
      *
      * This method is not idempotent. This means that subsequent calls may
-     * return different queues.
+     * return different test runs.
      *
-     * @return \Triquanta\AccessibilityMonitor\Queue|null
-     *   The queue or NULL in case no queue is available.
+     * @return \Triquanta\AccessibilityMonitor\TestRun|null
+     *   The test run or NULL in case no test run is available.
      */
-    public function getQueueToSubscribeTo();
+    public function getTestRunToProcess();
 
     /**
      * Gets URLs based on their status and last processed date/time.
