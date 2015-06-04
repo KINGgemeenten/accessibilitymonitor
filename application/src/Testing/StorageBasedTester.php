@@ -92,7 +92,6 @@ class StorageBasedTester implements TesterInterface
         // Process the test outcome.
         if ($outcome) {
             $url->setTestingStatus(TestingStatusInterface::STATUS_TESTED);
-            $this->statsD->increment("tests.all.status.success");
         }
         else {
             $url->setFailedTestCount($url->getFailedTestCount() + 1);
@@ -100,13 +99,11 @@ class StorageBasedTester implements TesterInterface
             if ($url->getFailedTestCount() >= $this->maxFailedTestRuns) {
                 $url->setTestingStatus(TestingStatusInterface::STATUS_ERROR);
                 $this->logger->info(sprintf('Dismissed testing %s, because it has been tested at least %d times and still failed.', $url->getUrl(), $this->maxFailedTestRuns));
-                $this->statsD->increment("tests.all.status.failed");
             }
             // Reschedule the URL for testing at a later time.
             else {
                 $url->setTestingStatus(TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST);
                 $this->logger->info(sprintf('Rescheduled %s for testing, because the current test failed or was not completed.', $url->getUrl()));
-                $this->statsD->increment("tests.all.status.rescheduled");
             }
         }
         $url->setLastProcessedTime(time());
