@@ -81,20 +81,21 @@ class ReTester {
     public function retest() {
         $urls = $this->storage->getUrlsByStatusAndLastProcessedDateTime(TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST, 0, time() - $this->threshold);
         foreach ($urls as $url) {
-            // Update the URL in storage.
-            $url->setTestingStatus(TestingStatusInterface::STATUS_SCHEDULED);
-            $this->storage->saveUrl($url);
-
             // Add the URL to the AMQP queue.
             $queueChannel = $this->amqpConnection->channel();
-            AmqpQueueHelper::declareQueue($queueChannel, $url->getQueueName());
+            $queueName = AmqpQueueHelper::createQueueName($url->getTestRunId());
+            AmqpQueueHelper::declareQueue($queueChannel, $queueName);
             $properties = array(
               'delivery_mode' => 2,
             );
             $messageData = new \stdClass();
             $messageData->urlId = (int) $url->getId();
             $msg = new AMQPMessage(json_encode($messageData), $properties);
-            $queueChannel->basic_publish($msg, '', $url->getQueueName());
+            $queueChannel->basic_publish($msg, '', $queueName);
+
+            // Update the URL in storage.
+            $url->setTestingStatus(TestingStatusInterface::STATUS_SCHEDULED);
+            $this->storage->saveUrl($url);
         }
         $this->logger->info(sprintf('Scheduled %d URL(s) for re-testing.', count($urls)));
     }

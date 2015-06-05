@@ -160,6 +160,12 @@ class Worker implements WorkerInterface {
             // again in the future.
             $queueName = AmqpQueueHelper::createQueueName($this->testRun->getId());
             $channel->basic_publish($message, '', $queueName);
+
+            // Get the original exception and log it.
+            while ($e->getPrevious()) {
+                $e = $e->getPrevious();
+            }
+            $this->logger->emergency(sprintf('%s on line %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));
         }
         catch (\Exception $e) {
             $this->logger->emergency(sprintf('%s on line %d in %s.', $e->getMessage(), $e->getLine(), $e->getFile()));

@@ -26,12 +26,14 @@
 DROP TABLE IF EXISTS `test_run`;
 
 CREATE TABLE `test_run` (
-  `priority` int(11) unsigned NOT NULL DEFAULT '0',
+  `priority` int(3) unsigned NOT NULL DEFAULT '0',
   `created` int(11) unsigned NOT NULL DEFAULT '0',
   `group_name` varchar(255) NOT NULL DEFAULT '',
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `website_test_results_id` int(10) unsigned NOT NULL,
   `last_processed` int(11) unsigned DEFAULT '0',
   PRIMARY KEY (`id`),
+  KEY `website_test_results_id` (`website_test_results_id`),
   KEY `created` (`created`),
   KEY `priority` (`priority`),
   KEY `group_name` (`group_name`),
@@ -56,8 +58,10 @@ CREATE TABLE `url` (
   PRIMARY KEY (`url_id`),
   KEY `status` (`status`),
   KEY `failed_test_count` (`failed_test_count`),
+  KEY `is_root` (`is_root`),
   KEY `last_processed` (`last_processed`),
   KEY `test_run_id` (`test_run_id`)
+  KEY `status_test_run_id` (`status`, `test_run_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -7,7 +7,7 @@
 #
 # Host: 192.168.50.5 (MySQL 5.5.43-0ubuntu0.12.04.1)
 # Database: inspector
-# Generation Time: 2015-05-29 11:49:24 +0000
+# Generation Time: 2015-05-22 14:19:23 +0000
 # ************************************************************
 
 
@@ -20,24 +20,17 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
-# Dump of table test_run
+# Dump of table queue
 # ------------------------------------------------------------
 
-DROP TABLE IF EXISTS `test_run`;
+DROP TABLE IF EXISTS `queue`;
 
-CREATE TABLE `test_run` (
-  `priority` int(11) unsigned NOT NULL DEFAULT '0',
-  `created` int(11) unsigned NOT NULL DEFAULT '0',
-  `group_name` varchar(255) NOT NULL DEFAULT '',
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `website_test_results_id` int(10) unsigned NOT NULL,
-  `last_processed` int(11) unsigned DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `website_test_results_id` (`website_test_results_id`),
-  KEY `created` (`created`),
-  KEY `priority` (`priority`),
-  KEY `group_name` (`group_name`),
-  KEY `last_processed` (`last_processed`)
+CREATE TABLE `queue` (
+  `priority` int(11) NOT NULL,
+  `name` varchar(255) NOT NULL DEFAULT '',
+  `created` int(11) DEFAULT NULL,
+  `last_request` int(11) DEFAULT '0',
+  PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -48,18 +41,21 @@ CREATE TABLE `test_run` (
 DROP TABLE IF EXISTS `url`;
 
 CREATE TABLE `url` (
-  `url_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `test_run_id` int(11) unsigned NOT NULL,
+  `url_id` int(11) NOT NULL AUTO_INCREMENT,
+  `website_test_results_id` int(10) unsigned NOT NULL,
   `url` varchar(1024) NOT NULL,
-  `status` tinyint(3) unsigned NOT NULL,
-  `last_processed` int(11) unsigned DEFAULT '0',
+  `status` int(11) NOT NULL,
+  `last_processed` int(11) DEFAULT NULL,
   `is_root` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `failed_test_count` int(11) unsigned NOT NULL DEFAULT '0',
+  `queue_name` varchar(255) NOT NULL DEFAULT '',
+  `failed_test_count` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`url_id`),
   KEY `status` (`status`),
   KEY `failed_test_count` (`failed_test_count`),
   KEY `last_processed` (`last_processed`),
-  KEY `test_run_id` (`test_run_id`)
+  KEY `website_test_results_id` (`website_test_results_id`),
+  KEY `queue_name` (`queue_name`),
+  KEY `status_queue_name` (`status`,`queue_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -70,12 +66,12 @@ CREATE TABLE `url` (
 DROP TABLE IF EXISTS `url_result`;
 
 CREATE TABLE `url_result` (
-  `url_id` int(11) unsigned NOT NULL,
+  `url_id` int(11) NOT NULL,
   `cms` varchar(1024) DEFAULT NULL,
   `quail_result` text,
   `pagespeed_result` longtext,
   PRIMARY KEY (`url_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
 

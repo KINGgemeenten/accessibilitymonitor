@@ -172,10 +172,10 @@ class Storage implements StorageInterface
                   'is_root' => (int) $url->isRoot(),
                   'failed_test_count' => $url->getFailedTestCount(),
                   'url' => $url->getUrl(),
-                  'website_test_results_id' => $url->getWebsiteTestResultsId(),
+                  'test_run_id' => $url->getTestRunId(),
                 ];
                 $insertUrlQuery = $this->database->getConnection()
-                  ->prepare("INSERT INTO url (website_test_results_id, url, status, last_processed, is_root) VALUES (:website_test_results_id, :url, :status, :last_processed, :is_root)");
+                  ->prepare("INSERT INTO url (test_run_id, url, status, last_processed, is_root) VALUES (:test_run_id, :url, :status, :last_processed, :is_root)");
                 $insertUrlQuery->execute($insertUrlValues);
 
                 // Get the URL's ID.
@@ -284,7 +284,7 @@ class Storage implements StorageInterface
         if (property_exists($case, 'uniqueKey')) {
             /** @var \Solarium\QueryType\Update\Query\Document\Document $doc */
             $doc = $updateQuery->createDocument();
-            $doc->setField('id', $this->createCaseSolrId($url, $case));
+            $doc->setField('id', $this->createCaseSolrId($url, $testRun, $case));
             $doc->setFIeld('url', $url->getUrl());
             $doc->setField('url_id',
               $this->escapeStringForSolr($url->getUrl()));
@@ -315,15 +315,16 @@ class Storage implements StorageInterface
      * Create a solr id for a case.
      *
      * @param \Triquanta\AccessibilityMonitor\Url $url
+     * @param \Triquanta\AccessibilityMonitor\TestRun $testRun
      * @param \stdClass $case
      *
      * @return string
      *   Case id.
      */
-    protected function createCaseSolrId(Url $url, \stdClass $case)
+    protected function createCaseSolrId(Url $url, TestRun $testRun, \stdClass $case)
     {
         // Create a hash based om the url and uniqueKey of the case.
-        $hash = md5($case->uniqueKey . '_' . $url->getWebsiteTestResultsId() . '_' . $url->getUrl());
+        $hash = md5($case->uniqueKey . '_' . $testRun->getWebsiteTestResultsId() . '_' . $url->getUrl());
 
         return $hash;
     }
@@ -374,7 +375,7 @@ class Storage implements StorageInterface
     {
         $testRun = new TestRun();
         $testRun->setId($record->id)
-          ->setGroup($record->group)
+          ->setGroup($record->group_name)
           ->setPriority($record->priority)
           ->setCreated($record->created)
           ->setWebsiteTestResultsId($record->website_test_results_id);
@@ -386,7 +387,7 @@ class Storage implements StorageInterface
         $query = $this->database->getConnection()
           ->prepare("SELECT * FROM test_run WHERE id = :id");
         $query->execute(array(
-          'ud' => $id,
+          'id' => $id,
         ));
 
         $record = $query->fetch(\PDO::FETCH_OBJ);
@@ -419,7 +420,7 @@ class Storage implements StorageInterface
     }
 
     public function getTestRunToProcess() {
-        // Get the names of all active test runs.
+        // Get the IDs of all active test runs.
         $activeTestRunIdsSelectQuery = $this->database->getConnection()->prepare("
 SELECT DISTINCT u.test_run_id
      FROM url u
@@ -433,22 +434,38 @@ SELECT DISTINCT u.test_run_id
             return null;
         }
 
-        // Of all the active test runs, load one that is available.
-        $parameters = [];
-        foreach ($activeTestRunIds as $i => $activeTestRunId) {
-            $parameters[':test_run_' . $i] = $activeTestRunId;
+        // Get the names of groups that can be processed.
+        $allowedGroupNamesSelectQuery = $this->database->getConnection()->prepare("
+SELECT DISTINCT group_name FROM test_run WHERE last_processed < :last_processed");
+        $allowedGroupNamesSelectQuery->execute([
+        'last_processed' => time() - $this->testRunGroupFloodingThreshold,
+        ]);
+        $allowedGroupNames = $allowedGroupNamesSelectQuery->fetchAll(\PDO::FETCH_COLUMN, 0);
+
+        if (empty($allowedGroupNames)) {
+            return null;
         }
-        $placeholders = implode(', ', array_keys($parameters));
-        // @todo Apply the flooding threshold to the groups rather than the test
-        //   runs themselves.
+
+        // Of all the active test runs, load one that is available.
+        $activeTestRunIdParameters = [];
+        foreach ($activeTestRunIds as $i => $activeTestRunId) {
+            $activeTestRunIdParameters[':test_run_' . $i] = $activeTestRunId;
+        }
+        $activeTestRunIdPlaceholders = implode(', ', array_keys($activeTestRunIdParameters));
+        $allowedGroupNameParameters = [];
+        foreach ($allowedGroupNames as $i => $allowedGroupName) {
+            $allowedGroupNameParameters[':group_name_' . $i] = $allowedGroupName;
+        }
+        $allowedGroupNamePlaceholders = implode(', ', array_keys($allowedGroupNameParameters));
         $availableTestRunSelectQuery = $this->database->getConnection()->prepare(sprintf("
 SELECT tr.*
      FROM test_run tr
      WHERE tr.id IN (%s)
-          AND q.last_processed < :last_processed
+          AND tr.group_name IN (%s)
      ORDER BY priority ASC, created ASC
-     LIMIT 1", $placeholders));
-        $parameters['last_request'] = time() - $this->testRunGroupFloodingThreshold;
+     LIMIT 1", $activeTestRunIdPlaceholders, $allowedGroupNamePlaceholders));
+        $parameters = array_merge($activeTestRunIdParameters, $allowedGroupNameParameters);
+
         $availableTestRunSelectQuery->execute($parameters);
         $record = $availableTestRunSelectQuery->fetch(\PDO::FETCH_OBJ);
 
