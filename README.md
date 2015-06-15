@@ -76,4 +76,4 @@ the tests after pushes, or for pull requests.
 
 Virtual machine
 ---------------
-See `./vm/README.md`.
+See [./vm/README.md](./vm/README.md).
