@@ -3,6 +3,10 @@ Accessibility Monitor
 
 [![Build Status](https://travis-ci.org/KINGgemeenten/accessibilitymonitor.svg?branch=feature/rabbitmq)](https://travis-ci.org/KINGgemeenten/accessibilitymonitor)
 
+About this document
+===================
+All relative paths are relative to the repository root.
+
 Requirements
 ============
 * PHP 5.4+
@@ -16,13 +20,14 @@ Application
 -----------
 * `cd ./application`
 * `composer install`
-* `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` and edit the values.
-* Make sure that the `tmp_directory` path (defaults to `/tmp/accessibilitymonitor`) is writable by the user under which
-  the workers run. This directory path can be overridden in `container_overrides.yml`.
+* `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` and edit/override the
+  configuration.
+* Make sure that the value of the `tmp_directory` configration is a directory path on the system that is writable by the 
+  user under which the workers run. The path defaults to `/tmp/accessibilitymonitor` and can be overridden in 
+  `container_overrides.yml`.
 
 Worker manager
 --------------
-
 * `mkdir /etc/accessibilitymonitor`
 * `echo $MAX > /etc/accessibilitymonitor/max_worker_count`, where `$MAX` is the maximum number of concurrent workers for
  the machine.
@@ -57,4 +62,4 @@ run using `./application/phpunit.xml.dist`. All tests are located in
 
 Virtual machine
 ---------------
-See ./vm/README.md.
+See `./vm/README.md`.
