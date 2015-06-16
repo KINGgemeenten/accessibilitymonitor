@@ -1,23 +1,36 @@
-Accessibility Monitor
-=====================
+# Accessibility Monitor
 
 [![Build Status](https://travis-ci.org/KINGgemeenten/accessibilitymonitor.svg?branch=feature/rabbitmq)](https://travis-ci.org/KINGgemeenten/accessibilitymonitor)
 
-This project contains the testing application for Gewoon Toegankelijk, the 
-daemon to start workers through the application, and a VM for testing.
+This project contains the testing application for 
+[Gewoon Toegankelijk](http://gewoontoegankelijk.nl), the daemon to start 
+workers through the application, and a VM for testing.
 
-About this document
-===================
 All relative paths are relative to the repository root.
 
-Requirements
-============
+## Requirements
 * PHP 5.5+
 * [Composer](http://getcomposer.org)
-* An operating system with Upstart (Ubuntu is used for all examples)
+* An operating system with [Upstart](http://upstart.ubuntu.com/) (Ubuntu is 
+  used for all examples)
 
-Installation
-============
+## Usage
+This project is a Symfony application that is built around Symfony's
+[dependency injection component](http://symfony.com/doc/current/components/dependency_injection/introduction.html).
+`\Triquanta\AccessibilityMonitor\Application` is responsible for booting the 
+application and building the service container.
+
+The service container is configured in `./application/container.yml` and 
+contains service definitions and simple configuration parameters. Existing 
+configuration can be extended and overridden by creating 
+`./application/container_overrides.yml`. Both files contain 
+[YAML container configuration](http://symfony.com/doc/current/components/dependency_injection/introduction.html#setting-up-the-container-with-configuration-files). 
+
+`./application/bin/tam` is the application's CLI, which controls all of its 
+functionality. It is built on Symfony's 
+[console component](http://symfony.com/doc/current/components/console/introduction.html).
+
+## Installation
 
 * Testing application
     * `cd ./application`
@@ -37,27 +50,21 @@ Installation
     * `cp ./application/scripts/accessibilitymonitor.conf /etc/init/`
     * `start accessibilitymonitor`
 
-Logging
-=======
+## Logging
 System events are logged to the console output, to file, and severe events also 
 result in emails being sent to the project maintainers. This behavior is 
-configured in `./application/container.yml` and can be overridden in 
-`./application/container_overrides.yml`.
+configured in the service container.
 
-Development
-===========
+## Development
 
-PSR-2
------
+### PSR-2
 All code must be written according the [PSR-2](http://www.php-fig.org/psr/psr-2/) guidelines.
 
-PSR-3
------
+### PSR-3
 Logging is done through [Monolog](https://github.com/Seldaek/monolog). Its logger is used according 
 [PSR-3](http://www.php-fig.org/psr/psr-3/).
 
-PSR-4
------
+### PSR-4
 Class and interface autoloading is done using
 [PSR-4](http://www.php-fig.org/psr/psr-4/) using the following namespace
 mappings:
@@ -65,8 +72,7 @@ mappings:
 * `\Triquanta\AccessibilityMonitor` maps to `./application/src`
 * `\Triquanta\Tests\AccessibilityMonitor` maps to `./application/tests/src`
 
-Testing
--------
+### Testing
 The library comes with [PHPUnit](https://phpunit.de/)-based tests that can be
 run using `./application/phpunit.xml.dist`. All tests are located in
 `\Triquanta\Tests\AccessibilityMonitor`.
@@ -74,6 +80,5 @@ run using `./application/phpunit.xml.dist`. All tests are located in
 The Github repository is hooked up to [Travis CI](https://travis-ci.org/KINGgemeenten/accessibilitymonitor), which runs 
 the tests after pushes, or for pull requests.
 
-Virtual machine
----------------
+### Virtual machine
 See [./vm/README.md](./vm/README.md).
