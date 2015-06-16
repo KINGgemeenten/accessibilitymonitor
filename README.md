@@ -9,25 +9,27 @@ workers through the application, and a VM for testing.
 All relative paths are relative to the repository root.
 
 ## Requirements
-* PHP 5.5+
+* [PHP](http://php.net) 5.5+
 * [Composer](http://getcomposer.org)
 * An operating system with [Upstart](http://upstart.ubuntu.com/) (Ubuntu is 
   used for all examples)
 
 ## Usage
-This project is a Symfony application that is built around Symfony's
+This project is a [Symfony](http://symfony.com/) application that is built 
+around Symfony's
 [dependency injection component](http://symfony.com/doc/current/components/dependency_injection/introduction.html).
 `\Triquanta\AccessibilityMonitor\Application` is responsible for booting the 
 application and building the service container.
 
-The service container is configured in `./application/container.yml` and 
-contains service definitions and simple configuration parameters. Existing 
-configuration can be extended and overridden by creating 
-`./application/container_overrides.yml`. Both files contain 
+The service container is configured in
+[./application/container.yml](./application/container.yml) and contains service 
+definitions and simple configuration parameters. Existing configuration can be 
+extended and overridden by creating `./application/container_overrides.yml`. 
+Both files contain 
 [YAML container configuration](http://symfony.com/doc/current/components/dependency_injection/introduction.html#setting-up-the-container-with-configuration-files). 
 
-`./application/bin/tam` is the application's CLI, which controls all of its 
-functionality. It is built on Symfony's 
+[./application/bin/tam](./application/bin/tam) is the application's CLI, which 
+can control all of its functionality. It is built on Symfony's 
 [console component](http://symfony.com/doc/current/components/console/introduction.html).
 
 ## Installation
@@ -69,13 +71,13 @@ Class and interface autoloading is done using
 [PSR-4](http://www.php-fig.org/psr/psr-4/) using the following namespace
 mappings:
 
-* `\Triquanta\AccessibilityMonitor` maps to `./application/src`
-* `\Triquanta\Tests\AccessibilityMonitor` maps to `./application/tests/src`
+* `\Triquanta\AccessibilityMonitor` maps to [./application/src](./application/src)
+* `\Triquanta\Tests\AccessibilityMonitor` maps to [./application/tests/src](./application/tests/src)
 
 ### Testing
 The library comes with [PHPUnit](https://phpunit.de/)-based tests that can be
-run using `./application/phpunit.xml.dist`. All tests are located in
-`\Triquanta\Tests\AccessibilityMonitor`.
+run using [./application/phpunit.xml.dist](./application/phpunit.xml.dist). 
+All tests are located in `\Triquanta\Tests\AccessibilityMonitor`.
 
 The Github repository is hooked up to [Travis CI](https://travis-ci.org/KINGgemeenten/accessibilitymonitor), which runs 
 the tests after pushes, or for pull requests.
