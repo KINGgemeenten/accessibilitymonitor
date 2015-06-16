@@ -11,6 +11,8 @@ All relative paths are relative to the directory of this file.
 ## Installation
 - `ansible-playbook init.yml -i ansible_hosts`
 - `vagrant up`
+- Execute `../sql-dump/inspector-N.sql` in the `inspector` MySQL database 
+  within the VM, where `N` is the highest available version number.
 
 # VM details
 The VM will be accessible at `192.168.50.5`.
