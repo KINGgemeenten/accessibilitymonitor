@@ -15,11 +15,11 @@ All relative paths are relative to the directory of this file.
 ## Installation
 - `ansible-playbook init.yml -i ansible_hosts`
 - `vagrant up`
-- Execute `../sql-dump/inspector-N.sql` in the `inspector` MySQL database 
-  within the VM, where `N` is the highest available version number.
 - `vagrant ssh`
 - `sudo su`
 - `cd /opt/accessibilitymonitor`
+- `mysql -u inspector -p inspector < ./sql-dump/inspector-N.sql` , where `N` is
+  the highest available version number.
 - Perform the testbot installation tasks as documented in
   [../README.md](../README.md).
 
