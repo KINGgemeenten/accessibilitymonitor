@@ -17,6 +17,9 @@ All relative paths are relative to the directory of this file.
 - `vagrant up`
 - Execute `../sql-dump/inspector-N.sql` in the `inspector` MySQL database 
   within the VM, where `N` is the highest available version number.
+- `vagrant ssh`
+- Perform the testbot installation tasks as documented in
+  [../README.md](../README.md).
 
 # VM details
 The VM will be accessible at `192.168.50.5`. 
