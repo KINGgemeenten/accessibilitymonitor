@@ -34,13 +34,21 @@ can control all of its functionality. It is built on Symfony's
 
 ## Installation
 
+### Test result metadata & results storage
+
+* Ensure a database has been created and its credentials are configured in the
+  testing application's `./application/container_overrides.yml`.
+* Run `./sql-dump/inspector-N.sql` (where `N` is the highest available version
+  number) in the database ensured in the previous step.
+
 ### Testbot
 
 * Testing application
     * `cd ./application`
     * `composer install`
     * `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` 
-      and edit/override the configuration.
+      and extend/override the configuration where necessary, such as for remote 
+      server information and authentication credentials.
     * Make sure that the value of the `tmp_directory` configration is a 
       directory path on the system that is writable by the user under which the 
       workers run. The path defaults to `/tmp/accessibilitymonitor` and can be 
@@ -53,13 +61,6 @@ can control all of its functionality. It is built on Symfony's
     * `` echo `pwd`/application/bin/tam retest > /etc/accessibilitymonitor/retest ``
     * `cp ./application/scripts/accessibilitymonitor.conf /etc/init/`
     * `start accessibilitymonitor`
-
-### Test result metadata & results storage
-
-* Ensure a database has been created and its credentials are configured in the
-  testing application's `./application/container_overrides.yml`.
-* Run `./sql-dump/inspector-N.sql` (where `N` is the highest available version
-  number) in the database ensured in the previous step.
 
 ## Logging
 System events are logged to the console output, to file, and severe events also 
