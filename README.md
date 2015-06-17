@@ -44,6 +44,7 @@ can control all of its functionality. It is built on Symfony's
 ### Testbot
 
 * Testing application
+    * Go to the repository root.
     * `cd ./application`
     * `composer install`
     * `cp ./container_overrides_example.yml ./container_overrides.yml` and
@@ -54,6 +55,7 @@ can control all of its functionality. It is built on Symfony's
       workers run. The path defaults to `/tmp/accessibilitymonitor` and can be 
       overridden in `container_overrides.yml`.
 * Worker manager (Upstart daemon)
+    * Go to the repository root.
     * `mkdir /etc/accessibilitymonitor`
     * `echo $MAX > /etc/accessibilitymonitor/max_worker_count`, where `$MAX` is 
       the maximum number of concurrent workers for the machine.
