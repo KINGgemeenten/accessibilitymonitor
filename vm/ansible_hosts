@@ -15,5 +15,5 @@ vagrant
 [rabbitmq]
 vagrant
 
-[results_storage]
+[mysql]
 vagrant
