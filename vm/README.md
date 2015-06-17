@@ -19,7 +19,7 @@ All relative paths are relative to the directory of this file.
 - `sudo su`
 - `cd /opt/accessibilitymonitor`
 - `mysql -u inspector -p inspector < ./sql-dump/inspector-N.sql` , where `N` is
-  the highest available version number.
+  the highest available version number. The password is `z31lb00t`.
 - Perform the testbot installation tasks as documented in
   [../README.md](../README.md).
 
