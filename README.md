@@ -43,26 +43,22 @@ can control all of its functionality. It is built on Symfony's
 
 ### Testbot
 
-* Testing application
-    * Go to the repository root.
-    * `cd ./application`
-    * `composer install`
-    * `cp ./container_overrides_example.yml ./container_overrides.yml` and
-      extend/override the configuration where necessary, such as for remote 
-      server information and authentication credentials.
-    * Make sure that the value of the `tmp_directory` configration is a 
-      directory path on the system that is writable by the user under which the 
-      workers run. The path defaults to `/tmp/accessibilitymonitor` and can be 
-      overridden in `container_overrides.yml`.
-* Worker manager (Upstart daemon)
-    * Go to the repository root.
-    * `mkdir /etc/accessibilitymonitor`
-    * `echo $MAX > /etc/accessibilitymonitor/max_worker_count`, where `$MAX` is 
-      the maximum number of concurrent workers for the machine.
-    * `` echo `pwd`/application/bin/tam start-worker > /etc/accessibilitymonitor/worker ``
-    * `` echo `pwd`/application/bin/tam retest > /etc/accessibilitymonitor/retest ``
-    * `cp ./application/scripts/accessibilitymonitor.conf /etc/init/`
-    * `start accessibilitymonitor`
+* `cd ./application`
+* `composer install`
+* `cp ./container_overrides_example.yml ./container_overrides.yml` and
+  extend/override the configuration where necessary, such as for remote 
+  server information and authentication credentials.
+* Make sure that the value of the `tmp_directory` configration is a 
+  directory path on the system that is writable by the user under which the 
+  workers run. The path defaults to `/tmp/accessibilitymonitor` and can be 
+  overridden in `container_overrides.yml`.
+* `mkdir /etc/accessibilitymonitor`
+* `echo $MAX > /etc/accessibilitymonitor/max_worker_count`, where `$MAX` is 
+  the maximum number of concurrent workers for the machine.
+* `` echo `pwd`/bin/tam start-worker > /etc/accessibilitymonitor/worker ``
+* `` echo `pwd`/bin/tam retest > /etc/accessibilitymonitor/retest ``
+* `cp ./scripts/accessibilitymonitor.conf /etc/init/`
+* `start accessibilitymonitor`
 
 ## Logging
 System events are logged to the console output, to file, and severe events also 
