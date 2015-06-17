@@ -54,7 +54,7 @@ can control all of its functionality. It is built on Symfony's
     * `cp ./application/scripts/accessibilitymonitor.conf /etc/init/`
     * `start accessibilitymonitor`
 
-## Test result metadata & results storage
+### Test result metadata & results storage
 
 * Ensure a database has been created and its credentials are configured in the
   testing application's `./application/container_overrides.yml`.
