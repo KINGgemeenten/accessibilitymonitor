@@ -46,8 +46,8 @@ can control all of its functionality. It is built on Symfony's
 * Testing application
     * `cd ./application`
     * `composer install`
-    * `cp ./application/container_overrides_example.yml ./application/container_overrides.yml` 
-      and extend/override the configuration where necessary, such as for remote 
+    * `cp ./container_overrides_example.yml ./container_overrides.yml` and
+      extend/override the configuration where necessary, such as for remote 
       server information and authentication credentials.
     * Make sure that the value of the `tmp_directory` configration is a 
       directory path on the system that is writable by the user under which the 
