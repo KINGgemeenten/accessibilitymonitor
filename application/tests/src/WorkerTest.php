@@ -9,7 +9,6 @@ namespace Triquanta\Tests\AccessibilityMonitor;
 
 use PhpAmqpLib\Message\AMQPMessage;
 use Triquanta\AccessibilityMonitor\AmqpQueueHelper;
-use Triquanta\AccessibilityMonitor\Queue;
 use Triquanta\AccessibilityMonitor\TestRun;
 use Triquanta\AccessibilityMonitor\Url;
 use Triquanta\AccessibilityMonitor\Worker;
@@ -65,7 +64,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     /**
      * The class under test.
      *
-     * @var \Triquanta\AccessibilityMonitor\Worker|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Triquanta\Tests\AccessibilityMonitor\WorkerTestWorker|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $sut;
 
@@ -179,10 +178,10 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
 
         $url = new Url();
 
-        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+        $testRun = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\TestRun')
           ->disableOriginalConstructor()
           ->getMock();
-        $this->sut->setQueue($queue);
+        $this->sut->setTestRun($testRun);
 
         $this->resultStorage->expects($this->atLeastOnce())
           ->method('getUrlById')
@@ -217,10 +216,10 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         $message->delivery_info['delivery_tag'] = $deliveryTag;
         $message->delivery_info['channel'] = $channel;
 
-        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+        $testRun = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\TestRun')
           ->disableOriginalConstructor()
           ->getMock();
-        $this->sut->setQueue($queue);
+        $this->sut->setTestRun($testRun);
 
         $this->resultStorage->expects($this->atLeastOnce())
           ->method('getUrlById')
@@ -249,10 +248,10 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
         $message->delivery_info['delivery_tag'] = $deliveryTag;
         $message->delivery_info['channel'] = $channel;
 
-        $queue = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\Queue')
+        $testRun = $this->getMockBuilder('\Triquanta\AccessibilityMonitor\TestRun')
           ->disableOriginalConstructor()
           ->getMock();
-        $this->sut->setQueue($queue);
+        $this->sut->setTestRun($testRun);
 
         $this->tester->expects($this->never())
             ->method('run');
@@ -270,10 +269,10 @@ class WorkerTestWorker extends Worker {
     /**
      * Sets the queue.
      *
-     * @param \Triquanta\AccessibilityMonitor\Queue $queue
+     * @param \Triquanta\AccessibilityMonitor\TestRun $testRun
      */
-    public function setQueue(Queue $queue) {
-        $this->testRun = $queue;
+    public function setTestRun(TestRun $testRun) {
+        $this->testRun = $testRun;
     }
 
 }

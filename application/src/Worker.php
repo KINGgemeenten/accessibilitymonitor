@@ -109,6 +109,7 @@ class Worker implements WorkerInterface {
             // Try to find a test run to process.
             $this->testRun = $this->resultStorage->getTestRunToProcess();
             if (!$this->testRun) {
+              $this->logger->debug('No queues available.');
                 sleep($failureWait);
                 continue;
             }
@@ -138,6 +139,7 @@ class Worker implements WorkerInterface {
      * @param \PhpAmqpLib\Message\AMQPMessage $message
      */
     public function processMessage(AMQPChannel $channel, AMQPMessage $message) {
+        $queueName = AmqpQueueHelper::createQueueName($this->testRun->getId());
         try {
             // Check message integrity.
             if (!$this->validateMessage($message)) {
@@ -158,6 +160,13 @@ class Worker implements WorkerInterface {
                 return;
             }
 
+            // Make sure the URL is indeed supposed to be tested.
+            if ($url->getTestingStatus() != TestingStatusInterface::STATUS_SCHEDULED) {
+                $this->logger->debug(sprintf('Skipped testing for URL %s, because it has status %d instead of %d.', $urlId, $url->getTestingStatus(), TestingStatusInterface::STATUS_SCHEDULED));
+                $channel->basic_ack($message->delivery_info['delivery_tag']);
+                return;
+            }
+
             // Run the actual tests.
             $this->logger->info(sprintf('Testing %s.', $url->getUrl()));
             $this->statsD->startTiming("tests.all.duration");
@@ -170,15 +179,15 @@ class Worker implements WorkerInterface {
             switch ($url->getTestingStatus()) {
                 case TestingStatusInterface::STATUS_TESTED:
                     $this->statsD->increment("tests.all.status.tested");
-                    $this->statsD->increment("tests.all.status.tested", $url->getQueueName());
+                    $this->statsD->increment("tests.all.status.tested", $queueName);
                     break;
                 case TestingStatusInterface::STATUS_ERROR:
                     $this->statsD->increment("tests.all.status.error");
-                    $this->statsD->increment("tests.all.status.error", $url->getQueueName());
+                    $this->statsD->increment("tests.all.status.error", $queueName);
                     break;
                 case TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST:
                     $this->statsD->increment("tests.all.status.scheduled_for_retest");
-                    $this->statsD->increment("tests.all.status.scheduled_for_retest", $url->getQueueName());
+                    $this->statsD->increment("tests.all.status.scheduled_for_retest", $queueName);
                     break;
             }
 
@@ -190,7 +199,6 @@ class Worker implements WorkerInterface {
             // re-tester relies on this metadata, publishing the URL to the
             // queue again is the only way to be certain it will be re-tested
             // again in the future.
-            $queueName = AmqpQueueHelper::createQueueName($this->testRun->getId());
             $channel->basic_publish($message, '', $queueName);
 
             // Get the original exception and log it.
