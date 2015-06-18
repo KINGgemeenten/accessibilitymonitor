@@ -8,8 +8,8 @@
 namespace Triquanta\AccessibilityMonitor\Testing;
 
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\ClientException;
 use Psr\Log\LoggerInterface;
+use Triquanta\AccessibilityMonitor\StatsDInterface;
 use Triquanta\AccessibilityMonitor\Url;
 
 /**
@@ -54,9 +54,17 @@ class GooglePageSpeedTester implements TesterInterface
     protected $logger;
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * Constructs a new instance.
      *
      * @param \Psr\Log\LoggerInterface $logger
+     * @param \Triquanta\AccessibilityMonitor\StatsDInterface $statsD
      * @param \GuzzleHttp\ClientInterface
      * @param string $apiKey
      * @param string $apiUrl
@@ -64,6 +72,7 @@ class GooglePageSpeedTester implements TesterInterface
      */
     public function __construct(
       LoggerInterface $logger,
+      StatsDInterface $statsD,
       ClientInterface $httpClient,
       $apiKey,
       $apiUrl,
@@ -74,11 +83,14 @@ class GooglePageSpeedTester implements TesterInterface
         $this->apiUrl = $apiUrl;
         $this->httpClient = $httpClient;
         $this->logger = $logger;
+        $this->statsD = $statsD;
     }
 
     public function run(Url $url)
     {
         if ($url->isRoot()) {
+            $this->statsD->startTiming("tests.google_pagespeed.duration");
+
             $request = $this->httpClient->createRequest('GET',
               $this->apiUrl);
             $request->getQuery()->set('key', $this->apiKey);
@@ -87,11 +99,20 @@ class GooglePageSpeedTester implements TesterInterface
             $request->getQuery()->set('strategy', $this->apiStrategy);
             $request->setHeader('User-Agent', 'GT inspector script');
 
-            $response = $this->httpClient->send($request);
-
-            $url->setGooglePageSpeedResult($response->getBody()
-              ->getContents());
+            try {
+                $response = $this->httpClient->send($request);
+                $url->setGooglePageSpeedResult($response->getBody()
+                  ->getContents());
+            }
+            catch (\Exception $e) {
+                throw $e;
+            }
+            finally {
+                $this->statsD->increment("tests.google_pagespeed.count");
+                $this->statsD->endTiming("tests.google_pagespeed.duration");
+            }
         }
+
         return true;
     }
 

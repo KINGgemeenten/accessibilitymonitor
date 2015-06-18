@@ -8,7 +8,7 @@
 namespace Triquanta\AccessibilityMonitor\Testing;
 
 use Psr\Log\LoggerInterface;
-use Triquanta\AccessibilityMonitor\StorageException;
+use Triquanta\AccessibilityMonitor\StatsDInterface;
 use Triquanta\AccessibilityMonitor\StorageInterface;
 use Triquanta\AccessibilityMonitor\Url;
 
@@ -42,6 +42,13 @@ class StorageBasedTester implements TesterInterface
     protected $logger;
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * The tester.
      *
      * @var \Triquanta\AccessibilityMonitor\Testing\TesterInterface
@@ -52,6 +59,7 @@ class StorageBasedTester implements TesterInterface
      * Creates a new instance.
      *
      * @param \Psr\Log\LoggerInterface $logger
+     * @param \Triquanta\AccessibilityMonitor\StatsDInterface $statsD
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
      * @param int $maxFailedTestRuns
@@ -59,11 +67,13 @@ class StorageBasedTester implements TesterInterface
      */
     public function __construct(
       LoggerInterface $logger,
+      StatsDInterface $statsD,
       TesterInterface $tester,
       StorageInterface $resultStorage,
       $maxFailedTestRuns
     ) {
         $this->logger = $logger;
+        $this->statsD = $statsD;
         $this->maxFailedTestRuns = $maxFailedTestRuns;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;

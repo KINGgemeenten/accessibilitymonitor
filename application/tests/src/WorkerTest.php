@@ -28,6 +28,13 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     protected $logger;
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * The queue.
      *
      * @var \PhpAmqpLib\Connection\AMQPStreamConnection|\PHPUnit_Framework_MockObject_MockObject
@@ -69,6 +76,8 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
     {
         $this->logger = $this->getMock('\Psr\Log\LoggerInterface');
 
+        $this->statsD = $this->getMock('\Triquanta\AccessibilityMonitor\StatsDInterface');
+
         $this->amqpQueue = $this->getMockBuilder('\PhpAmqpLib\Connection\AMQPStreamConnection')
           ->disableOriginalConstructor()
           ->getMock();
@@ -79,7 +88,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
 
         $this->workerTtl = mt_rand(2, 5);
 
-        $this->sut = new WorkerTestWorker($this->logger, $this->tester,
+        $this->sut = new WorkerTestWorker($this->logger, $this->statsD, $this->tester,
           $this->resultStorage, $this->amqpQueue, $this->workerTtl);
     }
 
@@ -88,7 +97,7 @@ class WorkerTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new Worker($this->logger, $this->tester,
+        $this->sut = new Worker($this->logger, $this->statsD, $this->tester,
           $this->resultStorage, $this->amqpQueue, $this->workerTtl);
     }
 

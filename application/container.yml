@@ -32,11 +32,15 @@ parameters:
   testing.retest_threshold: 21600
   testing.max_failed_test_runs: 2
   logger.mail.subject: 'Log messages for Gewoon Toegankelijk'
+  statsd.hostname: graphite.triquanta.nl
+  statsd.port: 8125
+  statsd.connection: UdpSocket
+  statsd.namespace: 'gt.inspector-<no>-<env>.statsd.workers'
 
 services:
   worker:
     class: \Triquanta\AccessibilityMonitor\Worker
-    arguments: ['@logger', '@testing.tester', '@testing.result_storage', '@queue', '%worker.ttl%']
+    arguments: ['@logger', '@statsd', '@testing.tester', '@testing.result_storage', '@queue', '%worker.ttl%']
   queue:
     class: \PhpAmqpLib\Connection\AMQPStreamConnection
     arguments: ['%queue.host%', '%queue.port%', '%queue.user%', '%queue.password%']
@@ -59,7 +63,7 @@ services:
     arguments: ['@logger', '@testing.result_storage', '@queue', '%testing.retest_threshold%']
   testing.tester:
     class: \Triquanta\AccessibilityMonitor\Testing\StorageBasedTester
-    arguments: ['@logger', '@testing.tester.grouped', '@testing.result_storage', '%testing.max_failed_test_runs%']
+    arguments: ['@logger', '@statsd', '@testing.tester.grouped', '@testing.result_storage', '%testing.max_failed_test_runs%']
   testing.tester.grouped:
     class: \Triquanta\AccessibilityMonitor\Testing\GroupedTester
     arguments: ['@logger']
@@ -69,13 +73,16 @@ services:
       - [addTester, ['@testing.tester.quail']]
   testing.tester.wappalyzer:
     class: \Triquanta\AccessibilityMonitor\Testing\WappalyzerTester
-    arguments: ['@phantomjs']
+    arguments: ['@statsd', '@phantomjs']
   testing.tester.quail:
     class: \Triquanta\AccessibilityMonitor\Testing\QuailTester
-    arguments: ['@phantomjs', '@logger']
+    arguments: ['@phantomjs', '@logger', '@statsd']
   testing.tester.google_pagespeed:
     class: \Triquanta\AccessibilityMonitor\Testing\GooglePageSpeedTester
-    arguments: ['@logger', '@http_client', '%google_pagespeed.api_key%', '%google_pagespeed.api_url%', '%google_pagespeed.api_strategy%']
+    arguments: ['@logger', '@statsd', '@http_client', '%google_pagespeed.api_key%', '%google_pagespeed.api_url%', '%google_pagespeed.api_strategy%']
+  statsd:
+    class: \Triquanta\AccessibilityMonitor\StatsD
+    arguments: ['%statsd.hostname%', '%statsd.port%', '%statsd.connection%', '%statsd.namespace%']
   logger:
     class: \Monolog\Logger
     arguments: ['global']

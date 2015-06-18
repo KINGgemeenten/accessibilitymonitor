@@ -15,6 +15,7 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Psr\Log\LoggerInterface;
 use Triquanta\AccessibilityMonitor\Testing\TesterInterface;
+use Triquanta\AccessibilityMonitor\Testing\TestingStatusInterface;
 
 /**
  * Provides a test run worker that tests URLs.
@@ -27,6 +28,13 @@ class Worker implements WorkerInterface {
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
+
+    /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
 
     /**
      * The AMQP queue connection.
@@ -68,18 +76,21 @@ class Worker implements WorkerInterface {
      *
      * @param \Psr\Log\LoggerInterface
      * @param \Triquanta\AccessibilityMonitor\Testing\TesterInterface $tester
+     * @param \Triquanta\AccessibilityMonitor\StatsDInterface $statsD
      * @param \Triquanta\AccessibilityMonitor\StorageInterface $resultStorage
      * @param \PhpAmqpLib\Connection\AMQPStreamConnection $queue
      * @param int $workerTtl
      */
     public function __construct(
       LoggerInterface $logger,
+      StatsDInterface $statsD,
       TesterInterface $tester,
       StorageInterface $resultStorage,
       AMQPStreamConnection $queue,
       $workerTtl
     ) {
         $this->logger = $logger;
+        $this->statsD = $statsD;
         $this->queueConnection = $queue;
         $this->resultStorage = $resultStorage;
         $this->tester = $tester;
@@ -89,9 +100,10 @@ class Worker implements WorkerInterface {
     public function run()
     {
         $this->logger->debug(sprintf('Starting worker. It will be shut down in %d seconds.', $this->workerTtl));
+        $this->statsD->startTiming("lifetime");
         $queueChannel = $this->queueConnection->channel();
         $workerStart = time();
-        $failureWait = 3;
+        $failureWait = 10;
 
         while ($workerStart + $this->workerTtl > time()) {
             // Try to find a test run to process.
@@ -106,6 +118,7 @@ class Worker implements WorkerInterface {
             AmqpQueueHelper::declareQueue($queueChannel, $queueName);
             $message = $queueChannel->basic_get($queueName);
             if (!($message instanceof AMQPMessage)) {
+                $this->logger->debug(sprintf('No message retrieved from RabbitMQ queue %s.', $this->queue->getName()));
                 sleep($failureWait);
                 continue;
             }
@@ -114,6 +127,7 @@ class Worker implements WorkerInterface {
         }
 
         $this->logger->debug(sprintf('Shutting down worker, because its TTL of %d seconds was reached.', $this->workerTtl));
+        $this->statsD->endTiming("lifetime");
         $queueChannel->close();
     }
 
@@ -146,11 +160,29 @@ class Worker implements WorkerInterface {
 
             // Run the actual tests.
             $this->logger->info(sprintf('Testing %s.', $url->getUrl()));
+            $this->statsD->startTiming("tests.all.duration");
             $start = microtime(true);
             $this->tester->run($url);
             $end = microtime(true);
             $duration = $end - $start;
             $this->logger->info(sprintf('Done testing %s (%s seconds)', $url->getUrl(), $duration));
+
+            switch ($url->getTestingStatus()) {
+                case TestingStatusInterface::STATUS_TESTED:
+                    $this->statsD->increment("tests.all.status.tested");
+                    $this->statsD->increment("tests.all.status.tested", $url->getQueueName());
+                    break;
+                case TestingStatusInterface::STATUS_ERROR:
+                    $this->statsD->increment("tests.all.status.error");
+                    $this->statsD->increment("tests.all.status.error", $url->getQueueName());
+                    break;
+                case TestingStatusInterface::STATUS_SCHEDULED_FOR_RETEST:
+                    $this->statsD->increment("tests.all.status.scheduled_for_retest");
+                    $this->statsD->increment("tests.all.status.scheduled_for_retest", $url->getQueueName());
+                    break;
+            }
+
+            $this->statsD->endTiming("tests.all.duration");
         }
         catch (StorageException $e) {
             // If saving the URL or test run failed, the metadata that was set

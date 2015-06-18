@@ -16,6 +16,13 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
+     * The StatsD logger.
+     *
+     * @var \Triquanta\AccessibilityMonitor\StatsD
+     */
+    protected $statsD;
+
+    /**
      * The Phantom JS manager.
      *
      * @var \Triquanta\AccessibilityMonitor\PhantomJsInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -31,9 +38,11 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $this->statsD = $this->getMock('\Triquanta\AccessibilityMonitor\StatsDInterface');
+
         $this->phantomJs = $this->getMock('\Triquanta\AccessibilityMonitor\PhantomJsInterface');
 
-        $this->sut = new WappalyzerTester($this->phantomJs);
+        $this->sut = new WappalyzerTester($this->statsD, $this->phantomJs);
     }
 
     /**
@@ -41,7 +50,7 @@ class WappalyzerTesterTest extends \PHPUnit_Framework_TestCase
      */
     public function testConstruct()
     {
-        $this->sut = new WappalyzerTester($this->phantomJs);
+        $this->sut = new WappalyzerTester($this->statsD, $this->phantomJs);
     }
 
     /**
