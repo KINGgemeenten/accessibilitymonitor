@@ -118,7 +118,7 @@ class Worker implements WorkerInterface {
             AmqpQueueHelper::declareQueue($queueChannel, $queueName);
             $message = $queueChannel->basic_get($queueName);
             if (!($message instanceof AMQPMessage)) {
-                $this->logger->debug(sprintf('No message retrieved from RabbitMQ queue %s.', $this->queue->getName()));
+                $this->logger->debug(sprintf('No message retrieved from RabbitMQ queue %s.', $queueName));
                 sleep($failureWait);
                 continue;
             }
