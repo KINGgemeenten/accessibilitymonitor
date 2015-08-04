@@ -94,7 +94,7 @@ class GooglePageSpeedTester implements TesterInterface
             $request = $this->httpClient->createRequest('GET',
               $this->apiUrl);
             $request->getQuery()->set('key', $this->apiKey);
-            $request->getQuery()->set('locale', 'nl');
+            $request->getQuery()->set('locale', 'en');
             $request->getQuery()->set('url', $url->getUrl());
             $request->getQuery()->set('strategy', $this->apiStrategy);
             $request->setHeader('User-Agent', 'GT inspector script');
