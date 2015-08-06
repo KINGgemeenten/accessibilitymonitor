@@ -497,10 +497,15 @@ SELECT DISTINCT u.queue_name
                   $queueName));
 
                 // Delete the queue from the database.
+                // To prevent race conditions only delete if we got at least one message from RabbitMQ
+                // and the last request was more than 5 minutes ago.
+                // "last_request" should be bigger than 0 and smaller than time() - 300
+                // @todo make the last_request_offset a setting, or use a better mechanism to prevent race conditions
                 $deleteQuery = $this->database->getConnection()
-                  ->prepare("DELETE FROM queue WHERE queue.name = :queue_name");
+                  ->prepare("DELETE FROM queue WHERE queue.name = :queue_name and queue.last_request > 0 and queue.last_request < :last_request_offset");
                 $result = $deleteQuery->execute([
                   'queue_name' => $queueName,
+                  'last_request_offset' => time() - 300,
                 ]);
                 if ($result) {
                     $this->logger->debug(sprintf('Successfully removed queue %s from the database.',
